@@ -133,3 +133,79 @@ VS-01..VS-13 — BDD-010 (persistência + search), BDD-024 (`qdrant-client` / `o
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — interfaces.md v0.1.0. Prosseguir para testes unitários (QA).
+
+---
+
+## Review — Unit tests (v0.1.0 → v0.1.1)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `unit-test-plan.md` + `tests/unit/index/vector/` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Contratos frozen / composição / hierarquia erros | OK | UT-T01–T07, UT-E01–E04 |
+| Ports runtime_checkable + sem chunking | OK | UT-P01–P04 |
+| Store: payload, ranking, replace, purge, delete, filter, idempotência | OK | UT-Q01–Q19 |
+| Embedder: vazio, blank, ordem, dim, SDK, sem chat | OK | UT-EM01–EM08, UT-X04 |
+| Falhas tipadas SDK Qdrant | OK | UT-Q20 (v0.1.1) |
+| `delete_paths` escopado por commit | OK | UT-Q21 (v0.1.1) |
+| Scope inválido além de upsert | OK | UT-Q17 expandido (v0.1.1) |
+| API alinhada a interfaces (sem divergência) | OK | assinaturas / keyword ctor |
+| Não enfraquece BDD VS-01..VS-14 | OK | unitários aprofundam; BDD permanece |
+
+### Achados (v0.1.0) — corrigidos em v0.1.1
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| `MAJOR` | Sem UT de falha SDK Qdrant → `VectorStoreError` (assimétrico a UT-EM05) | interfaces §3.10; plan v0.1.0 | Stub client raises → `VectorStoreError` | Corrigido UT-Q20 |
+| `MAJOR` | `delete_paths` “escopo por commit” sem corner (mesmo path em 2 commits) | interfaces §3.9 | delete newsha não remove oldsha | Corrigido UT-Q21 |
+| `SUGGESTION` | UT-Q17 só validava scope em `upsert` | §3.3 | Validar purge/replace/delete_paths | Corrigido UT-Q17 |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — unit-test-plan.md v0.1.1 + testes alinhados. Prosseguir para implementação (Developer).
+
+---
+
+## QA — unit-test-plan RED (v0.1.0)
+
+| Campo | Valor |
+|---|---|
+| Autor | QA Engineer |
+| Artefato | `unit-test-plan.md` + `tests/unit/index/vector/` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `TESTS_READY_FOR_REVIEW` |
+
+### Cobertura do plano
+
+| Grupo | IDs | Arquivo |
+|---|---|---|
+| Types frozen / composição | UT-T01..UT-T07 | `test_types.py` |
+| Erros tipados | UT-E01..UT-E04 | `test_errors.py` |
+| Ports Protocol | UT-P01..UT-P04 | `test_ports.py` |
+| QdrantVectorStore | UT-Q01..UT-Q19 + no-chunking | `test_qdrant_store.py` |
+| OpenAICompatibleEmbedder | UT-EM01..UT-EM08 + UT-X04 | `test_embedder.py` |
+
+Extremos: validation, dimensions, empty texts/batch/replace, purge escopado, idempotência point id, payload schema, search filters, SDK conformity (`qdrant_client` / `openai`, embedder sem chat).
+
+### RED
+
+```bash
+.venv/bin/python -m pytest tests/unit/index/vector -q
+```
+
+Falha na coleta com `ModuleNotFoundError: No module named 'github_rag.index.vector.types'` (API de produção ainda inexistente além do placeholder `__init__.py`) — esperado nesta etapa. Deps `qdrant-client`/`openai` deixadas para o Developer.
