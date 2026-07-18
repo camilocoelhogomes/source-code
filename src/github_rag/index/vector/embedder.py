@@ -47,8 +47,6 @@ class OpenAICompatibleEmbedder:
                 model=self._model,
                 input=list(texts),
             )
-        except EmbeddingError:
-            raise
         except Exception as exc:
             raise EmbeddingError(f"embeddings create failed: {exc}") from exc
 

@@ -247,3 +247,34 @@ Falha na coleta com `ModuleNotFoundError: No module named 'github_rag.index.vect
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — implementação conforme design/interfaces. Prosseguir para Blue (refactor).
+
+---
+
+## Review — Blue refactor
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `refactoring.md` + `qdrant_store.py` / `embedder.py` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `BLUE_APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Sem otimização especulativa | OK | `refactoring.md` — sem gargalo mensurável MVP |
+| Simplificação sem mudar contratos | OK | `_invoke` DRY; search generator; embedder wrap |
+| Testes verdes after | OK | T13 62 passed; suíte 442 passed; cov 98.49% |
+| Comportamento/BDD intactos | OK | mesmos cenários VS/UT |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum | — | — |
+
+### Decisão
+
+`BLUE_APPROVED_BY_ARCHITECT` — Blue encerrado; seguir documentação/changelog e PR.

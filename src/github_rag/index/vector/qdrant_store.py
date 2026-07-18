@@ -11,7 +11,8 @@ Motivo da separação
 from __future__ import annotations
 
 import uuid
-from typing import Any, Sequence
+from collections.abc import Callable
+from typing import Any, Sequence, TypeVar
 
 from qdrant_client.models import (
     Distance,
@@ -22,6 +23,8 @@ from qdrant_client.models import (
     PointStruct,
     VectorParams,
 )
+
+_T = TypeVar("_T")
 
 from github_rag.index.chunk.types import SemanticChunk, SourceLanguage
 from github_rag.index.vector.errors import (
@@ -72,15 +75,13 @@ class QdrantVectorStore:
             self._validate_record(record)
             points.append(self._to_point(scope, record))
         self._ensure_collection()
-        try:
-            self._client.upsert(
+        self._invoke(
+            "upsert",
+            lambda: self._client.upsert(
                 collection_name=self._collection_name,
                 points=points,
-            )
-        except VectorStoreError:
-            raise
-        except Exception as exc:
-            raise VectorStoreError(f"qdrant upsert failed: {exc}") from exc
+            ),
+        )
 
     def purge_other_commits(self, scope: RepoCommitScope) -> None:
         self._validate_scope(scope)
@@ -97,15 +98,13 @@ class QdrantVectorStore:
                 )
             ],
         )
-        try:
-            self._client.delete(
+        self._invoke(
+            "purge",
+            lambda: self._client.delete(
                 collection_name=self._collection_name,
                 points_selector=flt,
-            )
-        except VectorStoreError:
-            raise
-        except Exception as exc:
-            raise VectorStoreError(f"qdrant purge failed: {exc}") from exc
+            ),
+        )
 
     def replace_repo_commit(
         self, scope: RepoCommitScope, records: Sequence[VectorRecord]
@@ -122,15 +121,13 @@ class QdrantVectorStore:
                 FieldCondition(key="repo_id", match=MatchValue(value=repo_id))
             ]
         )
-        try:
-            self._client.delete(
+        self._invoke(
+            "delete_repo",
+            lambda: self._client.delete(
                 collection_name=self._collection_name,
                 points_selector=flt,
-            )
-        except VectorStoreError:
-            raise
-        except Exception as exc:
-            raise VectorStoreError(f"qdrant delete_repo failed: {exc}") from exc
+            ),
+        )
 
     def delete_paths(
         self, scope: RepoCommitScope, paths: Sequence[str]
@@ -151,15 +148,13 @@ class QdrantVectorStore:
                 FieldCondition(key="path", match=MatchAny(any=list(paths))),
             ]
         )
-        try:
-            self._client.delete(
+        self._invoke(
+            "delete_paths",
+            lambda: self._client.delete(
                 collection_name=self._collection_name,
                 points_selector=flt,
-            )
-        except VectorStoreError:
-            raise
-        except Exception as exc:
-            raise VectorStoreError(f"qdrant delete_paths failed: {exc}") from exc
+            ),
+        )
 
     def search(
         self,
@@ -178,23 +173,31 @@ class QdrantVectorStore:
                     )
                 ]
             )
-        try:
-            response = self._client.query_points(
+        response = self._invoke(
+            "search",
+            lambda: self._client.query_points(
                 collection_name=self._collection_name,
                 query=list(query_vector),
                 limit=limit,
                 query_filter=query_filter,
+            ),
+        )
+        return tuple(
+            self._hit_from_payload(
+                score=float(point.score),
+                payload=point.payload or {},
             )
+            for point in response.points
+        )
+
+    def _invoke(self, action: str, call: Callable[[], _T]) -> _T:
+        """Executa chamada Qdrant mapeando exceções para ``VectorStoreError``."""
+        try:
+            return call()
         except VectorStoreError:
             raise
         except Exception as exc:
-            raise VectorStoreError(f"qdrant search failed: {exc}") from exc
-
-        hits: list[SemanticHit] = []
-        for point in response.points:
-            payload = point.payload or {}
-            hits.append(self._hit_from_payload(score=float(point.score), payload=payload))
-        return tuple(hits)
+            raise VectorStoreError(f"qdrant {action} failed: {exc}") from exc
 
     def _ensure_collection(self) -> None:
         if self._collection_ready:
