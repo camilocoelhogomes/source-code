@@ -38,6 +38,15 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
   sem indexação nem reconcile (handoff ENG-011 → T14). Origem/conexão no
   catálogo ativo (BDD-001/016/021/023); ausência = soft-delete sem estado
   extra fora de REQ-020.
+- Chunking semântico Tree-sitter (T11): porta `ContextualChunker` e
+  implementação `TreeSitterContextualChunker` com grammars oficiais
+  (`tree-sitter` + python/java/javascript/typescript/markdown/**yaml/json/xml/toml**)
+  — única fonte de chunks RAG (DEC-003/015; BDD-007/024). Matriz config
+  ampliada por review humano PR #9.
+- Contrato estável `SemanticChunk` (`chunk_id` SHA-256 canônico, path, ranges,
+  kind, texto) para T12/T13/T14; erros tipados sem fallback por tamanho/linhas
+  (`EmptySourceError`, `BinarySourceError`, `GrammarUnavailableError`,
+  `ParseFailureError`).
 - Dependência de projeto `GitPython>=3.1` (DEC-015 / BR-023).
 - Descoberta GitHub (T05): `GitHubRepoDiscovery` lista repositórios por org
   via token resolvido em T02, filtra por wildcards de inclusão (BR-022) e
@@ -78,8 +87,8 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 - Desenvolvimento local com `.venv` documentado para Windows PowerShell,
   Windows cmd, macOS e Linux.
 - Harness pytest/pytest-cov com falha automática abaixo de 95% de cobertura.
-- Testes unitários e BDD: 416 testes aprovados (1 pulado sem Docker),
-  161 subtests, cobertura de 98.57% (T01–T08 + T07/T20 na main).
+- Testes unitários e BDD: 594 testes aprovados (1 pulado sem Docker),
+  187 subtests, cobertura de 98.51% (inclui T11 com yaml/json/xml/toml).
 - Normalização cross-platform de EOL e ignores para `.venv`, cobertura,
   caches e `*.egg-info`.
 
