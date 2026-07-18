@@ -59,7 +59,8 @@ python -m pytest
 
 O comando executa testes unitários e BDD com relatório de cobertura no
 terminal. O projeto exige cobertura mínima de 95%; a execução falha
-automaticamente abaixo desse limite.
+automaticamente abaixo desse limite. A suíte completa atual está em 335
+testes (1 pulado sem Docker) com cobertura de 97.99% (T01–T07).
 
 ## Elegibilidade de arquivos (T09)
 
@@ -138,6 +139,34 @@ for name, conn in config.connections.items():
 
 Wildcards em `repos` são filtros exclusivos de inclusão (`prefix*`, `*suffix`,
 `org/*`, exato). Lista vazia ⇒ nenhum repositório descoberto.
+
+## Sync do catálogo (T07)
+
+No bootstrap, `CatalogSync` sincroniza o catálogo SoT com as discoveries
+GitHub (T05) e local (T06): upsert dos repositórios descobertos e soft-delete
+dos ausentes da config atual. Não indexa nem executa o reconcile de tip
+`main` (ENG-011 — T14). Helper de wire: `run_catalog_sync` em
+`github_rag.app.bootstrap`.
+
+```python
+from github_rag.app import run_catalog_sync
+from github_rag.catalog import CatalogSync, InMemoryCatalogRepository
+from github_rag.config import ConfigLoader
+from github_rag.sources.github import GitHubRepoDiscovery
+from github_rag.sources.local import LocalRepoDiscovery
+
+config = ConfigLoader().load(config_path)
+sync = CatalogSync(
+    catalog=InMemoryCatalogRepository(),  # ou adaptador PostgreSQL
+    github_discovery=GitHubRepoDiscovery(),
+    local_discovery=LocalRepoDiscovery(),
+)
+result = run_catalog_sync(config, sync)
+# result.active / result.deactivated / result.local_issues
+```
+
+Repos ausentes saem do catálogo ativo (`active=False`); estados permanecem
+somente os de REQ-020 (sem `indisponível`).
 
 ## Catálogo (PostgreSQL)
 
