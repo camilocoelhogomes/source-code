@@ -100,3 +100,39 @@ Esperado: falha por `ImportError` dos módulos `github_rag.eligibility.filter` /
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — BDD v0.1.0. Prosseguir para interfaces.
+
+---
+
+## Review — Interfaces (v0.1.0)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `interfaces.md` + stubs `eligibility/{filter,rules,gitignore}.py` + `pyproject.toml` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Porta pura `filter(paths, gitignore_sources)` | OK | I-T09-001; `FileEligibilityFilter` Protocol |
+| Separação loader × porta | OK | I-T09-003; `GitignoreSource` + `load_gitignore_sources` |
+| pathspec GitWildMatch + dep `>=0.12` | OK | I-T09-002; import em `filter.py`; `pyproject.toml` |
+| Denylist CSV/imagens + sem allowlist | OK | I-T09-004; `rules.py` constantes + `EligibilityRules` |
+| Sem extensão include-by-default | OK | I-T09-005; `include_extensionless=True` |
+| Sem params de tamanho | OK | I-T09-006; assinatura `filter` |
+| Comentários responsabilidade/separação | OK | docstrings padrão T04 em cada contrato |
+| Stubs sem comportamento completo | OK | `NotImplementedError` em `filter` / `load_gitignore_sources` |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` | — | — |
+| `SUGGESTION` | Colapso de duplicatas e validação de path absoluto/`..` ficam para unit-test-plan | I-T09-007 | Cobrir nos unitários pós-interfaces |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — interfaces v0.1.0. Prosseguir para unit-test-plan (QA).

@@ -4,7 +4,7 @@
 |---|---|---|---|---|---|
 | Design | `0.1.0` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | Pipeline autônomo; sem BLOCKING/MAJOR |
 | BDD | `0.1.0` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | ELIG-01..07 cobrem BDD-006 + corners + D-T09-001..006; sem BLOCKING/MAJOR |
-| Interfaces | — | pendente | — | — | — |
+| Interfaces | `0.1.0` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | I-T09-001..008; stubs + pathspec>=0.12; sem BLOCKING/MAJOR |
 | Unit tests | — | pendente | — | — | — |
 | Implementação | — | pendente | — | — | — |
 | Blue refactor | — | pendente | — | — | — |
