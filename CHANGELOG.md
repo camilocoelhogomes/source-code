@@ -6,6 +6,10 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- Descoberta GitHub (T05): `GitHubRepoDiscovery` lista repositórios por org
+  via token resolvido em T02, filtra por wildcards de inclusão (BR-022) e
+  expõe `DiscoveredGitHubRepo` sem serializar o segredo (BDD-001/014/019).
+- Porta HTTP mockável `GitHubApiClient` com paginação da API GitHub.
 - Camada de persistência do catálogo (T03): domínio puro (`RepoState`,
   `RepoOrigin`, `FileStage`, máquina de estados fechada REQ-020), porta
   `CatalogRepository`, fake in-memory e adaptador PostgreSQL (SQLAlchemy 2.x +
@@ -36,8 +40,8 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 - Desenvolvimento local com `.venv` documentado para Windows PowerShell,
   Windows cmd, macOS e Linux.
 - Harness pytest/pytest-cov com falha automática abaixo de 95% de cobertura.
-- Testes unitários e BDD: 244 testes aprovados (1 pulado sem Docker),
-  161 subtests, cobertura de 99.29% (T01+T02+T03+T04).
+- Testes unitários e BDD: 277 testes aprovados (1 pulado sem Docker),
+  161 subtests, cobertura de 99.18% (T01+T02+T03+T04+T05).
 - Normalização cross-platform de EOL e ignores para `.venv`, cobertura,
   caches e `*.egg-info`.
 
