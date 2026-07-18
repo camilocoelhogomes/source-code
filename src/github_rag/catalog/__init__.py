@@ -37,6 +37,7 @@ from .models import (
 )
 from .memory import InMemoryCatalogRepository
 from .repository import CatalogRepository
+from .sync import CatalogSync, CatalogSyncError, CatalogSyncResult
 from .transitions import (
     ALLOWED_TRANSITIONS,
     IDEMPOTENT_SELF_STATES,
@@ -52,6 +53,9 @@ __all__ = [
     "CatalogError",
     "CatalogPersistenceError",
     "CatalogRepository",
+    "CatalogSync",
+    "CatalogSyncError",
+    "CatalogSyncResult",
     "ConcurrencyConflictError",
     "ExecutionStatus",
     "FileProgress",

@@ -1,4 +1,4 @@
-"""Inspeção de filesystem Git para descoberta local (T06)."""
+"""Inspeção de filesystem Git para descoberta local (T06 + T20 GitPython)."""
 
 from __future__ import annotations
 
@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Sequence
 from urllib.parse import unquote, urlparse
 
-_PACKED_REF_MAIN = re.compile(r"^[^\s#]+\s+refs/heads/main$", re.MULTILINE)
+from git import Repo
+from git.exc import InvalidGitRepositoryError, NoSuchPathError
 
 
 @dataclass(frozen=True)
@@ -37,10 +38,11 @@ class GitFilesystemInspector:
     """Parse de URL ``file://``, glob e validação Git sem mutar working tree.
 
     Responsabilidade
-        Concentrar I/O de filesystem e heurística Git (``.git``, ref ``main``).
+        Concentrar I/O de filesystem e inspeção Git (GitPython) da branch ``main``.
 
     Motivo da separação
-        Permite mock/injeção nos testes sem stubar ``LocalRepoDiscovery``.
+        Permite mock/injeção nos testes sem stubar ``LocalRepoDiscovery``;
+        confina o SDK ao adaptador (ENG-013 / DEC-015).
     """
 
     def parse_file_url(self, url: str) -> ParsedFileUrl:
@@ -96,7 +98,7 @@ class GitFilesystemInspector:
         )
 
     def inspect_repo(self, path: Path) -> RepoInspection:
-        """Valida repositório Git e presença de branch ``main``."""
+        """Valida repositório Git e presença de branch ``main`` via GitPython."""
         if not path.is_dir():
             return RepoInspection(
                 is_git_repo=False,
@@ -104,23 +106,28 @@ class GitFilesystemInspector:
                 reason="not a directory",
             )
 
-        git_dir = _resolve_git_dir(path)
-        if git_dir is None:
+        try:
+            with Repo(path) as repo:
+                # Paridade T06: mounts locais são worktrees; bare não é candidato.
+                if repo.bare:
+                    return RepoInspection(
+                        is_git_repo=False,
+                        has_main_branch=False,
+                        reason="not a git repository",
+                    )
+                if "main" not in repo.heads:
+                    return RepoInspection(
+                        is_git_repo=True,
+                        has_main_branch=False,
+                        reason="main branch not found",
+                    )
+                return RepoInspection(is_git_repo=True, has_main_branch=True)
+        except (InvalidGitRepositoryError, NoSuchPathError):
             return RepoInspection(
                 is_git_repo=False,
                 has_main_branch=False,
                 reason="not a git repository",
             )
-
-        has_main = _has_main_branch(git_dir)
-        if not has_main:
-            return RepoInspection(
-                is_git_repo=True,
-                has_main_branch=False,
-                reason="main branch not found",
-            )
-
-        return RepoInspection(is_git_repo=True, has_main_branch=True)
 
 
 def _to_native_path(raw: str) -> Path:
@@ -137,32 +144,3 @@ def _is_absolute_file_path(path: Path, raw: str) -> bool:
     if path.is_absolute():
         return True
     return bool(re.match(r"^[A-Za-z]:", str(path)) or re.match(r"^/[A-Za-z]:", raw))
-
-
-def _resolve_git_dir(repo_path: Path) -> Path | None:
-    dot_git = repo_path / ".git"
-    if dot_git.is_dir():
-        return dot_git
-    if dot_git.is_file():
-        content = dot_git.read_text(encoding="utf-8").strip()
-        if content.startswith("gitdir:"):
-            gitdir = content.split(":", 1)[1].strip()
-            resolved = Path(gitdir)
-            if not resolved.is_absolute():
-                resolved = (repo_path / resolved).resolve()
-            return resolved if resolved.is_dir() else None
-    return None
-
-
-def _has_main_branch(git_dir: Path) -> bool:
-    main_ref = git_dir / "refs" / "heads" / "main"
-    if main_ref.is_file():
-        return True
-
-    packed = git_dir / "packed-refs"
-    if packed.is_file():
-        text = packed.read_text(encoding="utf-8", errors="replace")
-        if _PACKED_REF_MAIN.search(text):
-            return True
-
-    return False
