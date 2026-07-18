@@ -6,6 +6,11 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- `LocalRepoDiscovery` (T06): expande URLs `file://` com glob em volumes montados,
+  valida repositório Git e branch `main`, identifica origem `local` e registra
+  issues por conexão/path sem abortar outras conexões (BDD-016, BDD-018).
+- Camada `github_rag.sources.local` com `GitFilesystemInspector` injetável para
+  testes; convenção de mount `/repos` documentada (ENG-005).
 - Camada de persistência do catálogo (T03): domínio puro (`RepoState`,
   `RepoOrigin`, `FileStage`, máquina de estados fechada REQ-020), porta
   `CatalogRepository`, fake in-memory e adaptador PostgreSQL (SQLAlchemy 2.x +
@@ -36,8 +41,8 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 - Desenvolvimento local com `.venv` documentado para Windows PowerShell,
   Windows cmd, macOS e Linux.
 - Harness pytest/pytest-cov com falha automática abaixo de 95% de cobertura.
-- Testes unitários e BDD: 244 testes aprovados (1 pulado sem Docker),
-  161 subtests, cobertura de 99.29% (T01+T02+T03+T04).
+- Testes unitários e BDD: 271 testes aprovados (1 pulado sem Docker),
+  161 subtests, cobertura de 97.55% (T01+T02+T03+T04+T06).
 - Normalização cross-platform de EOL e ignores para `.venv`, cobertura,
   caches e `*.egg-info`.
 
