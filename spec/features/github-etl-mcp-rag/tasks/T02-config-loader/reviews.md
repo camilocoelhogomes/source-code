@@ -57,3 +57,43 @@ Nenhum.
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — design v0.2.0 apto para o gate BDD. Próximo artefato: `bdd.md` (sem implementação).
+
+---
+
+## Review BDD — Tech Lead Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `bdd.md` v0.1.0 + `tests/bdd/test_config_loader.py` + `tests/bdd/features/config_loader.feature` |
+| Data | 2026-07-18 |
+| Branch | `feature/github-etl-mcp-rag-T02-config-loader` |
+| Modo | Autonomous pipeline (aprovação Architect substitui HITL) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Checks executados
+
+| Check | Resultado |
+|---|---|
+| Cobertura design §3.1: BDD-021 parcial, BDD-022, BDD-014 parcial | OK — CFG-01..14 |
+| Sem overscape (descoberta/UI/container) | OK |
+| Given/When/Then mapeados a `TestCFG*` | OK |
+| Imports esperados de `github_rag.config` | OK |
+| Sem fixar injeção `ConfigLoader(environ=)` antes de interfaces | OK — `patch.dict(os.environ)` |
+| Sem `interfaces.md` / implementação do loader | OK |
+| Red esperado | OK — `PYTHONPATH=src python3 -m unittest ... test_config_loader.py` → 17 errors `ImportError: cannot import name 'AppConfig'` |
+
+### Achados
+
+| ID | Severidade | Evidência | Achado | Correção |
+|---|---|---|---|---|
+| — | — | — | Nenhum BLOCKING/MAJOR | — |
+| S-01 | `SUGGESTION` | design §4.2 blank env | Candidato inicial cobria só env ausente | Aceito e aplicado: `test_blank_token_env_raises_*` em CFG-09 |
+
+### Bloqueios abertos
+
+Nenhum.
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — BDD v0.1.0 apto para o gate de interfaces. Sem implementação nesta etapa.
