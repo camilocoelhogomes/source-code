@@ -23,6 +23,7 @@ from github_rag.snapshot.diff import FileDiffSet
 from github_rag.snapshot.errors import (
     CommitNotFoundError,
     CorruptRepositoryError,
+    FileNotFoundInCommitError,
     GitHubSnapshotNetworkError,
     MainBranchMissingError,
 )
@@ -116,6 +117,10 @@ class TestMainSnapshotBdd(unittest.TestCase):
         tree = self.provider.list_tree(self._local(), commit_sha=sha_a)
         self.assertNotIn("dirty.txt", tree)
         self.assertNotIn("only_feature.py", tree)
+        with self.assertRaises(FileNotFoundInCommitError):
+            self.provider.read_file(
+                self._local(), commit_sha=sha_a, path="dirty.txt"
+            )
 
     def test_ms05_first_index_signal(self) -> None:
         """MS-05: from_commit None → FirstIndexSignal."""

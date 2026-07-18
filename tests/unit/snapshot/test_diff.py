@@ -6,14 +6,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from github_rag.snapshot.diff import FileChangeKind, FileDiff, FileDiffSet
-from github_rag.snapshot.models import LocalSnapshotSource
+from github_rag.snapshot.diff import FileDiff, FileDiffSet
+from github_rag.snapshot.models import FileChangeKind, LocalSnapshotSource
 from github_rag.snapshot.provider import DefaultMainSnapshotProvider
-from tests.unit.snapshot.helpers import (
-    commit_files,
-    init_repo_with_main,
-    rename_and_commit,
-)
+from tests.unit.snapshot.helpers import init_repo_with_main, rename_and_commit
 
 
 class TestFileDiffModels(unittest.TestCase):

@@ -108,3 +108,38 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — interfaces v0.1.0. Prosseguir para testes unitários (QA).
+
+## Review — Unit test plan + fase vermelha v0.1.0
+
+| Campo | Valor |
+|---|---|
+| Data | 2026-07-18 |
+| Revisor | Tech Lead Architect |
+| Artefato | `unit-test-plan.md` v0.1.0 + `tests/unit/snapshot/*.py` + `tests/bdd/test_main_snapshot.py` |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Interfaces base | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
+| BDD base | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
+| Resultado | `CHANGES_REQUIRED` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Contratos / IDs do plano materializados | OK | U-M01..04, U-D01..02, U-L01..12, U-G01..07, U-P01..02, U-X01..05; MS-01..12 |
+| Extremos / corners (main ausente, corrupt, rede, first index) | OK | U-L07/U-G07/MS-06; U-L08/MS-07; U-G04..05/MS-08; U-L11/MS-05 |
+| Evidência red `ModuleNotFoundError` | OK | Coleção falha nos 6 módulos; confirmado em 2026-07-18 (`github_rag.snapshot.{diff,errors,models}` ausentes) |
+| Alinhamento às interfaces | parcial | Porta/`DefaultMainSnapshotProvider`, fontes tipadas, `GitClonePort` mock, erros tipados OK; U-P03 desalinhado |
+| Não enfraquecer critérios | falha | U-P03 aceita `AttributeError` e omite `SnapshotError` previsto no plano |
+
+### Achados
+
+| ID | Severidade | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| M-UT-01 | `MAJOR` | `unit-test-plan.md` U-P03: `TypeError ou SnapshotError`; `tests/unit/snapshot/test_provider.py:72` usa `(TypeError, AttributeError)` | Ajustar assert para `(TypeError, SnapshotError)` (remover `AttributeError`); implementação correta com `SnapshotError` deve passar | aberto |
+| S-UT-01 | `SUGGESTION` | `test_diff.py:9` importa `FileChangeKind` de `snapshot.diff`; interfaces §1 colocam `FileChangeKind` em `models.py` | Importar de `github_rag.snapshot.models` (ou re-export documentado) para não forçar layout contraditório | aberto (não bloqueante) |
+| S-UT-02 | `SUGGESTION` | `test_models.py` U-M04: constrói erro sem token no cenário | Preferir assert BR-008 em caminho com token (já coberto por U-G04/U-G06/MS-12) | aberto (não bloqueante) |
+| S-UT-03 | `SUGGESTION` | `test_ms04` não asserta `read_file` de `dirty.txt` (bdd.md MS-04 “nem ser legível”) | Espelhar U-L05 no BDD ou manter só no unitário | aberto (não bloqueante) |
+
+### Decisão
+
+`CHANGES_REQUIRED` — fechar M-UT-01 (U-P03) e reapresentar para review Architect. Não avançar para implementação.

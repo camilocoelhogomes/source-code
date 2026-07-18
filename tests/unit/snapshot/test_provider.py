@@ -9,6 +9,7 @@ from typing import Sequence
 from unittest.mock import MagicMock
 
 from github_rag.catalog.models import RepoOrigin
+from github_rag.snapshot.errors import SnapshotError
 from github_rag.snapshot.models import (
     GitHubSnapshotSource,
     LocalSnapshotSource,
@@ -69,5 +70,5 @@ class TestDefaultProvider(unittest.TestCase):
 
     def test_u_p03_invalid_source_type(self) -> None:
         provider = DefaultMainSnapshotProvider()
-        with self.assertRaises((TypeError, AttributeError)):
+        with self.assertRaises((TypeError, SnapshotError)):
             provider.get_main_tip(object())  # type: ignore[arg-type]

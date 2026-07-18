@@ -5,7 +5,7 @@
 | Feature | `github-etl-mcp-rag` |
 | Task | `T08-main-snapshot` |
 | Estado | `PENDING_ARCHITECT_REVIEW` |
-| Versão | `0.1.0` |
+| Versão | `0.1.1` |
 | Interfaces base | `0.1.0` |
 | BDD base | `0.1.0` |
 
@@ -13,7 +13,8 @@
 
 | Data | Autor | Decisão | Versão |
 |---|---|---|---|
-| — | — | — | `0.1.0` |
+| 2026-07-18 | Tech Lead Architect | `CHANGES_REQUIRED` | `0.1.0` | M-UT-01 U-P03 |
+| — | — | — | `0.1.1` | M-UT-01 fechado; re-review |
 
 ## 1. Escopo
 
