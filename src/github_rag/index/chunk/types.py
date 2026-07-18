@@ -32,6 +32,10 @@ class SourceLanguage(StrEnum):
     JAVASCRIPT = "javascript"
     TYPESCRIPT = "typescript"
     MARKDOWN = "markdown"
+    YAML = "yaml"
+    JSON = "json"
+    XML = "xml"
+    TOML = "toml"
 
 
 @dataclass(frozen=True)
@@ -83,6 +87,11 @@ _EXTENSION_TO_LANGUAGE: dict[str, SourceLanguage] = {
     ".tsx": SourceLanguage.TYPESCRIPT,
     ".md": SourceLanguage.MARKDOWN,
     ".markdown": SourceLanguage.MARKDOWN,
+    ".yaml": SourceLanguage.YAML,
+    ".yml": SourceLanguage.YAML,
+    ".json": SourceLanguage.JSON,
+    ".xml": SourceLanguage.XML,
+    ".toml": SourceLanguage.TOML,
 }
 
 

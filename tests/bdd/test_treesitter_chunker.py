@@ -1,7 +1,8 @@
 """
 BDD executável — T11-treesitter-chunker.
 
-Valida TS-01..TS-15 (BDD-007, BDD-024, DEC-003, corners tipados) conforme bdd.md 0.1.1.
+Valida TS-01..TS-19 (BDD-007, BDD-024, DEC-003, corners tipados, config yaml/json/xml/toml)
+conforme bdd.md 0.2.0.
 
 Execução:
     python -m pytest tests/bdd/test_treesitter_chunker.py -q
@@ -330,6 +331,71 @@ class TestTS15ErrorNodesDoNotFailAlone(unittest.TestCase):
         content = b"class A:\n    def broken(\n"
         chunks = chunker.chunk(ChunkSourceFile(path="broken.py", content=content))
         self.assertGreaterEqual(len(chunks), 1)
+
+
+_YAML_CFG = b"name: app\nnested:\n  enabled: true\n"
+_JSON_CFG = b'{"a": 1, "b": {"c": 2}}\n'
+_XML_CFG = b"<root><child attr=\"x\">text</child></root>\n"
+_TOML_CFG = b'[section]\nkey = "value"\n\n[other]\nx = 1\n'
+
+
+class TestTS16YamlStructural(unittest.TestCase):
+    """TS-16 — YAML chunking estrutural (não por tamanho/linhas)."""
+
+    def test_yaml_and_yml(self) -> None:
+        chunker = TreeSitterContextualChunker()
+        for path in ("config/app.yaml", "config/app.yml"):
+            with self.subTest(path=path):
+                chunks = chunker.chunk(ChunkSourceFile(path=path, content=_YAML_CFG))
+                self.assertGreaterEqual(len(chunks), 1)
+                self.assertTrue(all(c.language == SourceLanguage.YAML for c in chunks))
+                self.assertTrue(all(c.text for c in chunks))
+                # Alvos §4.4 — `stream` root-only NÃO satisfaz.
+                self.assertTrue(
+                    {c.kind for c in chunks} & {"document", "block_mapping_pair"}
+                )
+
+
+class TestTS17JsonStructural(unittest.TestCase):
+    """TS-17 — JSON chunking estrutural."""
+
+    def test_json_object_pairs(self) -> None:
+        chunker = TreeSitterContextualChunker()
+        chunks = chunker.chunk(ChunkSourceFile(path="package.json", content=_JSON_CFG))
+        self.assertGreaterEqual(len(chunks), 1)
+        self.assertTrue(all(c.language == SourceLanguage.JSON for c in chunks))
+        # Alvos §4.4 — `document` root-only NÃO satisfaz.
+        self.assertTrue({c.kind for c in chunks} & {"object", "pair", "array"})
+
+
+class TestTS18XmlStructural(unittest.TestCase):
+    """TS-18 — XML chunking estrutural via language_xml."""
+
+    def test_xml_nested_elements(self) -> None:
+        registry = OfficialGrammarRegistry()
+        lang = registry.resolve(SourceLanguage.XML, path_extension=".xml")
+        self.assertIsNotNone(lang)
+        chunker = TreeSitterContextualChunker(grammar_registry=registry)
+        chunks = chunker.chunk(ChunkSourceFile(path="pom.xml", content=_XML_CFG))
+        self.assertGreaterEqual(len(chunks), 1)
+        self.assertTrue(all(c.language == SourceLanguage.XML for c in chunks))
+        element_ranges = {
+            (c.start_byte, c.end_byte) for c in chunks if c.kind == "element"
+        }
+        # Ninhos com ranges distintos → ambos (design §4.4.1).
+        self.assertGreaterEqual(len(element_ranges), 2)
+
+
+class TestTS19TomlStructural(unittest.TestCase):
+    """TS-19 — TOML chunking estrutural."""
+
+    def test_toml_tables(self) -> None:
+        chunker = TreeSitterContextualChunker()
+        chunks = chunker.chunk(ChunkSourceFile(path="pyproject.toml", content=_TOML_CFG))
+        self.assertGreaterEqual(len(chunks), 1)
+        self.assertTrue(all(c.language == SourceLanguage.TOML for c in chunks))
+        # Alvos §4.4 — `document` root-only NÃO satisfaz.
+        self.assertTrue({c.kind for c in chunks} & {"table", "pair"})
 
 
 if __name__ == "__main__":

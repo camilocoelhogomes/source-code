@@ -77,6 +77,11 @@ class TestLanguageFromPath(unittest.TestCase):
             "lib/mod.cjs": SourceLanguage.JAVASCRIPT,
             "ui/comp.ts": SourceLanguage.TYPESCRIPT,
             "ui/Comp.tsx": SourceLanguage.TYPESCRIPT,
+            "config/app.yaml": SourceLanguage.YAML,
+            "config/app.yml": SourceLanguage.YAML,
+            "package.json": SourceLanguage.JSON,
+            "pom.xml": SourceLanguage.XML,
+            "pyproject.toml": SourceLanguage.TOML,
         }
         for path, expected in cases.items():
             with self.subTest(path=path):
@@ -117,7 +122,17 @@ class TestFrozenDataclasses(unittest.TestCase):
     def test_source_language_closed_values(self) -> None:
         self.assertEqual(
             {m.value for m in SourceLanguage},
-            {"python", "java", "javascript", "typescript", "markdown"},
+            {
+                "python",
+                "java",
+                "javascript",
+                "typescript",
+                "markdown",
+                "yaml",
+                "json",
+                "xml",
+                "toml",
+            },
         )
 
 

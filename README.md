@@ -59,14 +59,43 @@ python -m pytest
 
 O comando executa testes unitários e BDD com relatório de cobertura no
 terminal. O projeto exige cobertura mínima de 95%; a execução falha
-automaticamente abaixo desse limite.
+automaticamente abaixo desse limite. A suíte completa atual está em 416
+testes (1 pulado sem Docker) com cobertura de 98.51% (T01–T11).
+
+## Elegibilidade de arquivos (T09)
+
+O snapshot é filtrado por `FileEligibilityFilter` (`github_rag.eligibility`)
+antes da indexação (consumidor: T14):
+
+- Inclui textuais de desenvolvimento (qualquer linguagem, incl. Markdown e Java).
+- Exclui CSV, imagens e paths cobertos por `.gitignore` (matching via
+  biblioteca **pathspec** / GitWildMatch — sem parser caseiro).
+- Sem limite funcional de tamanho de arquivo no MVP.
+- Arquivos sem extensão (`Makefile`, `Dockerfile`, …) são incluídos por
+  padrão, salvo se ignorados pelo `.gitignore`.
+
+```python
+from pathlib import Path
+from github_rag.eligibility import (
+    PathspecFileEligibilityFilter,
+    load_gitignore_sources,
+)
+
+sources = load_gitignore_sources(Path("/path/to/repo"))
+eligible = PathspecFileEligibilityFilter().filter(
+    ["src/App.java", "data.csv", "target/x.class"],
+    sources,
+)
+```
 
 ## Chunking semântico Tree-sitter (T11)
 
 Arquivos elegíveis são decompostos em chunks estruturais via
 `TreeSitterContextualChunker` (`github_rag.index.chunk`). Não há chunking
-por tamanho/linhas. Consumidores: metadados SLM (T12), índice vetorial (T13)
-e orquestrador (T14).
+por tamanho/linhas. Matriz MVP: python, java, javascript, typescript,
+markdown, **yaml**, **json**, **xml**, **toml** (grammars oficiais;
+configs de linguagem — review PR #9). Consumidores: metadados SLM (T12),
+Qdrant (T13) e orquestrador (T14).
 
 ```python
 from github_rag.index.chunk import ChunkSourceFile, TreeSitterContextualChunker
@@ -74,6 +103,28 @@ from github_rag.index.chunk import ChunkSourceFile, TreeSitterContextualChunker
 chunks = TreeSitterContextualChunker().chunk(
     ChunkSourceFile(path="src/app.py", content=b"def f():\n    pass\n")
 )
+# também: .yaml/.yml, .json, .xml, .toml
+```
+
+## Metadados SLM por chunk (T12)
+
+Cada `SemanticChunk` (T11) é enriquecido via porta `MetadataGenerator`
+(`github_rag.index.metadata`). O adaptador default usa o SDK `openai`
+apontando a um runtime local OpenAI-compatible; modelo default
+`qwen2.5-coder:3b` (Qwen Coder 3B). Uma chamada = um chunk. Falhas são
+tipadas (`MetadataGenerationError` e subclasses). Tools MCP não usam esta
+porta (BR-010).
+
+```python
+from github_rag.index.metadata import (
+    OpenAICompatibleMetadataGenerator,
+    SlmClientSettings,
+)
+
+gen = OpenAICompatibleMetadataGenerator(
+    settings=SlmClientSettings(base_url="http://127.0.0.1:11434/v1"),
+)
+metadata = gen.generate(chunk)  # ChunkMetadata → metadata.to_payload()
 ```
 
 ## Índice vetorial Qdrant e embeddings (T13)
@@ -146,6 +197,52 @@ for name, conn in config.connections.items():
 
 Wildcards em `repos` são filtros exclusivos de inclusão (`prefix*`, `*suffix`,
 `org/*`, exato). Lista vazia ⇒ nenhum repositório descoberto.
+
+## Sync do catálogo (T07)
+
+No bootstrap, `CatalogSync` sincroniza o catálogo SoT com as discoveries
+GitHub (T05) e local (T06): upsert dos repositórios descobertos e soft-delete
+dos ausentes da config atual. Não indexa nem executa o reconcile de tip
+`main` (ENG-011 — T14). Helper de wire: `run_catalog_sync` em
+`github_rag.app.bootstrap`.
+
+```python
+from github_rag.app import run_catalog_sync
+from github_rag.catalog import CatalogSync, InMemoryCatalogRepository
+from github_rag.config import ConfigLoader
+from github_rag.sources.github import GitHubRepoDiscovery
+from github_rag.sources.local import LocalRepoDiscovery
+
+config = ConfigLoader().load(config_path)
+sync = CatalogSync(
+    catalog=InMemoryCatalogRepository(),  # ou adaptador PostgreSQL
+    github_discovery=GitHubRepoDiscovery(),
+    local_discovery=LocalRepoDiscovery(),
+)
+result = run_catalog_sync(config, sync)
+# result.active / result.deactivated / result.local_issues
+```
+
+Repos ausentes saem do catálogo ativo (`active=False`); estados permanecem
+somente os de REQ-020 (sem `indisponível`).
+
+## Índice Zoekt (T10)
+
+Busca exata de código via adaptador fino sobre a API/CLI oficiais do Zoekt
+(`src/github_rag/index/zoekt/`). Consumidores (T14/T16) usam a porta
+`ExactCodeIndex`; testes usam `FakeExactCodeIndex` sem processo Zoekt.
+
+```python
+from github_rag.index.zoekt import (
+    ExactSearchQuery,
+    FakeExactCodeIndex,
+    ZoektExactCodeIndex,
+)
+
+index = ZoektExactCodeIndex.from_environ()  # ZOEKT_URL, ZOEKT_INDEX_DIR, …
+# ou FakeExactCodeIndex() em testes
+hits = index.search(ExactSearchQuery(pattern="authenticate", repository="org/repo"))
+```
 
 ## Catálogo (PostgreSQL)
 

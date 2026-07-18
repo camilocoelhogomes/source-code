@@ -3,9 +3,17 @@
 | Gate | Versão / Commit | Decisão | Autor | Data | Observações |
 |---|---|---|---|---|---|
 | Design | `0.1.1` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | Pipeline autônomo |
+| Design | `0.2.0` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | Escopo config PR #9; yaml/json/xml/toml; pipeline autônomo |
 | BDD | `0.1.1` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | Pipeline autônomo |
 | Interfaces | `0.1.1` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | Pipeline autônomo |
 | Unit tests | `0.1.2` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | Red demonstrado; pipeline autônomo |
 | Implementação | — | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | Correções MAJOR (points, path, pins) |
 | Blue refactor | — | `BLUE_APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | Sem otimização especulativa |
-| Gate humano | PR | pendente | — | — | Único gate humano: review/merge no GitHub |
+| BDD + Interfaces + Unit (config v0.2.0) | `0.2.0` | `CHANGES_REQUIRED` | Tech Lead Architect | 2026-07-18 | Asserts/plan enfraquecem kinds estruturais TS-16..19; RED OK; sem commit de aprovação |
+| BDD | `0.2.0` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | Config languages; gate conjunto v0.2.1 |
+| Interfaces | `0.2.0` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | SourceLanguage + language_xml + seletores config |
+| Unit tests | `0.2.1` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | MAJORs kinds estruturais fechados; RED OK |
+| Implementação config | `1d0a37b` / v0.2 | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | yaml/json/xml/toml; pins; `language_xml`; cobertura 98.51% |
+| Blue refactor (config) | pós-`1d0a37b` | `BLUE_APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | Sem mudança de código; baseline 594 passed / 98.51% |
+| Gate humano | PR #9 | pendente re-review | — | — | Escopo config atendido (yaml/json/xml/toml); aguarda aprovação humana no GitHub |
+

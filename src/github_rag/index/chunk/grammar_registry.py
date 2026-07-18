@@ -61,6 +61,22 @@ def _language_ptr(language: SourceLanguage, *, path_extension: str) -> Any:
         import tree_sitter_markdown as pkg
 
         return pkg.language()
+    if language is SourceLanguage.YAML:
+        import tree_sitter_yaml as pkg
+
+        return pkg.language()
+    if language is SourceLanguage.JSON:
+        import tree_sitter_json as pkg
+
+        return pkg.language()
+    if language is SourceLanguage.XML:
+        import tree_sitter_xml as pkg
+
+        return pkg.language_xml()
+    if language is SourceLanguage.TOML:
+        import tree_sitter_toml as pkg
+
+        return pkg.language()
     # Enum fechado MVP: ramo só para defesa se SourceLanguage crescer sem update.
     raise GrammarUnavailableError(  # pragma: no cover
         f"linguagem sem grammar MVP: {language.value}",
@@ -88,6 +104,10 @@ class OfficialGrammarRegistry:
             (SourceLanguage.TYPESCRIPT, ".ts"),
             (SourceLanguage.TYPESCRIPT, ".tsx"),
             (SourceLanguage.MARKDOWN, ".md"),
+            (SourceLanguage.YAML, ".yaml"),
+            (SourceLanguage.JSON, ".json"),
+            (SourceLanguage.XML, ".xml"),
+            (SourceLanguage.TOML, ".toml"),
         ):
             self.resolve(lang, path_extension=ext)
 

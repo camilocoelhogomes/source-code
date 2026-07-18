@@ -236,3 +236,202 @@ PYTHONPATH=src .venv/bin/python -m pytest tests/unit/index/chunk tests/bdd/test_
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — implementação alinhada a design/interfaces/BDD após correções MAJOR acima. Prosseguir para etapa Blue (`refactoring.md`).
+
+---
+
+## Review — Design (v0.2.0 — escopo config PR #9)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `design.md` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Trigger | Review humano PR #9 (`r3609409543`) — yaml/json/xml/toml |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Escopo autorizado pelo humano | OK | §0 histórico; Trigger; D-T11-011 |
+| DEC-003 — sem fallback tamanho/linhas | OK | §3 fluxo erro; §3.1; §4.4.1 root estrutural (não genérico); D-T11-001 |
+| DEC-015 / BR-023 — só grammars oficiais PyPI | OK | §4.2 pins + origens; yaml/toml = tree-sitter-grammars (sem pacote no org core); json/xml = tree-sitter; D-T11-002/011 |
+| Matriz `SourceLanguage` MVP | OK | §4.2: python/java/js/ts/markdown + yaml/json/xml/toml; extensões e variantes |
+| Nós-alvo config | OK | §4.4: yaml `document`/`block_mapping_pair` (+ root `stream`); json `object`/`pair`/`array`; xml `element`; toml `table`/`pair` — tipos existem nos grammars |
+| XML `language_xml` | OK | §4.2 / §4.7 / D-T11-012; pacote expõe `language_xml` e `language_dtd` |
+| Compatibilidade T12/T13/T14 | OK | §8 amplia enum; contratos `SemanticChunk`/`chunk_id` inalterados |
+| Riscos / rollback | OK | §10–§11; pins §8 |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+| `SUGGESTION` | YAML MVP omite `flow_pair` (só `block_mapping_pair`) — YAML flow-only cobre via `document`/root | design §4.4; node-types yaml | Incluir `flow_pair` se BDD de configs flow exigir |
+| `SUGGESTION` | TOML MVP omite `table_array_element` — `[[tables]]` cobertos indiretamente via `pair` | design §4.4; node-types toml | Incluir se BDD de Cargo/pyproject exigir unidade de tabela-array |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — design v0.2.0. Prosseguir para atualização de BDD/interfaces/unitários/implementação alinhados à matriz ampliada.
+
+---
+
+## Review — BDD / Interfaces / Unit+BDD red (v0.2.0 — config PR #9)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `bdd.md` + `interfaces.md` + `unit-test-plan.md` + testes RED config |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Trigger | Review humano PR #9 — yaml/json/xml/toml |
+| Resultado | `CHANGES_REQUIRED` |
+
+### Decisão por artefato
+
+| Artefato | Decisão | Notas |
+|---|---|---|
+| `bdd.md` v0.2.0 (TS-16..TS-19) | Conteúdo OK (não marcado APPROVED enquanto gate conjunto falha) | DEC-003 explícito; kinds estruturais alinhados design §4.4; XML `language_xml` (TS-18) |
+| `interfaces.md` v0.2.0 | Conteúdo OK (idem) | `SourceLanguage` + extensões; `language_xml`; seletores config §3.11; I-T11-008 intacto |
+| `unit-test-plan.md` v0.2.0 + testes executáveis | `CHANGES_REQUIRED` | UT-C20..C23 / BDD TS-16..19 enfraquecem kinds estruturais vs `bdd.md` / design §4.4 |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| DEC-003 — cenários config exigem chunking estrutural (sem fallback tamanho/linhas) | FALHA parcial | `bdd.md` TS-16..19 OK no texto; asserts executáveis aceitam só root (`stream`/`document`) — ver MAJOR |
+| DEC-015 — grammars oficiais | OK (contratos) | interfaces §3.9; design §4.2; UT-G06 planejado |
+| Alinhamento design v0.2.0 | FALHA parcial | seletores/enum/extensões OK nos docs; testes feliz path não fecham kinds §4.4 |
+| Extremos/corners | OK no plano | UT-N05 cobre alvos; corners pré-existentes mantidos |
+| RED pela razão esperada | OK | ver evidência abaixo |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| `MAJOR` | Asserts TS-16 / UT-C20 aceitam `stream` no conjunto de kinds — root-only passa sem `document`/`block_mapping_pair` (enfraquece DEC-003 / bdd TS-16) | `tests/bdd/test_treesitter_chunker.py` ~353; `test_treesitter.py` UT-C20 ~238 | Intersecção só com `{"document", "block_mapping_pair"}` (root `stream` só via fallback testado noutro caso, se necessário) |
+| `MAJOR` | Asserts TS-17 / UT-C21 e TS-19 / UT-C23 aceitam `document` sozinho — root fallback satisfaz sem `object`/`pair`/`array` ou `table`/`pair` | BDD + unit happy paths | Exigir intersecção com alvos design §4.4 (sem contar root como suficiente no feliz path) |
+| `MAJOR` | TS-18 / fixture aninhada: BDD exige ninhos com ranges distintos → ambos; teste só `len(element_ranges) >= 1` | `test_treesitter_chunker.py` TS-18 ~380–383; bdd TS-18 | `assertGreaterEqual(len(element_ranges), 2)` para `_XML_CFG` |
+| `MAJOR` | `unit-test-plan.md` UT-C20..C23 coluna Esperado só `len>=1, language` — não rastreia kinds estruturais de TS-16..19 | `unit-test-plan.md` matriz | Atualizar Esperado + asserts para kinds §4.4 / BDD |
+| `SUGGESTION` | TS-18 não prova variante `language_xml` vs `language_dtd` | resolve só `assertIsNotNone` | Comparar com `tree_sitter_xml.language_xml()` (e ≠ `language_dtd`) |
+| `SUGGESTION` | Docstring do módulo BDD ainda cita TS-01..TS-15 | `test_treesitter_chunker.py` L1–7 | Atualizar para TS-01..TS-19 / v0.2.0 |
+
+### Evidência RED (subset config)
+
+```bash
+PYTHONPATH=src .venv/bin/python -m pytest \
+  tests/unit/index/chunk/test_types.py::TestFrozenDataclasses::test_source_language_closed_values \
+  tests/unit/index/chunk/test_types.py::TestLanguageFromPath::test_ut_t04_mvp_extensions \
+  tests/unit/index/chunk/test_grammar_registry.py::TestOfficialGrammarRegistry::test_ut_g06_resolve_config_languages \
+  tests/unit/index/chunk/test_node_selectors.py::TestSelectSemanticNodes::test_ut_n05_config_language_targets \
+  tests/unit/index/chunk/test_treesitter.py::TestTreeSitterContextualChunker::test_ut_c20_yaml \
+  tests/unit/index/chunk/test_treesitter.py::TestTreeSitterContextualChunker::test_ut_c21_json \
+  tests/unit/index/chunk/test_treesitter.py::TestTreeSitterContextualChunker::test_ut_c22_xml \
+  tests/unit/index/chunk/test_treesitter.py::TestTreeSitterContextualChunker::test_ut_c23_toml \
+  tests/bdd/test_treesitter_chunker.py::TestTS16YamlStructural \
+  tests/bdd/test_treesitter_chunker.py::TestTS17JsonStructural \
+  tests/bdd/test_treesitter_chunker.py::TestTS18XmlStructural \
+  tests/bdd/test_treesitter_chunker.py::TestTS19TomlStructural \
+  -q --no-cov
+```
+
+Resultado: falhas pela razão esperada (impl v0.1 ainda sem config):
+- `AttributeError: SourceLanguage has no attribute 'YAML'|'XML'` (enum incompleto)
+- `AssertionError` em UT-T07 (faltam `yaml`/`json`/`xml`/`toml` no enum)
+- `GrammarUnavailableError` nos happy paths chunker/BDD (extensão fora do mapa MVP atual)
+
+### Decisão
+
+`CHANGES_REQUIRED` — corrigir asserts/plan (MAJORs) e reapresentar o trio BDD/interfaces/unit-tests para aprovação Architect. Não avançar implementação config até gate limpo.
+
+---
+
+## Review — BDD / Interfaces / Unit+BDD red (v0.2.1 — re-review MAJOR)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `bdd.md` 0.2.0 + `interfaces.md` 0.2.0 + `unit-test-plan.md` 0.2.1 + testes RED |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Trigger | Correção MAJOR commits `02cc081` / follow-up `caa7fc3` |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| MAJORs anteriores fechados | OK | TS-16/C20: só `document`/`block_mapping_pair`; TS-17/C21: só `object`/`pair`/`array`; TS-18/C22: `len(element_ranges) >= 2`; TS-19/C23: só `table`/`pair`; plano UT-C20..C23 Esperado alinhado |
+| DEC-003 — chunking estrutural config | OK | Asserts feliz path não aceitam root-only; BDD TS-16..19 + UT-N05 |
+| DEC-015 — grammars oficiais | OK | interfaces §3.9; UT-G06; design §4.2 |
+| Alinhamento design v0.2.0 | OK | enum/extensões/seletores/XML `language_xml` |
+| RED | OK | `GrammarUnavailableError` / `AttributeError` (enum incompleto) — impl config ainda ausente |
+
+### Achados anteriores — status
+
+| Severidade | Achado | Status |
+|---|---|---|
+| `MAJOR` | kinds YAML aceitam `stream` | Corrigido |
+| `MAJOR` | kinds JSON/TOML aceitam `document` sozinho | Corrigido |
+| `MAJOR` | XML ninhos `>= 1` | Corrigido (`>= 2`) |
+| `MAJOR` | plano UT-C20..C23 sem kinds | Corrigido (v0.2.1) |
+| `SUGGESTION` | docstring BDD TS-01..15 | Corrigido (TS-01..TS-19) |
+| `SUGGESTION` | TS-18 não prova `language_xml` vs `language_dtd` | Aberto (não bloqueia) |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+| `SUGGESTION` | TS-18 resolve só `assertIsNotNone` — não compara `language_xml` ≠ `language_dtd` | `test_treesitter_chunker.py` TS-18 | Opcional na impl/test GREEN |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — BDD 0.2.0, interfaces 0.2.0, unit-test-plan 0.2.1. Prosseguir para implementação config (Developer).
+
+---
+
+## Review — Implementação config (v0.2 / commit `1d0a37b`)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `src/github_rag/index/chunk/{types,grammar_registry,node_selectors}.py` + `pyproject.toml` (pins config) |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Trigger | Implementação expandida após design/BDD/interfaces/unit APPROVED v0.2.x |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| DEC-003 / ENG-008 — sem chunk por tamanho/linhas | OK | Sem `max_chars`/`chunk_size`/`overlap`/split por linhas no pacote; seletores só por tipo de nó |
+| DEC-015 / BDD-024 — grammars oficiais PyPI | OK | `tree-sitter-yaml==0.7.2`, `json==0.24.8`, `xml==0.7.0`, `toml==0.7.0`; imports oficiais em `_language_ptr` |
+| `SourceLanguage` + extensões §4.2 | OK | enum YAML/JSON/XML/TOML; `.yaml`/`.yml`/`.json`/`.xml`/`.toml` em `language_from_path` |
+| Nós-alvo §4.4 | OK | `_TARGETS`: yaml `document`/`block_mapping_pair`; json `object`/`pair`/`array`; xml `element`; toml `table`/`pair` |
+| XML `language_xml` (D-T11-012) | OK | `pkg.language_xml()`; runtime `Language` == `language_xml`, ≠ `language_dtd` |
+| Eager registry inclui config | OK | `OfficialGrammarRegistry.__init__` resolve yaml/json/xml/toml |
+| Alinhamento BDD TS-16..19 / UT-C20..C23 | OK | kinds estruturais (não root-only); XML ninhos `>= 2` ranges |
+| Contrato T12/T13/T14 intacto | OK | `SemanticChunk` / `chunk_id` / erros tipados sem mudança de semântica |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+| `SUGGESTION` | TS-18 resolve só `assertIsNotNone` — não compara `language_xml` ≠ `language_dtd` (já verificado em review runtime) | `test_treesitter_chunker.py` TS-18 | Opcional endurecer assert |
+| `SUGGESTION` | Eager load de grammars (incl. config) — custo startup; sem medição | `grammar_registry.py` | Avaliar lazy só com baseline Blue |
+
+### Checks
+
+```bash
+PYTHONPATH=src .venv/bin/python -m pytest -q --cov=github_rag --cov-report=term-missing:skip-covered
+# 594 passed, 1 skipped; Total coverage: 98.51%
+# chunk modules ≥98% (node_selectors 98%; demais 100%)
+```
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — implementação config alinhada a design/interfaces/BDD v0.2.x (DEC-003/015). Prosseguir para etapa Blue.

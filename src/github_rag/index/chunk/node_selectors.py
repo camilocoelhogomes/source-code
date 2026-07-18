@@ -32,6 +32,13 @@ _KIND_PRIORITY: dict[str, int] = {
     "section": 50,
     "atx_heading": 50,
     "setext_heading": 50,
+    "document": 40,
+    "block_mapping_pair": 50,
+    "object": 45,
+    "array": 45,
+    "pair": 50,
+    "element": 50,
+    "table": 50,
 }
 
 _TARGETS: dict[SourceLanguage, frozenset[str]] = {
@@ -71,6 +78,30 @@ _TARGETS: dict[SourceLanguage, frozenset[str]] = {
             "section",
             "atx_heading",
             "setext_heading",
+        }
+    ),
+    SourceLanguage.YAML: frozenset(
+        {
+            "document",
+            "block_mapping_pair",
+        }
+    ),
+    SourceLanguage.JSON: frozenset(
+        {
+            "object",
+            "pair",
+            "array",
+        }
+    ),
+    SourceLanguage.XML: frozenset(
+        {
+            "element",
+        }
+    ),
+    SourceLanguage.TOML: frozenset(
+        {
+            "table",
+            "pair",
         }
     ),
 }
