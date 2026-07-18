@@ -3,12 +3,12 @@
 | Campo | Valor |
 |---|---|
 | Feature ID | `github-etl-mcp-rag` |
-| Versão do plano | `0.1.2` |
+| Versão do plano | `0.1.3` |
 | Estado | `HUMAN_PLAN_APPROVAL` |
 | Requisitos base | `requirements.md` v0.3.0 (aprovado 2026-07-18, commit `71ed647`) |
 | Natureza | greenfield; sem código de aplicação pré-existente |
-| Revisão humana | rejeição parcial do candidato `0166f97` incorporada em v0.1.2 |
-| Revisão PO | `PO_PLAN_APPROVED` em 2026-07-18 (v0.1.2); candidato aguardando aprovação humana do plano |
+| Revisão humana | rejeição parcial do candidato `7d6f14a` (venv em T01) incorporada em v0.1.3 |
+| Revisão PO | `PO_PLAN_APPROVED` em 2026-07-18 (v0.1.3); candidato aguardando aprovação humana do plano |
 
 ## 1. Arquitetura
 
@@ -70,6 +70,7 @@ Zoekt permanece o caminho de busca exata e **não** substitui Tree-sitter/SLM/Qd
 | ID | Decisão | Motivo |
 |---|---|---|
 | ENG-001 | Aplicação principal em **Python 3.12+** (API HTTP + workers + MCP SDK); UI web leve (SPA ou templates) consumindo a API. | Ecossistema maduro para MCP, Tree-sitter, embeddings/SLM e FastAPI; um runtime local. |
+| ENG-009 | Desenvolvimento local usa **`python -m venv`** (padrão `.venv/`) para instalar e isolar dependências; README documenta create/activate/install/test. Delivery por containers (T19) instala deps na imagem e **não** monta/usa o `.venv` do host. | Feedback humano no candidato `7d6f14a`; alinha REQ-007 (local) com REQ-036 (containers) sem conflito. |
 | ENG-002 | Compose com serviços: `app`, `postgres`, `qdrant`, `zoekt` (e runtime SLM atrás de porta abstrata). | Isola estado e índices; delivery padronizado (REQ-036). |
 | ENG-003 | Defaults: `INDEX_WORKERS=2`, `QUERY_WORKERS=4` (ajustáveis por env; máximos documentados na imagem). | Leve em máquina de desenvolvedor; dúvida não bloqueante fechada para MVP. |
 | ENG-004 | Horário diário: env define default no boot; preferência persistida na UI (PostgreSQL) prevalece em runtime. | Ambos exigidos (REQ-017); precedência explícita evita ambiguidade. |
@@ -175,7 +176,7 @@ T19-container-delivery            → T17, T18
 
 | Onda | Tasks paralelas | Gate |
 |---|---|---|
-| W0 | `T01` | Fundação |
+| W0 | `T01` | Fundação + venv de desenvolvimento |
 | W1 | `T02`, `T03`, `T04` | Contratos + SoT + limites |
 | W2 | `T05`, `T06` | Descoberta de origens |
 | W3 | `T07`, `T08`, `T09` | Catálogo operacional + preparação de snapshot |
@@ -205,7 +206,7 @@ T19-container-delivery            → T17, T18
 
 | Task | REQs / BRs / DECs | BDDs |
 |---|---|---|
-| T01 | cobertura 95%, stack local | — (habilita demais) |
+| T01 | cobertura 95%; stack local; **venv** obrigatório para deps de dev (ENG-009) | — (habilita demais) |
 | T02 | REQ-009,039–042; BR-016–021; DEC-012 | BDD-021,022 |
 | T03 | BR-001,004; dados operacionais | BDD-004,007,008 (persistência) |
 | T04 | REQ-004,037; BR-006 | BDD-002,013 |
@@ -243,10 +244,9 @@ Greenfield: sem migração de dados legados. Rollback = não promover imagem/tag
 
 ## 9. Handoff
 
-`PO_PLAN_APPROVED` (v0.1.2). Validado:
+`PO_PLAN_APPROVED` (v0.1.3). Validado:
 
-- Chunks semânticos somente via Tree-sitter (T11; sem chunking por tamanho/linhas).
-- SLM local gera metadados **por cada** chunk e o Qdrant persiste vetor + payload (T12–T14).
-- Sem regressão: estados REQ-020; UI REQ-023; agenda BDD-003 (T15/T18).
+- T01 / ENG-009: `python -m venv` / `.venv` obrigatório para deps locais; T19 não usa `.venv` do host.
+- Sem regressão: Tree-sitter→SLM→Qdrant; estados REQ-020; UI REQ-023; agenda BDD-003.
 
 Estado atual: `HUMAN_PLAN_APPROVAL` — candidato pronto para aprovação humana do plano. Nenhuma aprovação humana do plano está registrada neste artefato.
