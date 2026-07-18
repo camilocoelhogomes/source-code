@@ -7,16 +7,20 @@
 | Autor | Implementation Task Runner |
 | Data | 2026-07-18 |
 | Estado | `APPROVED_BY_ARCHITECT` |
-| Versão | `0.1.1` |
+| Versão | `0.2.0` |
 | Branch | `feature/github-etl-mcp-rag-T11-treesitter-chunker` |
 | Base | `main` |
 | Rastreabilidade | DEC-003, DEC-015; BR-005, BR-023; REQ-014, REQ-022; ENG-008, ENG-013; BDD-007 (etapa Tree-sitter); BDD-024 |
+| Trigger | Review humano PR #9 — expandir matriz MVP com yaml/json/xml/toml (configs) |
 
 ## 0. Histórico de revisão Architect
 
 | Data | Autor | Decisão | Versão | Observações |
 |---|---|---|---|---|
 | 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.1` | Correções: política nós aninhados/dedupe; `chunk_id` canônico; ERROR nodes; TS/TSX; invariante `len>=1`. |
+| 2026-07-18 | Humano (`camilocoelhogomes`) | Escopo autorizado (PR #9) | — | Pedido em `design.md`: incluir yaml, json, xml e toml por arquivos de configuração das linguagens. Discussion: `https://github.com/camilocoelhogomes/source-code/pull/9#discussion_r3609409543` |
+| 2026-07-18 | Tech Lead Architect | `PENDING` | `0.2.0` | Ampliação da matriz MVP + grammars oficiais de config; aguarda review. |
+| 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.2.0` | Matriz config (yaml/json/xml/toml) + grammars PyPI; DEC-003/015 intactos; XML `language_xml`. |
 
 ## 1. Contexto
 
@@ -85,18 +89,22 @@ Entrada imutável:
 
 ### 4.2 `SourceLanguage` (enum fechado MVP)
 
-Linguagens com grammar oficial no MVP (REQ-014 menciona textuais/Markdown/Java; Python é baseline do stack):
+Linguagens com grammar oficial no MVP (REQ-014 menciona textuais/Markdown/Java; Python é baseline do stack; config languages adicionadas por review humano PR #9):
 
-| Valor | Extensões | Grammar (pacote) | Variante Language |
-|---|---|---|---|
-| `python` | `.py`, `.pyi` | `tree-sitter-python` | única |
-| `java` | `.java` | `tree-sitter-java` | única |
-| `javascript` | `.js`, `.mjs`, `.cjs` | `tree-sitter-javascript` | única |
-| `typescript` | `.ts` | `tree-sitter-typescript` | `language_typescript` |
-| `typescript` | `.tsx` | `tree-sitter-typescript` | `language_tsx` |
-| `markdown` | `.md`, `.markdown` | `tree-sitter-markdown` | única |
+| Valor | Extensões | Grammar (pacote PyPI) | Variante Language | Origem do pacote |
+|---|---|---|---|---|
+| `python` | `.py`, `.pyi` | `tree-sitter-python` | única | tree-sitter oficial |
+| `java` | `.java` | `tree-sitter-java` | única | tree-sitter oficial |
+| `javascript` | `.js`, `.mjs`, `.cjs` | `tree-sitter-javascript` | única | tree-sitter oficial |
+| `typescript` | `.ts` | `tree-sitter-typescript` | `language_typescript` | tree-sitter oficial |
+| `typescript` | `.tsx` | `tree-sitter-typescript` | `language_tsx` | tree-sitter oficial |
+| `markdown` | `.md`, `.markdown` | `tree-sitter-markdown` | única | grammar oficial mantida |
+| `yaml` | `.yaml`, `.yml` | `tree-sitter-yaml` (`0.7.2`) | única | [tree-sitter-grammars/tree-sitter-yaml](https://github.com/tree-sitter-grammars/tree-sitter-yaml) — grammar comunitária oficial do ecossistema tree-sitter-grammars (não há `tree-sitter/tree-sitter-yaml` no org core; escolha alinhada DEC-015/BR-023) |
+| `json` | `.json` | `tree-sitter-json` (`0.24.8`) | única | [tree-sitter/tree-sitter-json](https://github.com/tree-sitter/tree-sitter-json) |
+| `xml` | `.xml` | `tree-sitter-xml` (`0.7.0`) | `language_xml` | [tree-sitter/tree-sitter-xml](https://github.com/tree-sitter/tree-sitter-xml) — pacote expõe também `language_dtd`; MVP usa só `language_xml` para `.xml` |
+| `toml` | `.toml` | `tree-sitter-toml` (`0.7.0`) | única | [tree-sitter-grammars/tree-sitter-toml](https://github.com/tree-sitter-grammars/tree-sitter-toml) — idem yaml: grammar oficial do ecossistema tree-sitter-grammars |
 
-Extensão desconhecida / sem grammar → `GrammarUnavailableError` (não chunka por linhas). Matriz MVP é deliberadamente fechada; ampliar grammars é evolução futura — não inventar split genérico para cobrir REQ-014 além do MVP (risco §10).
+Extensão desconhecida / sem grammar → `GrammarUnavailableError` (não chunka por linhas). Matriz MVP permanece fechada; ampliar além desta lista continua evolução futura — **proibido** split genérico (DEC-003).
 
 ### 4.3 `SemanticChunk`
 
@@ -133,6 +141,10 @@ Sem sal, sem conteúdo do texto no hash (id estável a edições fora do range; 
 | Java | `class_declaration`, `interface_declaration`, `method_declaration`, `constructor_declaration` |
 | JavaScript/TS | `function_declaration`, `class_declaration`, `method_definition`, `export_statement` com declaração interna |
 | Markdown | `section` (ou heading + corpo via estrutura do grammar markdown) |
+| YAML | `document`, `block_mapping_pair` (unidades de documento / pares chave–valor; root `stream` só como fallback) |
+| JSON | `object`, `pair`, `array` (estrutura de objetos/arrays e pares; root `document` como fallback) |
+| XML | `element` (elementos aninhados com ranges distintos → ambos; root `document` como fallback) |
+| TOML | `table`, `pair` (tabelas e pares; root `document` como fallback) |
 
 #### 4.4.1 Nós aninhados, overlap e dedupe
 
@@ -141,7 +153,7 @@ Sem sal, sem conteúdo do texto no hash (id estável a edições fora do range; 
 | Ninhos com ranges distintos | Emitir **ambos** (ex.: `class` e `method` interno) — unidades contextuais distintas para T12/T13 |
 | Mesmo `(start_byte, end_byte)` | Dedupe: manter **um** chunk; prioridade de `kind` documentada em `node_selectors` (ex.: declaração interna > `export_statement` wrapper) |
 | Ordem | Determinística: ordenar por `(start_byte, end_byte, kind)` crescente |
-| Zero nós-alvo após parse OK | Emitir **um** chunk do nó raiz estrutural (`module` / `program` / `document`); `kind` = nome do tipo raiz |
+| Zero nós-alvo após parse OK | Emitir **um** chunk do nó raiz estrutural (`module` / `program` / `document` / `stream`); `kind` = nome do tipo raiz |
 | Arquivo vazio | Continua `EmptySourceError` |
 
 ### 4.5 `ContextualChunker` (Protocol)
@@ -163,7 +175,7 @@ Antes do parse: se `b"\x00"` em `content` → `BinarySourceError`. Conteúdo dev
 
 ### 4.7 Grammar registry
 
-`GrammarRegistry.resolve(language, path_extension) -> tree_sitter.Language` carrega grammars oficiais. Para `typescript`, escolhe `language_typescript` vs `language_tsx` pela extensão (`.ts` / `.tsx`). Ausência/ImportError → `GrammarUnavailableError`. Injetável para testes (fake language/parser).
+`GrammarRegistry.resolve(language, path_extension) -> tree_sitter.Language` carrega grammars oficiais. Para `typescript`, escolhe `language_typescript` vs `language_tsx` pela extensão (`.ts` / `.tsx`). Para `xml`, usa `language_xml` (não `language_dtd` no MVP). Ausência/ImportError → `GrammarUnavailableError`. Injetável para testes (fake language/parser).
 
 ### 4.8 Parse e nós `ERROR`
 
@@ -202,9 +214,9 @@ Mensagens incluem `path` e `language` quando souber; sem dados sensíveis. Base 
 
 ## 8. Compatibilidade
 
-- Deps novas: `tree-sitter`, `tree-sitter-python`, `tree-sitter-java`, `tree-sitter-javascript`, `tree-sitter-typescript`, `tree-sitter-markdown` (versões compatíveis com API Language atual; pin no `pyproject`).
+- Deps: `tree-sitter`, `tree-sitter-python`, `tree-sitter-java`, `tree-sitter-javascript`, `tree-sitter-typescript`, `tree-sitter-markdown`, **`tree-sitter-yaml`**, **`tree-sitter-json`**, **`tree-sitter-xml`**, **`tree-sitter-toml`** (pins no `pyproject`).
 - Python 3.12+.
-- Não altera contratos T01–T10.
+- Não altera contratos T01–T10; amplia o enum `SourceLanguage` e a matriz de extensões (consumidores T12/T13/T14 passam a aceitar os novos valores de `language`).
 
 ## 9. Observabilidade
 
@@ -240,6 +252,8 @@ Remover pacote `index.chunk` (exceto stub), deps tree-sitter do pyproject e test
 | D-T11-008 | Ninhos com ranges distintos → ambos; range idêntico → dedupe | Contrato estável + evita double-index do mesmo span |
 | D-T11-009 | Nós `ERROR` não invalidam sozinhos o parse | Comportamento real do Tree-sitter; só falha se não houver chunk materializável |
 | D-T11-010 | TS vs TSX via variante Language no registry | Pacote oficial `tree-sitter-typescript` expõe ambas |
+| D-T11-011 | Matriz MVP inclui yaml/json/xml/toml | Review humano PR #9 — configs de linguagens; grammars oficiais PyPI (DEC-015) |
+| D-T11-012 | XML usa só `language_xml` no MVP | `.dtd` fora do escopo pedido; evita ambiguidade de variante |
 
 ## 13. Arquivos previstos
 

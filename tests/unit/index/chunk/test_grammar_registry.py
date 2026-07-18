@@ -64,6 +64,19 @@ class TestOfficialGrammarRegistry(unittest.TestCase):
                 registry.resolve(SourceLanguage.PYTHON, path_extension=".py")
         self.assertIn("cobol", str(ctx.exception))
 
+    def test_ut_g06_resolve_config_languages(self) -> None:
+        registry = OfficialGrammarRegistry()
+        cases = (
+            (SourceLanguage.YAML, ".yaml"),
+            (SourceLanguage.YAML, ".yml"),
+            (SourceLanguage.JSON, ".json"),
+            (SourceLanguage.XML, ".xml"),
+            (SourceLanguage.TOML, ".toml"),
+        )
+        for language, ext in cases:
+            with self.subTest(language=language, ext=ext):
+                self.assertIsNotNone(registry.resolve(language, path_extension=ext))
+
 
 class TestGrammarRegistryFailures(unittest.TestCase):
     """UT-G03."""
