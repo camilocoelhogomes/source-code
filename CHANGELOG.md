@@ -6,6 +6,9 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- `WorkerLimiter` (T04) com semáforos isolados de indexação e consulta
+  (`INDEX_WORKERS` / `QUERY_WORKERS`), fila quando o limite é atingido e
+  rejeição explícita de capacidade `< 1`.
 - Fundação Python 3.12+ da T01 com layout `src/github_rag` e fronteiras de
   pacotes para as próximas tasks.
 - Contrato de bootstrap `AppSettings`, `load_settings` e
@@ -13,7 +16,8 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 - Desenvolvimento local com `.venv` documentado para Windows PowerShell,
   Windows cmd, macOS e Linux.
 - Harness pytest/pytest-cov com falha automática abaixo de 95% de cobertura.
-- Testes unitários e BDD: 37 testes aprovados, cobertura de 100%.
+- Testes unitários e BDD: suíte em 64 testes aprovados, cobertura de 100%
+  (T01+T04).
 - Normalização cross-platform de EOL e ignores para `.venv`, cobertura,
   caches e `*.egg-info`.
 

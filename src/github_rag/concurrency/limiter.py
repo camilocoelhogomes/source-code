@@ -123,23 +123,19 @@ class SemaphoreWorkerLimiter:
     def __init__(self, *, capacity: int, pool: str) -> None:
         _validate_capacity(capacity=capacity, pool=pool)
         self._capacity = capacity
-        self._pool = pool
         self._semaphore = threading.Semaphore(capacity)
 
     @property
     def capacity(self) -> int:
         return self._capacity
 
-    def acquire(self) -> AbstractContextManager[None]:
-        @contextmanager
-        def _slot() -> Iterator[None]:
-            self._semaphore.acquire()
-            try:
-                yield
-            finally:
-                self._semaphore.release()
-
-        return _slot()
+    @contextmanager
+    def acquire(self) -> Iterator[None]:
+        self._semaphore.acquire()
+        try:
+            yield
+        finally:
+            self._semaphore.release()
 
 
 def create_index_limiter(settings: AppSettings) -> WorkerLimiter:

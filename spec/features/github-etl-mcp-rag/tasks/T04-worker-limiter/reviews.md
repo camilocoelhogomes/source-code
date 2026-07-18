@@ -134,3 +134,74 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — unit-test-plan v0.1.0 e testes unitários em RED. Prosseguir para implementação (Developer / green).
+
+## Review — Implementação (green)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `src/github_rag/concurrency/limiter.py`, `src/github_rag/concurrency/__init__.py` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Contratos base | design `0.1.1`, interfaces `0.1.0`, BDD e unit-test-plan `APPROVED_BY_ARCHITECT` |
+| Evidência | 64 passed (suite); coverage 100%; T04 BDD+unit verdes |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+| Próximo | Pronto para etapa Blue (refactor) |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Fidelidade ao Protocol (`capacity` + `acquire` CM) | OK | `SemaphoreWorkerLimiter` L123–L142; reexports em `__init__.py` |
+| Semáforo sync + release em `finally` | OK | `threading.Semaphore`; `try/finally` + `release` em `_slot` L136–L140 |
+| Isolamento index × query | OK | factories distintas L162–L187; testes U-11/U-16 e WL-04 ambos sentidos |
+| `capacity < 1` → `WorkerLimiterError` sem fallback | OK | `_validate_capacity` L98–L102; U-07/U-08/U-12; WL-08 |
+| Mensagem cita pool + valor + razão | OK | `f"{pool}: capacity must be >= {MIN_WORKERS}, got {capacity}"`; U-15 |
+| Escopo (sem jobs/MCP/UI/asyncio/reparse env) | OK | só `concurrency/`; factories leem `AppSettings` |
+| Testes não enfraquecidos no green | OK | diff red→green: +WL-04 inverso; +assert `">="` em U-15 |
+| Cobertura ≥ 95% | OK | 100% em `concurrency` e suite completa |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` | — | — |
+| `SUGGESTION` | `@contextmanager` aninhado recria closure a cada `acquire()` | `limiter.py` L133–L142 | Blue: avaliar CM dedicado/reuso se baseline mostrar alocação relevante; não alterar contrato |
+| `SUGGESTION` | `self._pool` guardado e não lido após construção | `limiter.py` L126 | Blue: remover atributo se não usado, ou documentar retenção para debug |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — implementação green aceita. Pronto para Blue refactor (sem mudança de comportamento/contratos).
+
+## Review — Blue refactor
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `refactoring.md` + `src/github_rag/concurrency/limiter.py` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Implementação base | `APPROVED_BY_ARCHITECT` |
+| Evidência | 64 passed, 36 subtests; coverage 100% (TOTAL 81 stmts; `limiter.py` 35 stmts) |
+| Resultado | `BLUE_APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Sem mudança de comportamento/contratos | OK | Mesma API `capacity` + `acquire()` CM; `try/finally` + `release`; factories e Protocol intactos |
+| Só simplificação | OK | `@contextmanager` no método (não nested); removido `self._pool` não lido; pool só em `_validate_capacity` |
+| Baseline e resultados registrados | OK | `refactoring.md`: pré 64/100%/38 stmts → pós 64/100%/35 stmts |
+| SUGGESTIONs green endereçadas | OK | Closure aninhada eliminada; atributo `_pool` removido |
+| Cobertura mantida ≥ 95% | OK | 100%; `limiter.py` 35 stmts, 0 miss |
+| Fora de escopo Blue respeitado | OK | Sem asyncio/Dockerfile/consumidores T14/T17 |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING`, `MAJOR` ou `SUGGESTION` | — | — |
+
+### Decisão
+
+`BLUE_APPROVED_BY_ARCHITECT` — refatoração Blue aceita. Prosseguir para documentação/changelog e gate humano (PR).
