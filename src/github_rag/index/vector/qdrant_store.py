@@ -20,9 +20,12 @@ from qdrant_client.models import (
     Filter,
     MatchAny,
     MatchValue,
+    PayloadSchemaType,
     PointStruct,
     VectorParams,
 )
+
+_PAYLOAD_INDEX_FIELDS: tuple[str, ...] = ("repo_id", "commit_sha", "path")
 
 _T = TypeVar("_T")
 
@@ -204,31 +207,47 @@ class QdrantVectorStore:
             return
         try:
             self._client.get_collection(self._collection_name)
-            self._collection_ready = True
-            return
         except VectorStoreError:
             raise
         except Exception:
-            pass
-        try:
-            self._client.create_collection(
-                collection_name=self._collection_name,
-                vectors_config=VectorParams(
-                    size=self._vector_size,
-                    distance=Distance.COSINE,
-                ),
-            )
-            self._collection_ready = True
-        except VectorStoreError:
-            raise
-        except Exception as exc:
             try:
-                self._client.get_collection(self._collection_name)
-                self._collection_ready = True
+                self._client.create_collection(
+                    collection_name=self._collection_name,
+                    vectors_config=VectorParams(
+                        size=self._vector_size,
+                        distance=Distance.COSINE,
+                    ),
+                )
+            except VectorStoreError:
+                raise
+            except Exception as exc:
+                try:
+                    self._client.get_collection(self._collection_name)
+                except Exception:
+                    raise VectorStoreError(
+                        f"qdrant collection setup failed: {exc}"
+                    ) from exc
+        self._ensure_payload_indexes()
+        self._collection_ready = True
+
+    def _ensure_payload_indexes(self) -> None:
+        """Cria índices KEYWORD para filtros; falhas por campo não abortam setup.
+
+        Responsabilidade: solicitar ``create_payload_index`` para
+        ``repo_id`` / ``commit_sha`` / ``path`` após a collection existir.
+        Motivo: em servidor Qdrant os índices aceleram purge/delete/search;
+        em ``:memory:`` o SDK pode emitir warning sem efeito — não falhar.
+        """
+        for field_name in _PAYLOAD_INDEX_FIELDS:
+            try:
+                self._client.create_payload_index(
+                    collection_name=self._collection_name,
+                    field_name=field_name,
+                    field_schema=PayloadSchemaType.KEYWORD,
+                )
             except Exception:
-                raise VectorStoreError(
-                    f"qdrant collection setup failed: {exc}"
-                ) from exc
+                # Já existe, warning local, ou limitações do client — filtros ok.
+                continue
 
     def _validate_scope(self, scope: RepoCommitScope) -> None:
         if not scope.repo_id or not scope.repo_id.strip():
