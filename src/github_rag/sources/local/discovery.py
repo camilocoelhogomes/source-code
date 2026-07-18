@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 from github_rag.catalog.models import RepoOrigin
-
-if TYPE_CHECKING:
-    from github_rag.config.schema import AppConfig, GitConnection
+from github_rag.config.schema import AppConfig, GitConnection, GitHubConnection
+from github_rag.sources.local.git_fs import GitFilesystemInspector
 
 
 @dataclass(frozen=True)
@@ -71,12 +69,22 @@ class LocalRepoDiscovery:
         Isola volumes montados e heurística Git de config (T02) e catálogo (T07).
     """
 
-    def __init__(self, inspector: object | None = None) -> None:
-        self._inspector = inspector
+    def __init__(self, inspector: GitFilesystemInspector | None = None) -> None:
+        self._inspector = inspector or GitFilesystemInspector()
 
     def discover(self, config: AppConfig) -> LocalDiscoveryResult:
         """Descobre repos de todas as conexões ``type: git``."""
-        raise NotImplementedError
+        repos: list[DiscoveredLocalRepo] = []
+        issues: list[LocalDiscoveryIssue] = []
+
+        for name, connection in config.connections.items():
+            if isinstance(connection, GitHubConnection):
+                continue
+            result = self.discover_connection(name, connection)
+            repos.extend(result.repos)
+            issues.extend(result.issues)
+
+        return LocalDiscoveryResult(repos=tuple(repos), issues=tuple(issues))
 
     def discover_connection(
         self,
@@ -84,4 +92,65 @@ class LocalRepoDiscovery:
         connection: GitConnection,
     ) -> LocalDiscoveryResult:
         """Descobre repos de uma única conexão ``git``."""
-        raise NotImplementedError
+        repos: list[DiscoveredLocalRepo] = []
+        issues: list[LocalDiscoveryIssue] = []
+
+        try:
+            parsed = self._inspector.parse_file_url(connection.url)
+        except ValueError as exc:
+            issues.append(
+                LocalDiscoveryIssue(
+                    connection_name=connection_name,
+                    path=connection.url,
+                    message=str(exc),
+                )
+            )
+            return LocalDiscoveryResult(repos=(), issues=tuple(issues))
+
+        base = parsed.base_path
+        if not self._inspector.is_accessible(base):
+            issues.append(
+                LocalDiscoveryIssue(
+                    connection_name=connection_name,
+                    path=connection.url,
+                    message=(
+                        f"local volume path is inaccessible: {base.as_posix()}"
+                    ),
+                )
+            )
+            return LocalDiscoveryResult(repos=(), issues=tuple(issues))
+
+        candidates = self._inspector.expand_candidates(base, parsed.glob_pattern)
+        if not candidates:
+            issues.append(
+                LocalDiscoveryIssue(
+                    connection_name=connection_name,
+                    path=connection.url,
+                    message="no matching directories found for local connection",
+                )
+            )
+
+        for candidate in candidates:
+            inspection = self._inspector.inspect_repo(candidate)
+            candidate_path = candidate.resolve().as_posix()
+
+            if inspection.is_valid_candidate:
+                repos.append(
+                    DiscoveredLocalRepo(
+                        connection_name=connection_name,
+                        local_path=candidate_path,
+                        repo_identifier=candidate.name,
+                    )
+                )
+                continue
+
+            message = inspection.reason or "invalid local git repository"
+            issues.append(
+                LocalDiscoveryIssue(
+                    connection_name=connection_name,
+                    path=candidate_path,
+                    message=message,
+                )
+            )
+
+        return LocalDiscoveryResult(repos=tuple(repos), issues=tuple(issues))

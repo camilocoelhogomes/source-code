@@ -143,6 +143,21 @@ class TestLocalRepoDiscovery(unittest.TestCase):
         discovery = LocalRepoDiscovery(inspector)
         self.assertIs(discovery._inspector, inspector)
 
+    def test_discover_connection_invalid_url_issue(self) -> None:
+        result = LocalRepoDiscovery().discover_connection(
+            "local", _git_conn("https://not-file/x")
+        )
+        self.assertEqual(result.repos, ())
+        self.assertEqual(len(result.issues), 1)
+
+    def test_discover_connection_empty_glob_match_issue(self) -> None:
+        empty = self.mount / "empty"
+        empty.mkdir()
+        url = f"file://{empty.resolve().as_posix()}/*"
+        result = LocalRepoDiscovery().discover_connection("local", _git_conn(url))
+        self.assertEqual(result.repos, ())
+        self.assertTrue(any("no matching" in i.message for i in result.issues))
+
 
 if __name__ == "__main__":
     unittest.main()

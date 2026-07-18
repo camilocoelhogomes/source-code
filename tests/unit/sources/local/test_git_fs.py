@@ -113,6 +113,10 @@ class TestGitFilesystemInspector(unittest.TestCase):
         result = self.inspector.inspect_repo(f)
         self.assertFalse(result.is_git_repo)
 
+    def test_parse_invalid_scheme_raises(self) -> None:
+        with self.assertRaises(ValueError):
+            self.inspector.parse_file_url("https://example.com/x")
+
 
 if __name__ == "__main__":
     unittest.main()
