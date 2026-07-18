@@ -171,3 +171,64 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — unit-test-plan v0.1.1 + suíte executável. RED confirmado (`ModuleNotFoundError` / `ImportError` na coleta). Prosseguir para implementação (Developer).
+
+---
+
+## Review — Implementação (produção `src/github_rag/index/zoekt/`)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | implementação T10 + aderência a `interfaces.md` / `design.md` / testes |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Porta `ExactCodeIndex` + modelos frozen | OK | `port.py`, `models.py`; re-exports em `__init__.py` |
+| DEC-016 — adaptador fino HTTP/CLI oficial | OK | `client.py` urllib `POST /api/search`; `runner.py` `subprocess` `shell=False`; sem parser de shard |
+| MVP index: tree + `zoekt-index -index` + `-name` | OK | `index.py` `_index_via_tree` L158–166 |
+| Escape literal `content:"…"` | OK | `_escape_literal_pattern` L36–39; I-T10-010 |
+| Erros tipados + `__cause__` | OK | `_run_indexer` / `search` envelopam transporte |
+| Fake in-memory + substituição de conjunto | OK | `fake.py` ZOEKT-08 / I-T10-013 |
+| `from_environ` `ZOEKT_*` sem `AppSettings` | OK | `index.py` L95–119; D-T10-007 |
+| Suite T10 | OK | 67 passed (unit + BDD) |
+| Suite completa + cobertura | OK | 372 passed, 1 skipped; fail_under=95; total **97.52%** |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção / resolução |
+|---|---|---|---|
+| `MAJOR` | `delete_repository`: `path.unlink` podia propagar `OSError` cru em vez de `ExactCodeIndexError(operation="delete")` | `index.py` loop de remoção (I-T10-012 / interfaces §3.8) | **Corrigido pelo Architect:** `try/except OSError` envelopando o unlink → `ExactCodeIndexError` |
+| — | Nenhum `BLOCKING` aberto após correção | — | — |
+| `SUGGESTION` | Campos `_git_index_bin` / `_git_workdir` reservados sem caminho ativo (otimização D-T10-001) | `index.py` L90–92 | Aceito: superfície de construtor contratada; fora do Protocol |
+| `SUGGESTION` | Ramos raros ainda sem cobertura local (`indexer.run` raise, `index_dir` ausente, `max_matches`, unlink OSError) | `index.py` L179–180, 205, 255–256, 268–269 | Não bloqueia; cobertura global ≥95% |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — implementação aderente a interfaces/design/DEC-016 após correção MAJOR de contrato em `delete_repository`. Prosseguir para Blue.
+
+---
+
+## Review — Blue (refactoring)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `refactoring.md` + código pós-baseline |
+| Data | 2026-07-18 |
+| Pipeline | autonomous |
+| Resultado | `BLUE_APPROVED_BY_ARCHITECT` |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` / `MAJOR` | Adaptador já fino; sem complexidade especulativa | — |
+
+### Decisão
+
+`BLUE_APPROVED_BY_ARCHITECT` — sem mudança estrutural necessária (ver `refactoring.md`). Suite T10 + completa verdes; cobertura global 97.52%.

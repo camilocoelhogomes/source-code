@@ -6,6 +6,12 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- Adaptador Zoekt (T10): porta `ExactCodeIndex` com `ZoektExactCodeIndex`
+  (CLI `zoekt-index` + HTTP oficial `POST /api/search`) e `FakeExactCodeIndex`
+  injetável — DEC-016 / BDD-009 / BDD-024; erros tipados `ExactCodeIndexError`
+  para T14; envs `ZOEKT_*` via `from_environ` sem alterar `AppSettings`.
+- Pacote `github_rag.index.zoekt` (`models`, `port`, `client`, `runner`,
+  `index`, `fake`, `errors`).
 - Descoberta GitHub (T05): `GitHubRepoDiscovery` lista repositórios por org
   via token resolvido em T02, filtra por wildcards de inclusão (BR-022) e
   expõe `DiscoveredGitHubRepo` sem serializar o segredo (BDD-001/014/019).
@@ -45,8 +51,8 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 - Desenvolvimento local com `.venv` documentado para Windows PowerShell,
   Windows cmd, macOS e Linux.
 - Harness pytest/pytest-cov com falha automática abaixo de 95% de cobertura.
-- Testes unitários e BDD: 305 testes aprovados (1 pulado sem Docker),
-  161 subtests, cobertura de 97.82% (T01+T02+T03+T04+T05+T06).
+- Testes unitários e BDD: 372 testes aprovados (1 pulado sem Docker),
+  161 subtests, cobertura de 97.52% (T01–T06+T10).
 - Normalização cross-platform de EOL e ignores para `.venv`, cobertura,
   caches e `*.egg-info`.
 

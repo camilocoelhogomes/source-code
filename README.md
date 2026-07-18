@@ -59,8 +59,8 @@ python -m pytest
 
 O comando executa testes unitários e BDD com relatório de cobertura no
 terminal. O projeto exige cobertura mínima de 95%; a execução falha
-automaticamente abaixo desse limite. A suíte completa atual está em 305
-testes (1 pulado sem Docker) com cobertura de 97.82% (T01–T06).
+automaticamente abaixo desse limite. A suíte completa atual está em 372
+testes (1 pulado sem Docker) com cobertura de 97.52% (T01–T06+T10).
 
 ## Configuração de conexões (T02)
 
@@ -113,6 +113,24 @@ for name, conn in config.connections.items():
 
 Wildcards em `repos` são filtros exclusivos de inclusão (`prefix*`, `*suffix`,
 `org/*`, exato). Lista vazia ⇒ nenhum repositório descoberto.
+
+## Índice Zoekt (T10)
+
+Busca exata de código via adaptador fino sobre a API/CLI oficiais do Zoekt
+(`src/github_rag/index/zoekt/`). Consumidores (T14/T16) usam a porta
+`ExactCodeIndex`; testes usam `FakeExactCodeIndex` sem processo Zoekt.
+
+```python
+from github_rag.index.zoekt import (
+    ExactSearchQuery,
+    FakeExactCodeIndex,
+    ZoektExactCodeIndex,
+)
+
+index = ZoektExactCodeIndex.from_environ()  # ZOEKT_URL, ZOEKT_INDEX_DIR, …
+# ou FakeExactCodeIndex() em testes
+hits = index.search(ExactSearchQuery(pattern="authenticate", repository="org/repo"))
+```
 
 ## Catálogo (PostgreSQL)
 
