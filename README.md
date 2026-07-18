@@ -59,7 +59,8 @@ python -m pytest
 
 O comando executa testes unitários e BDD com relatório de cobertura no
 terminal. O projeto exige cobertura mínima de 95%; a execução falha
-automaticamente abaixo desse limite.
+automaticamente abaixo desse limite. A suíte completa atual está em 144
+testes com cobertura de 100% (T01+T02+T04).
 
 ## Configuração de conexões (T02)
 
@@ -79,6 +80,16 @@ try:
 except ConfigLoadError as exc:
     raise SystemExit(exc) from exc
 ```
+
+## Workers (T04)
+
+Defaults de engenharia (via env / `load_settings`):
+
+- `INDEX_WORKERS=2`
+- `QUERY_WORKERS=4`
+
+Capacidade `< 1` é rejeitada por `WorkerLimiterError`. Pools de indexação e
+consulta são isolados (`create_index_limiter` / `create_query_limiter`).
 
 ## Entrega por container
 
