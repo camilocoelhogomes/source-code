@@ -59,8 +59,26 @@ python -m pytest
 
 O comando executa testes unitários e BDD com relatório de cobertura no
 terminal. O projeto exige cobertura mínima de 95%; a execução falha
-automaticamente abaixo desse limite. A entrega T01 foi validada com 37 testes.
-aprovados e cobertura de 100%.
+automaticamente abaixo desse limite.
+
+## Configuração de conexões (T02)
+
+O arquivo JSON apontado por `CONFIG_PATH` (via `AppSettings.config_path`)
+é carregado por `ConfigLoader` no pacote `github_rag.config`. Exemplo em
+`examples/config.json`. Tokens GitHub usam somente `{ "env": "NOME" }` —
+o valor fica na variável de ambiente, nunca no JSON. Config inválida é
+rejeitada por completo (sem conexões parciais).
+
+```python
+from pathlib import Path
+from github_rag.config import ConfigLoader, ConfigLoadError
+
+loader = ConfigLoader()
+try:
+    config = loader.load(Path("/path/to/config.json"))
+except ConfigLoadError as exc:
+    raise SystemExit(exc) from exc
+```
 
 ## Entrega por container
 
