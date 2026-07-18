@@ -7,7 +7,7 @@
 | Autor | Tech Lead Architect |
 | Data | 2026-07-18 |
 | Estado | `APPROVED_BY_ARCHITECT` |
-| Versão | `0.1.0` |
+| Versão | `0.1.1` |
 | Branch | `feature/github-etl-mcp-rag-T13-qdrant-vector-store` |
 | Base | `feature/github-etl-mcp-rag-T11-treesitter-chunker` |
 | Rastreabilidade | DEC-003, DEC-004, DEC-015; BR-010, BR-011, BR-023; REQ-002; ENG-008, ENG-013; BDD-010, BDD-024 |
@@ -17,6 +17,7 @@
 | Data | Autor | Decisão | Versão | Observações |
 |---|---|---|---|---|
 | 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.0` | Design inicial sólido: contratos `EnrichedChunk`/`ChunkMetadata`, ports `VectorStore`/`Embedder`, payload Qdrant, reindex por commit, testes via `:memory:` + fake Embedder. |
+| 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.1` | Delta PR #13: índices de payload `repo_id`/`commit_sha`/`path` obrigatórios no setup (idempotente; warning `:memory:` não aborta). |
 
 ## 1. Contexto
 
@@ -236,7 +237,11 @@ Payload **flat + objeto metadata** (tipos JSON-compatíveis do Qdrant):
 | `end_point` | `[row, col]` | `SemanticChunk` |
 | `metadata` | object | `ChunkMetadata` → `{summary, keywords, symbols}` |
 
-Índices de payload recomendados (criação da collection / `create_payload_index`): `repo_id`, `commit_sha`, `path` — para filtros de purge/delete/search.
+Índices de payload **obrigatórios no setup** da collection (`create_payload_index` com `PayloadSchemaType.KEYWORD`): `repo_id`, `commit_sha`, `path` — para filtros de purge/delete/search.
+
+- Após a collection existir (create ou get), o adaptador solicita os três índices.
+- Setup **idempotente**: índice já existente ou warning do Qdrant local (`:memory:` — índices sem efeito) **não** aborta o setup nem propaga `VectorStoreError`; filtros continuam válidos sem índice.
+- Em servidor Qdrant real os índices têm efeito e são recomendados para escala.
 
 **Invariante de aceite:** nenhum upsert sem `metadata.summary` não vazio e campos do chunk Tree-sitter presentes.
 

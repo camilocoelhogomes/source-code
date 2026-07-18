@@ -300,3 +300,35 @@ Falha na coleta com `ModuleNotFoundError: No module named 'github_rag.index.vect
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — entrada T13 no changelog e seção README `index.vector`.
+
+---
+
+## Review — Delta payload indexes (PR #13)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | design `0.1.1` / interfaces `0.1.1` / unit-test-plan `0.1.2` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Índices KEYWORD no setup | OK | design §4.8; interfaces §4 |
+| Idempotência / warning `:memory:` | OK | não aborta; sem `VectorStoreError` |
+| Porta `VectorStore` inalterada | OK | detalhe de adaptador |
+| BDD sem VS-15 | OK | aceite de filtro já em VS-07/10/11; setup → UT-Q22..25 |
+| Sem mudança de schema de payload | OK | só indexes |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| SUGGESTION | Marcar em `refactoring.md` índices como promovidos (pedido humano), não Blue | PR #13 | Aplicar no Blue do delta |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — prosseguir TDD (UT-Q22..25) e implementação.

@@ -7,8 +7,8 @@
 | Autor | Tech Lead Architect |
 | Data | 2026-07-18 |
 | Estado | `APPROVED_BY_ARCHITECT` |
-| Versão | `0.1.0` |
-| Design base | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
+| Versão | `0.1.1` |
+| Design base | `0.1.1` (`APPROVED_BY_ARCHITECT`) |
 | BDD base | `0.1.1` (`APPROVED_BY_ARCHITECT`) |
 | Branch | `feature/github-etl-mcp-rag-T13-qdrant-vector-store` |
 
@@ -17,6 +17,7 @@
 | Data | Autor | Decisão | Versão | Observações |
 |---|---|---|---|---|
 | 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.0` | Contratos alinhados a design §4 e BDD VS-01..VS-14. |
+| 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.1` | Delta: índices KEYWORD obrigatórios no setup; porta `VectorStore` inalterada. |
 
 ## 1. Escopo e exclusões
 
@@ -418,7 +419,11 @@ Chaves obrigatórias no ponto (design §4.8 / VS-01):
 | `end_point` | `[row, col]` | `SemanticChunk` |
 | `metadata` | object | `ChunkMetadata` → summary/keywords/symbols |
 
-Índices de payload recomendados: `repo_id`, `commit_sha`, `path`.
+Índices de payload **obrigatórios no setup** (`QdrantVectorStore._ensure_collection` ou helper): `repo_id`, `commit_sha`, `path` via `create_payload_index` com schema `KEYWORD`.
+
+- Solicitados após a collection existir (create ou get).
+- Setup **idempotente**: existência prévia do índice ou warning do Qdrant local (`:memory:`) **não** propaga `VectorStoreError`.
+- Porta `VectorStore` permanece inalterada (detalhe de adaptador).
 
 ## 5. Reexports (`index/vector/__init__.py`)
 

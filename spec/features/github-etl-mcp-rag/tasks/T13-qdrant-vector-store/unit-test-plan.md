@@ -7,8 +7,8 @@
 | Autor | QA Engineer + Tech Lead Architect |
 | Data | 2026-07-18 |
 | Estado | `APPROVED_BY_ARCHITECT` |
-| Versão | `0.1.1` |
-| Interfaces base | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
+| Versão | `0.1.2` |
+| Interfaces base | `0.1.1` (`APPROVED_BY_ARCHITECT`) |
 | BDD base | `0.1.1` (`APPROVED_BY_ARCHITECT`) |
 
 ## 0. Histórico Architect
@@ -16,6 +16,7 @@
 | Data | Autor | Decisão | Versão | Observações |
 |---|---|---|---|---|
 | 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.1` | Correções: UT-Q20 SDK→VectorStoreError; UT-Q21 delete_paths por commit; UT-Q17 scope em purge/replace/delete_paths. |
+| 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.2` | Delta índices: UT-Q22..UT-Q25; sem VS-15 (setup/ops → unitário). |
 
 ## Artefatos
 
@@ -69,6 +70,10 @@
 | UT-Q19 | dois chunk_ids | upsert A+B | search encontra ambos | point id distinto | `test_qdrant_store.py` |
 | UT-Q20 | falha SDK Qdrant | client stub raises | `VectorStoreError` (não Validation/Dimension) | §3.10 / §6 | `test_qdrant_store.py` |
 | UT-Q21 | `delete_paths` por commit | same path em oldsha+newsha; delete newsha | só newsha some; oldsha permanece | §3.9 ENG-012 | `test_qdrant_store.py` |
+| UT-Q22 | índices em collection nova | `_ensure_collection` cria collection | `create_payload_index` 3× (`repo_id`/`commit_sha`/`path`) com `KEYWORD` | design §4.8 / interfaces §4 | `test_qdrant_store.py` |
+| UT-Q23 | índices em collection existente | `get_collection` ok | mesmos 3 índices; `create_collection` não chamado | design §4.8 | `test_qdrant_store.py` |
+| UT-Q24 | índice falha / already exists | `create_payload_index` raises | `_ensure_collection` completa; sem `VectorStoreError` | idempotência setup | `test_qdrant_store.py` |
+| UT-Q25 | `_ensure_collection` ready | 2ª chamada com flag ready | não re-chama `create_payload_index` | cache setup | `test_qdrant_store.py` |
 | UT-EM01 | batch vazio | `embed(())` | `()`; stub sem `create` | VS-12 | `test_embedder.py` |
 | UT-EM02 | whitespace / vazio | `"   "` / `""` / misto | `EmbeddingValidationError`; sem `create` | VS-12 | `test_embedder.py` |
 | UT-EM03 | happy path ordem | 2 textos | len=2; ordem; dim ok | §3.8 | `test_embedder.py` |
@@ -88,6 +93,7 @@
 | UT-X04 | embedder: texto válido após batch vazio | stub chamado só no válido | `test_embedder.py` |
 | UT-X05 | delete_paths não cruza commit_sha | UT-Q21 | `test_qdrant_store.py` |
 | UT-X06 | SDK Qdrant falha tipada | UT-Q20 | `test_qdrant_store.py` |
+| UT-X07 | índices payload idempotentes | UT-Q22..UT-Q25 | `test_qdrant_store.py` |
 
 ## Fixtures
 
