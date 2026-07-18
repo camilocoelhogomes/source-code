@@ -41,6 +41,14 @@ class TestMetadataErrorAttributes(unittest.TestCase):
         self.assertIn("c-9", text)
         self.assertIn("src/app.py", text)
 
+    def test_ut_e02b_str_with_partial_context(self) -> None:
+        only_id = MetadataModelError(chunk_id="only-id")
+        self.assertEqual(str(only_id), "chunk_id=only-id")
+        only_path = MetadataModelError(chunk_id=None, path="p.py")
+        self.assertEqual(str(only_path), "path=p.py")
+        empty = MetadataModelError()
+        self.assertEqual(str(empty), "")
+
     def test_ut_e03_message_must_not_leak_api_key_value(self) -> None:
         secret = "sk-super-secret-value-xyz"
         err = MetadataModelError(
