@@ -6,7 +6,7 @@
 | Task | `T07-catalog-sync` |
 | Autor | Implementation Task Runner (QA step) |
 | Data | 2026-07-18 |
-| Estado | `DRAFT` |
+| Estado | `APPROVED_BY_ARCHITECT` |
 | Versão BDD | `0.1.0` |
 | Design base | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
 | Branch | `feature/github-etl-mcp-rag-T07-catalog-sync` |
