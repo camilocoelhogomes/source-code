@@ -179,7 +179,7 @@ class TestTreeSitterContextualChunker(unittest.TestCase):
         self.assertGreaterEqual(len(chunks), 1)
 
     def test_ut_x03_large_synthetic_python(self) -> None:
-        body = b"def f0():\n    return 0\n" + b"x = 1\n" * 3000
+        body = b"def f0():\n    return 0\n" + b"x = 1\n" * 9000
         self.assertGreater(len(body), 50_000)
         chunker = TreeSitterContextualChunker()
         chunks = chunker.chunk(ChunkSourceFile(path="big.py", content=body))
