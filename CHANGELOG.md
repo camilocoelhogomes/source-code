@@ -4,6 +4,14 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ## [Unreleased]
 
+### Alterado
+
+- Descoberta local (T20 / DT-001): `GitFilesystemInspector.inspect_repo` passa a
+  usar **GitPython** (`git.Repo`) em vez de parse ad-hoc de `.git` / refs /
+  `packed-refs` (BR-023, DEC-015). Contrato `LocalRepoDiscovery` e BDD-016/018
+  preservados; bare continua rejeitado; runtime requer pacote GitPython e
+  binário `git` no PATH.
+
 ### Adicionado
 
 - Snapshot da `main` (T08): `MainSnapshotProvider` / `DefaultMainSnapshotProvider`
@@ -12,7 +20,12 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
   `GitClonePort` mockável; `FirstIndexSignal` quando não há commit anterior;
   erros tipados (`MainBranchMissingError`, `CorruptRepositoryError`,
   `GitHubSnapshotNetworkError`, `CommitNotFoundError`, `FileNotFoundInCommitError`).
-- Dependência `GitPython>=3.1` (DEC-015 / BR-023).
+- Sync do catálogo (T07): `CatalogSync` orquestra discovery GitHub + local →
+  upsert/`deactivate` no `CatalogRepository`; `run_catalog_sync` no bootstrap
+  sem indexação nem reconcile (handoff ENG-011 → T14). Origem/conexão no
+  catálogo ativo (BDD-001/016/021/023); ausência = soft-delete sem estado
+  extra fora de REQ-020.
+- Dependência de projeto `GitPython>=3.1` (DEC-015 / BR-023).
 - Descoberta GitHub (T05): `GitHubRepoDiscovery` lista repositórios por org
   via token resolvido em T02, filtra por wildcards de inclusão (BR-022) e
   expõe `DiscoveredGitHubRepo` sem serializar o segredo (BDD-001/014/019).
@@ -52,8 +65,8 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 - Desenvolvimento local com `.venv` documentado para Windows PowerShell,
   Windows cmd, macOS e Linux.
 - Harness pytest/pytest-cov com falha automática abaixo de 95% de cobertura.
-- Testes unitários e BDD: 305 testes aprovados (1 pulado sem Docker),
-  161 subtests, cobertura de 97.82% (T01+T02+T03+T04+T05+T06).
+- Testes unitários e BDD: 373 testes aprovados (1 pulado sem Docker),
+  161 subtests, cobertura de 97.35% (T01–T08).
 - Normalização cross-platform de EOL e ignores para `.venv`, cobertura,
   caches e `*.egg-info`.
 
