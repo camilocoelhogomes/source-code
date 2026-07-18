@@ -98,3 +98,38 @@ VS-01..VS-13 — BDD-010 (persistência + search), BDD-024 (`qdrant-client` / `o
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — bdd.md v0.1.1 + testes alinhados. Prosseguir para interfaces.
+
+---
+
+## Review — Interfaces (v0.1.0)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `interfaces.md` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Ports `VectorStore` / `Embedder` com responsabilidade e motivo | OK | §3.8, §3.9 |
+| Types frozen alinhados ao design §4.1–4.4 | OK | §3.1–3.5; I-T13-002/003 |
+| Erros tipados VS-04/VS-09/VS-12 | OK | §3.6, §3.7; I-T13-006 |
+| Assinaturas = design + BDD (`replace`, `delete_*`, stub ctor embedder) | OK | §3.9–3.11 |
+| DEC-003 / sem chunking params | OK | I-T13-007; §3.8–3.9 |
+| BDD-024 / BR-023 SDKs oficiais | OK | I-T13-008/009; §3.10–3.11 |
+| Payload §4.8 / VS-01 | OK | §4; I-T13-011 |
+| Comentários RESPONSABILIDADE / MOTIVO em cada contrato | OK | §3.1–3.11 |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING`, `MAJOR` ou `SUGGESTION` | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — interfaces.md v0.1.0. Prosseguir para testes unitários (QA).
