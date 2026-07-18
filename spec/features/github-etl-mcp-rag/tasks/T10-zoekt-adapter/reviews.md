@@ -125,3 +125,49 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — interfaces v0.1.0. Prosseguir para unit tests (QA).
+
+---
+
+## Review — Unit tests (v0.1.0 → v0.1.1)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `unit-test-plan.md` + `tests/unit/index/zoekt/*` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Modelos frozen + defaults | OK | M-01..06; `test_models.py` |
+| `ExactCodeIndexError` tipado / `__cause__` | OK | E-01..05; `test_errors.py` |
+| `FakeExactCodeIndex` porta + fail_operations | OK | F-01..14 + F-12b; alinhado ZOEKT-01..08 / I-T10-004..016 |
+| HTTP transport oficial `POST /api/search` | OK | C-01..07; mock urllib; DEC-016 |
+| CLI runner `subprocess` sem shell | OK | R-01..05; `shell=False` |
+| Adaptador index/search/delete/`from_environ` | OK | I-01..16b; transports fake |
+| Extremos (vazio, mismatch, escape, ordenação) | OK | F-07..12b; I-04..08; I-11 |
+| Sem implementação de produção | OK | só placeholder `index/zoekt/__init__.py` |
+| RED pré-implementação | OK | `ModuleNotFoundError: github_rag.index.zoekt.{models,errors,fake,client,runner}` |
+
+### Achados na revisão de v0.1.0 (corrigidos em v0.1.1)
+
+| Severidade | Achado | Evidência | Correção aplicada |
+|---|---|---|---|
+| `MAJOR` | I-13b vácuo: com `RecordingIndexRunner` não há shard em `index_dir`; assert de leftovers vazios passava sem exercitar limpeza | `test_index.py` `test_delete_repository_after_index_clears_repo_association` | Planta sentinel `{repo_slug}_v16.00000.zoekt` pós-index; asserta remoção + 2ª delete no-op |
+| `MAJOR` | I-16 só assertava `ZOEKT_INDEX_BIN`; plan pedia defaults + overrides `ZOEKT_*` | `test_from_environ_reads_zoekt_envs` | Assert `-index` = `ZOEKT_INDEX_DIR`; novo I-16b defaults `zoekt-index` + URL `127.0.0.1:6070` |
+| `MAJOR` | Fake cobria mismatch só de `repository`, não de `commit` (I-T10-004 incompleto na porta fake) | `test_fake.py` F-12 | Novo F-12b `test_file_to_index_commit_mismatch_raises` |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+| `SUGGESTION` | E-03 não embute `SECRET_TOKEN` na message para forçar redaction automática | `test_errors.py` L30–43; plan E-03 “token fixture ausente” | Se implementação fizer redaction, cobrir na suite pós-implementação |
+| `SUGGESTION` | `max_matches` → `Opts` oficiais não exercitado | D-T10-003; sem caso no plan | Opcional na implementação se mapeamento for trivial |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — unit-test-plan v0.1.1 + suíte executável. RED confirmado (`ModuleNotFoundError` / `ImportError` na coleta). Prosseguir para implementação (Developer).
