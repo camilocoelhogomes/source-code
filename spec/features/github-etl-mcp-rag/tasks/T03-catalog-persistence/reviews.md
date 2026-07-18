@@ -116,3 +116,36 @@ BDD cobre integralmente os critérios de aceite da persistência (BDD-004/005/00
 ### Conclusão
 
 Interfaces congelam corretamente enums fechados (REQ-020 + `ExecutionStatus` distinto), modelos de leitura imutáveis, hierarquia de erros, a máquina de estados declarativa (S-1) e a porta `CatalogRepository` com nomes canônicos 100% dentro dos candidatos do BDD (nenhum cenário quebra). Todos os stubs são `...` (sem implementação); fake/adaptador ficam fora do gate, mantendo o BDD em RED como esperado. Comentários de responsabilidade e motivo presentes em toda interface. Nenhum achado `BLOCKING` ou `MAJOR`; 3 `SUGGESTION` para o gate de unit tests/impl. Resultado: `APPROVED_BY_ARCHITECT` (gate INTERFACES).
+
+## Review Unit Tests — Tech Lead Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | tech-lead-architect (modo REVIEW; não autor dos unit tests) |
+| Artefato | `unit-test-plan.md` `0.1.0` + `tests/unit/catalog/{test_transitions,test_models,test_memory_repository}.py` |
+| Branch | `feature/github-etl-mcp-rag-T03-catalog-persistence` |
+| Data | 2026-07-18 |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios verificados
+
+| # | Critério | Veredito | Evidência |
+|---|---|---|---|
+| 1 | Suficiência de extremos/corner cases | OK | `transitions`: varredura exaustiva 5×5 (`test_all_other_pairs_are_rejected` L100–107), auto-transições idempotentes×ilegais (L90–98), pulos ilegais representativos (L109–127), `is_up_to_date` com `None` em proc/tip/ambos + case-sensitive + SHA-40 (L152–172); `memory`: not found em todas as operações, sequências vazias, boundaries `0`/`100` (L409–416), idempotência de file stage (L494–500), retenção de histórico entre tentativas e após soft-delete (L449–470) |
+| 2 | Aderência às interfaces `APPROVED` | OK | imports de `github_rag.catalog` ⊆ `__init__.__all__`; chamadas casam com assinaturas do Protocol: `upsert_repository(**kw)` keyword-only (repository.py L69–77), `update_progress(rid,percent,fp,ft,stage)` posicional (L230–237), `mark_error(rid,msg,at)` (L184–189), `transition_state(id,target,*,expected_version)` (L127–133), `start_execution(rid,commit_target)` (L251–255); leitura de progresso via `entry.progress.*` (B-3, models.py L174) |
+| 3 | Evidência RED reproduzida | OK | `test_transitions.py` → `54 failed, 11 passed, 9 subtests passed`; `test_models.py` → `14 passed`; `test_memory_repository.py` → `ModuleNotFoundError: github_rag.catalog.memory` na coleta. Idêntico ao registrado no plano §10 |
+| 4 | Sem implementação de produção nos testes | OK | helpers `_register`/`_drive_to_indexing`/`_drive_to_up_to_date` (test_memory_repository.py L53–70) apenas compõem chamadas da API pública; nenhuma lógica de domínio/persistência nos testes |
+| 5 | Ordem de erros de concorrência (existência→versão→validade) | OK | `test_missing_repository_checked_before_version_and_validity` (L187–192), `test_stale_version_raises_conflict_even_when_target_valid` (L194–201, alvo válido), `test_version_checked_before_validity` (L203–211, stale+ilegal⇒conflito), `test_illegal_transition_with_correct_version_...preserves_state` (L213–221) |
+| 6 | I-1/I-2/I-3 endereçados | OK | I-1: `test_mark_updated_without_open_execution_is_noop_closure` (L300–306) + `test_mark_error_without_open_execution_is_noop_closure` (L325–330); I-2: `test_mark_indexing_does_not_open_execution_implicitly` (L269–272); I-3: `test_record_file_stage_missing_execution_raises_not_found` (L509–511) + `test_list_file_progress_missing_execution_raises_not_found` (L517–519) reutilizando `RepositoryNotFoundError` |
+| 7 | Contagens do plano conferem | OK | `test_transitions.py`=18, `test_models.py`=14, `test_memory_repository.py`=56 métodos — batem com plano §4/§5/§6 |
+| 8 | `models` fora do alvo do RED (blindagem) | OK | enums fechados REQ-020, `ExecutionStatus` disjunto (test_models.py L80–82), imutabilidade `frozen` e defaults `None` — 14 verdes por design |
+
+### Achados
+
+| ID | Severidade | Evidência | Achado | Correção esperada |
+|---|---|---|---|---|
+| U-1 | SUGGESTION | `test_memory_repository.py` L372–379 (`test_reconcile_stays_up_to_date_when_tip_absent`) | O nome/comentário do teste sugere o ramo "tip ausente" (`current_main_commit is None`) do reconcile (interfaces §5.4), mas o corpo chama `mark_updated`, que fixa `current_main_commit == "C1"`; o caso exercido é, na prática, "tip presente e igual" (redundante com `test_reconcile_keeps_up_to_date_when_commit_matches`). Via API pública do fake não há caminho para atingir `up_to_date` com tip `None`, logo o ramo pode ser inalcançável. | No gate de impl, renomear/ajustar o comentário para refletir "tip igual" ou documentar que o ramo "tip ausente" é inalcançável pela porta. Não bloqueia: cobertura efetiva do reconcile é garantida por CP-01/CP-02. |
+
+### Conclusão
+
+Os unit tests cobrem contratos, extremos, corner cases, entradas inválidas, estados vazios, falhas, concorrência e idempotência, aderindo integralmente às interfaces congeladas (`APPROVED_BY_ARCHITECT`), sem implementação de produção nos testes. A ordem de checagem de concorrência (existência→versão→validade) e as decisões I-1/I-2/I-3 estão fixadas. Evidência RED reproduzida e idêntica ao plano (transitions 54 falhas / memory ModuleNotFoundError; models verdes por serem blindagem, não alvo do RED). Nenhum achado `BLOCKING` ou `MAJOR`; 1 `SUGGESTION` (U-1) para o gate de implementação. Resultado: `APPROVED_BY_ARCHITECT` (gate UNIT_TESTS).
