@@ -178,3 +178,38 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — unit-test-plan v0.1.1 + fase vermelha. Prosseguir para implementação (Developer).
+
+## Review — Implementação v0.1.0
+
+| Campo | Valor |
+|---|---|
+| Data | 2026-07-18 |
+| Revisor | Tech Lead Architect |
+| Artefato | `src/github_rag/snapshot/*.py` + `pyproject.toml` (GitPython) + testes snapshot/BDD |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Design / interfaces / unit-test-plan | `APPROVED_BY_ARCHITECT` |
+| Resultado | `APPROVED_BY_ARCHITECT` (após correção M-IMP-01) |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Porta `MainSnapshotProvider` / `DefaultMainSnapshotProvider` | OK | `provider.py` despacha local/GitHub; adaptadores não exportados como API estável em `__init__.py` |
+| Tip GitHub via PyGithub; Git via GitPython | OK | `github.py` `get_branch("main")`; `local.py`/`clone.py` usam `git.Repo` |
+| `GitClonePort` + D-T08-008 (SHAs pedidos) | OK | `github._materialize` passa `commit_sha`/`from_commit`/`to_commit`; após fix, fetch com auth antes do scrub |
+| `FirstIndexSignal` / arquivo completo / rename | OK | `from_commit is None` → sinal; `blob.data_stream.read()`; `--no-renames` + fallback R→D+A |
+| Tip local só `main` / ignora working tree | OK | `repo.heads.main`; dirty/untracked não entram em tip/tree/read |
+| Sem enfraquecer testes | OK | U-P03 mantém `(TypeError, SnapshotError)`; teste de clone reforça ordem fetch→scrub |
+| Suíte / cobertura | OK | 373 passed, 1 skipped; cobertura total 97.36% (≥95%) |
+
+### Achados
+
+| ID | Severidade | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| M-IMP-01 | `MAJOR` | `clone.py` (pré-fix): scrub do remote com token **antes** de `git.fetch`; `filter=blob:none` arriscava `read_file` sem blobs (D-T08-004/008, BR-008, design §4.6/§7) | Fetch de todos os SHAs com URL autenticada; scrub no `finally`; remover `blob:none` | **fechado** em `clone.py` + assert de ordem em `test_clone.py` |
+| S-IMP-01 | `SUGGESTION` | `provider.py:113-114` `_ = SnapshotError` morto | Remover na Blue | aberto (não bloqueante) |
+| S-IMP-02 | `SUGGESTION` | `clone.py` ramos defensivos do `finally` / fallback `config_writer` (~88% no módulo) | Cobrir na Blue se meta de simplificação/cobertura do módulo | aberto (não bloqueante) |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — implementação alinhada às interfaces/design após correção M-IMP-01. Prosseguir para etapa Blue.

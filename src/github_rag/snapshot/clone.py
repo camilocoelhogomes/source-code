@@ -58,30 +58,29 @@ class ShallowGitClonePort:
         shas = tuple(dict.fromkeys(commit_shas))  # unique, preserve order
         root = self._work_root or Path(tempfile.mkdtemp(prefix="github_rag_clone_"))
         target = root / full_name.replace("/", "_")
-        # URL com token efêmero — não deve ser persistida pelo caller após uso
         encoded = quote(token, safe="")
-        url = f"https://x-access-token:{encoded}@github.com/{full_name}.git"
+        auth_url = f"https://x-access-token:{encoded}@github.com/{full_name}.git"
+        clean_url = f"https://github.com/{full_name}.git"
+        repo: Repo | None = None
 
         try:
             if target.exists() and (target / ".git").exists():
                 repo = Repo(target)
+                _set_origin_url(repo, auth_url)
             else:
                 target.parent.mkdir(parents=True, exist_ok=True)
+                # Sem filter=blob:none: read_file precisa do conteúdo completo (D-T08-004).
                 repo = Repo.clone_from(
-                    url,
+                    auth_url,
                     str(target),
                     multi_options=["--no-checkout"],
-                    filter="blob:none",
                 )
-            # Remove remote URL com credencial
-            with repo.config_writer() as cw:
-                if cw.has_section('remote "origin"'):
-                    cw.set('remote "origin"', "url", f"https://github.com/{full_name}.git")
 
             for sha in shas:
                 if _has_commit(repo, sha):
                     continue
                 try:
+                    # Fetch com auth ainda presente (antes do scrub).
                     repo.git.fetch("origin", sha)
                 except GitCommandError as exc:
                     raise CommitNotFoundError(
@@ -96,8 +95,30 @@ class ShallowGitClonePort:
             raise GitHubSnapshotNetworkError(
                 f"falha ao clonar ou materializar {full_name}"
             ) from exc
+        finally:
+            # BR-008: nunca persistir remote com token após a operação.
+            if repo is not None:
+                try:
+                    _set_origin_url(repo, clean_url)
+                except Exception:  # noqa: BLE001
+                    pass
+            elif target.exists() and (target / ".git").exists():
+                try:
+                    _set_origin_url(Repo(target), clean_url)
+                except Exception:  # noqa: BLE001
+                    pass
 
         return target
+
+
+def _set_origin_url(repo: Repo, url: str) -> None:
+    """Atualiza URL do remote origin sem vazar falhas de config ao caller."""
+    try:
+        repo.remotes.origin.set_url(url)
+    except Exception:  # noqa: BLE001
+        with repo.config_writer() as cw:
+            if cw.has_section('remote "origin"'):
+                cw.set('remote "origin"', "url", url)
 
 
 def _has_commit(repo: Repo, sha: str) -> bool:

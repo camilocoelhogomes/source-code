@@ -40,12 +40,13 @@ class TestShallowGitClonePort(unittest.TestCase):
             )
             self.assertEqual(path, workspace)
 
-    def test_clone_from_fetches_missing_sha(self) -> None:
+    def test_clone_from_fetches_missing_sha_before_scrub(self) -> None:
+        """Auth deve permanecer até o fetch; scrub do token só depois (BR-008 / D-T08-008)."""
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             fake_repo = MagicMock()
-            # first has_commit False, after fetch True
             states = {"fetched": False}
+            order: list[str] = []
 
             def commit_lookup(sha: str):
                 if states["fetched"]:
@@ -53,15 +54,15 @@ class TestShallowGitClonePort(unittest.TestCase):
                 raise Exception("missing")
 
             def fetch(*_a, **_k):
+                order.append("fetch")
                 states["fetched"] = True
+
+            def set_url(url: str):
+                order.append(("set_url", url))
 
             fake_repo.commit.side_effect = commit_lookup
             fake_repo.git.fetch.side_effect = fetch
-            cw = MagicMock()
-            cw.__enter__ = MagicMock(return_value=cw)
-            cw.__exit__ = MagicMock(return_value=False)
-            cw.has_section.return_value = True
-            fake_repo.config_writer.return_value = cw
+            fake_repo.remotes.origin.set_url.side_effect = set_url
 
             with patch(
                 "github_rag.snapshot.clone.Repo.clone_from",
@@ -75,7 +76,21 @@ class TestShallowGitClonePort(unittest.TestCase):
                 )
                 self.assertEqual(path.name, "acme_demo")
                 fake_repo.git.fetch.assert_called()
-                cw.set.assert_called()
+                # fetch ocorre antes do scrub para URL limpa
+                self.assertIn("fetch", order)
+                scrub_idxs = [
+                    i
+                    for i, step in enumerate(order)
+                    if isinstance(step, tuple)
+                    and step[0] == "set_url"
+                    and "tok" not in step[1]
+                ]
+                self.assertTrue(scrub_idxs)
+                self.assertLess(order.index("fetch"), scrub_idxs[0])
+                # remote final sem token
+                fake_repo.remotes.origin.set_url.assert_any_call(
+                    "https://github.com/acme/demo.git"
+                )
 
     def test_fetch_failure_commit_not_found(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -83,11 +98,6 @@ class TestShallowGitClonePort(unittest.TestCase):
             fake_repo = MagicMock()
             fake_repo.commit.side_effect = Exception("missing")
             fake_repo.git.fetch.side_effect = GitCommandError("fetch", 1)
-            cw = MagicMock()
-            cw.__enter__ = MagicMock(return_value=cw)
-            cw.__exit__ = MagicMock(return_value=False)
-            cw.has_section.return_value = False
-            fake_repo.config_writer.return_value = cw
 
             with patch(
                 "github_rag.snapshot.clone.Repo.clone_from",
@@ -100,6 +110,8 @@ class TestShallowGitClonePort(unittest.TestCase):
                         token="tok",
                         commit_shas=["a" * 40],
                     )
+                # scrub ainda ocorre no finally
+                fake_repo.remotes.origin.set_url.assert_called()
 
     def test_fetch_succeeds_but_commit_still_missing(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -107,11 +119,6 @@ class TestShallowGitClonePort(unittest.TestCase):
             fake_repo = MagicMock()
             fake_repo.commit.side_effect = Exception("missing")
             fake_repo.git.fetch.return_value = None
-            cw = MagicMock()
-            cw.__enter__ = MagicMock(return_value=cw)
-            cw.__exit__ = MagicMock(return_value=False)
-            cw.has_section.return_value = False
-            fake_repo.config_writer.return_value = cw
 
             with patch(
                 "github_rag.snapshot.clone.Repo.clone_from",
