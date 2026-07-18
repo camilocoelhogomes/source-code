@@ -9,6 +9,7 @@ import inspect
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from github_rag.eligibility.filter import (
     EligibilityError,
@@ -241,6 +242,51 @@ class TestRulesConstants(unittest.TestCase):
         self.assertTrue(DEFAULT_ELIGIBILITY_RULES.include_extensionless)
         self.assertEqual(DEFAULT_ELIGIBILITY_RULES.csv_extensions, CSV_DENYLIST)
         self.assertEqual(DEFAULT_ELIGIBILITY_RULES.image_extensions, IMAGE_DENYLIST)
+
+
+class TestCoverageCorners(unittest.TestCase):
+    """Ramos defensivos para cobertura ≥95% do código alterado (T09)."""
+
+    def test_u25_internal_dotdot_normalizes(self) -> None:
+        result = _filt().filter(["src/../App.java"], [])
+        self.assertEqual(result, ["App.java"])
+
+    def test_u26_dotdot_collapses_to_empty_raises(self) -> None:
+        with self.assertRaises(EligibilityError):
+            _filt().filter(["foo/.."], [])
+
+    def test_u27_windows_absolute_raises(self) -> None:
+        with self.assertRaises(EligibilityError) as ctx:
+            _filt().filter(["C:/Windows/file.py"], [])
+        self.assertIn("C:/Windows/file.py", str(ctx.exception))
+
+    def test_u28_path_equals_nested_source_dir_skipped(self) -> None:
+        """path == relative_dir → rel vazio; fonte aninhada não aplica padrão."""
+        sources = [_source("docs", "*.md")]
+        result = _filt().filter(["docs", "docs/guide.md"], sources)
+        self.assertEqual(result, ["docs"])
+
+    def test_u29_loader_oserror_on_gitignore(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".gitignore").write_text("*.log\n", encoding="utf-8")
+            with patch.object(
+                Path,
+                "read_text",
+                side_effect=OSError("permission denied"),
+            ):
+                with self.assertRaises(EligibilityError) as ctx:
+                    load_gitignore_sources(root)
+            self.assertIn("ilegível", str(ctx.exception))
+
+    def test_u30_extensionless_opt_out(self) -> None:
+        rules = EligibilityRules(
+            csv_extensions=CSV_DENYLIST,
+            image_extensions=IMAGE_DENYLIST,
+            include_extensionless=False,
+        )
+        result = _filt(rules).filter(["Makefile", "App.java"], [])
+        self.assertEqual(result, ["App.java"])
 
 
 if __name__ == "__main__":

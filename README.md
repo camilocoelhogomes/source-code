@@ -59,8 +59,33 @@ python -m pytest
 
 O comando executa testes unitários e BDD com relatório de cobertura no
 terminal. O projeto exige cobertura mínima de 95%; a execução falha
-automaticamente abaixo desse limite. A suíte completa atual está em 305
-testes (1 pulado sem Docker) com cobertura de 97.82% (T01–T06).
+automaticamente abaixo desse limite.
+
+## Elegibilidade de arquivos (T09)
+
+O snapshot é filtrado por `FileEligibilityFilter` (`github_rag.eligibility`)
+antes da indexação (consumidor: T14):
+
+- Inclui textuais de desenvolvimento (qualquer linguagem, incl. Markdown e Java).
+- Exclui CSV, imagens e paths cobertos por `.gitignore` (matching via
+  biblioteca **pathspec** / GitWildMatch — sem parser caseiro).
+- Sem limite funcional de tamanho de arquivo no MVP.
+- Arquivos sem extensão (`Makefile`, `Dockerfile`, …) são incluídos por
+  padrão, salvo se ignorados pelo `.gitignore`.
+
+```python
+from pathlib import Path
+from github_rag.eligibility import (
+    PathspecFileEligibilityFilter,
+    load_gitignore_sources,
+)
+
+sources = load_gitignore_sources(Path("/path/to/repo"))
+eligible = PathspecFileEligibilityFilter().filter(
+    ["src/App.java", "data.csv", "target/x.class"],
+    sources,
+)
+```
 
 ## Configuração de conexões (T02)
 

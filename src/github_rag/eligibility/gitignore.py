@@ -12,6 +12,7 @@ Motivo da separação
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -65,10 +66,42 @@ def load_gitignore_sources(repo_root: Path) -> list[GitignoreSource]:
     Erros
         ``EligibilityError`` se ``repo_root`` inexistente/ilegível ou se algum
         ``.gitignore`` não for UTF-8 decodificável.
-
-    Nota
-        Stub nesta etapa — implementação após unit-test-plan aprovado.
     """
-    raise NotImplementedError(
-        "load_gitignore_sources: implementação após unit-test-plan (T09)"
-    )
+    from github_rag.eligibility.filter import EligibilityError
+
+    root = Path(repo_root)
+    if not root.exists() or not root.is_dir():
+        raise EligibilityError(
+            f"repo_root inexistente ou ilegível: {root}"
+        )
+
+    sources: list[GitignoreSource] = []
+    for dirpath, dirnames, filenames in os.walk(
+        root,
+        topdown=True,
+        followlinks=False,
+    ):
+        dirnames[:] = sorted(name for name in dirnames if name != ".git")
+        if ".gitignore" not in filenames:
+            continue
+
+        gitignore_path = Path(dirpath) / ".gitignore"
+        try:
+            text = gitignore_path.read_text(encoding="utf-8")
+        except UnicodeDecodeError as exc:
+            raise EligibilityError(
+                f".gitignore não-UTF-8: {gitignore_path}"
+            ) from exc
+        except OSError as exc:
+            raise EligibilityError(
+                f".gitignore ilegível: {gitignore_path}"
+            ) from exc
+
+        rel = Path(dirpath).resolve().relative_to(root.resolve())
+        relative_dir = "" if rel == Path(".") else rel.as_posix()
+        sources.append(
+            GitignoreSource(relative_dir=relative_dir, lines=text.splitlines())
+        )
+
+    sources.sort(key=lambda s: (s.relative_dir.count("/"), s.relative_dir))
+    return sources

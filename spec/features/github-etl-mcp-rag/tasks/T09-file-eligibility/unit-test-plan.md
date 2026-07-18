@@ -89,3 +89,14 @@ Evidência red (2026-07-18): **21 failed, 3 passed** (U-19, U-22, U-23).
 - `.git/info/exclude` e excludes globais
 - Indexação, UI, orquestração T14
 - Cenários BDD ELIG-01..07 (já em `tests/bdd/test_file_eligibility.py`)
+
+## Complemento cobertura (pós-impl)
+
+| ID | Caso | Esperado |
+|---|---|---|
+| U-25 | `src/../App.java` | normaliza para `App.java` |
+| U-26 | `foo/..` | `EligibilityError` |
+| U-27 | path Windows absoluto | `EligibilityError` |
+| U-28 | path == relative_dir da fonte aninhada | não aplica padrões da fonte; path elegível se tipo ok |
+| U-29 | OSError ao ler `.gitignore` | `EligibilityError` ilegível |
+| U-30 | `include_extensionless=False` | exclui `Makefile` |

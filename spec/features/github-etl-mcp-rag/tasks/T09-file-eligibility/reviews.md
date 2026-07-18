@@ -214,3 +214,76 @@ Código de produção **não** alterado além dos stubs existentes.
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — unit-test-plan v0.1.0 e testes unitários suficientes. Prosseguir para implementação (Developer).
+
+---
+
+## Review — Implementação (v0.1.0)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `src/github_rag/eligibility/{filter,gitignore,rules}.py` vs `design.md` / `interfaces.md` |
+| Data | 2026-07-18 |
+| Branch | `feature/github-etl-mcp-rag-T09-file-eligibility` |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| D-T09-001 / I-T09-001 porta pura | OK | `FileEligibilityFilter.filter(paths, sources)`; sem I/O; loader separado |
+| D-T09-002 / I-T09-002 pathspec (não parser caseiro) | OK | `PathSpec.from_lines("gitwildmatch", …)` + `GitWildMatchPattern`; dep `pathspec>=0.12` |
+| D-T09-003 / I-T09-008 last-match nested | OK | `_is_ignored`: fontes aplicáveis por profundidade; last pattern wins incl. `!` |
+| D-T09-004 / I-T09-004 denylist CSV/imagens | OK | `rules.py` + `_is_denied_by_extension` após ignore; sem allowlist |
+| D-T09-005 / I-T09-005 sem extensão | OK | `include_extensionless=True` default |
+| D-T09-006 / I-T09-006 sem size caps | OK | assinatura sem size; filtro não consulta volume |
+| I-T09-007 validação paths | OK | absoluto / Windows drive / `..` escape / vazio / `.` → `EligibilityError`; `\` → `/`; duplicatas colapsadas |
+| Loader BR-023 | OK | `os.walk(followlinks=False)`; skip `.git/`; UTF-8 estrito |
+
+### Verificação
+
+```bash
+.venv/bin/python -m pytest tests/bdd/test_file_eligibility.py tests/unit/eligibility/ -q --no-cov
+# 33 passed
+.venv/bin/python -m pytest -q --cov=github_rag --cov-fail-under=95
+# 338 passed, 1 skipped; Total coverage: 96.95%
+```
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` | — | — |
+| `SUGGESTION` | `pathspec` emite `DeprecationWarning` para alias `gitwildmatch` | pytest warnings; I-T09-002 exige `gitwildmatch` | Manter contrato atual; migrar para `gitignore` só com equivalência validada + update de I-T09-002 |
+| `SUGGESTION` | Ramos raros sem cobertura local (`a/../b`, `OSError` no loader, `rel==""`) | `filter.py` 92%; `gitignore.py` miss 95-96 | Opcional; gate global ≥95% já satisfeito (96.95%) |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — implementação v0.1.0 aderente a D-T09/I-T09. Prosseguir para Blue.
+
+---
+
+## Review — Blue refactoring (v0.1.0)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `refactoring.md` + código eligibility |
+| Data | 2026-07-18 |
+| Pipeline | autonomous |
+| Resultado | `BLUE_APPROVED_BY_ARCHITECT` |
+
+### Análise
+
+Módulos já coesos (porta / loader / rules). Sem complexidade desnecessária nem gargalo evidenciado no volume típico de snapshot. Otimizações especulativas (cache de `PathSpec` por chamada) rejeitadas sem baseline de perf reproduzível.
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` | — | — |
+
+### Decisão
+
+`BLUE_APPROVED_BY_ARCHITECT` — nenhuma mudança estrutural necessária; ver `refactoring.md`.

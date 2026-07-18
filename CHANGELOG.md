@@ -6,6 +6,13 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- Elegibilidade de arquivos (T09): porta `FileEligibilityFilter` com
+  implementação `PathspecFileEligibilityFilter` — inclui textuais de
+  desenvolvimento (Markdown, Java, etc.), exclui CSV/imagens e paths
+  cobertos por `.gitignore` via **pathspec** GitWildMatch (BDD-006,
+  DEC-015 / BR-023); sem caps de tamanho (REQ-019).
+- Helper `load_gitignore_sources` para `.gitignore` aninhados; política
+  documentada para arquivos sem extensão (include-by-default).
 - Descoberta GitHub (T05): `GitHubRepoDiscovery` lista repositórios por org
   via token resolvido em T02, filtra por wildcards de inclusão (BR-022) e
   expõe `DiscoveredGitHubRepo` sem serializar o segredo (BDD-001/014/019).

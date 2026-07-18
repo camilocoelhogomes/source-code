@@ -14,23 +14,21 @@ Motivo da separação
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from pathlib import PurePosixPath
+from typing import Protocol, runtime_checkable
 
 import pathspec
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 
+from github_rag.eligibility.gitignore import GitignoreSource
 from github_rag.eligibility.rules import (
     DEFAULT_ELIGIBILITY_RULES,
     EligibilityRules,
 )
 
-if TYPE_CHECKING:
-    from github_rag.eligibility.gitignore import GitignoreSource
-
 # Referência explícita ao motor OSS (D-T09-002 / BDD-024 / ELIG-06).
-# A implementação completa usará PathSpec.from_lines("gitwildmatch", lines).
-_ = (pathspec, PathSpec, GitWildMatchPattern)
+_ = (pathspec, GitWildMatchPattern)
 
 
 class EligibilityError(Exception):
@@ -111,8 +109,7 @@ class PathspecFileEligibilityFilter:
         tamanho.
 
     Erros
-        ``EligibilityError`` conforme design §2.5; stub atual levanta
-        ``NotImplementedError`` até a implementação pós unit-test-plan.
+        ``EligibilityError`` conforme design §2.5.
     """
 
     def __init__(self, rules: EligibilityRules | None = None) -> None:
@@ -123,13 +120,119 @@ class PathspecFileEligibilityFilter:
         paths: Sequence[str],
         gitignore_sources: Sequence[GitignoreSource],
     ) -> list[str]:
-        """Filtra paths elegíveis (stub — comportamento na etapa de implementação).
+        """Filtra paths elegíveis.
 
         Responsabilidade: ver ``FileEligibilityFilter.filter``.
         Motivo da separação: implementação concreta distinta do Protocol.
-        Invariantes / Erros: ver classe; stub → ``NotImplementedError``.
+        Invariantes / Erros: ver classe.
         """
-        raise NotImplementedError(
-            "PathspecFileEligibilityFilter.filter: "
-            "implementação após unit-test-plan (T09)"
-        )
+        result: list[str] = []
+        seen: set[str] = set()
+        for raw in paths:
+            normalized = _normalize_path(raw)
+            if normalized in seen:
+                continue
+            seen.add(normalized)
+            if _is_ignored(normalized, gitignore_sources):
+                continue
+            if _is_denied_by_extension(normalized, self._rules):
+                continue
+            result.append(normalized)
+        return result
+
+
+def _normalize_path(path: str) -> str:
+    """Normaliza separadores e valida path relativo ao root do snapshot."""
+    if path == "":
+        raise EligibilityError("path vazio não é elegível")
+
+    normalized = path.replace("\\", "/")
+
+    if normalized in (".", "./"):
+        raise EligibilityError(f"path inválido (não é arquivo): {path}")
+
+    if normalized.startswith("/") or _is_windows_absolute(normalized):
+        raise EligibilityError(f"path absoluto não permitido: {path}")
+
+    parts = [part for part in normalized.split("/") if part not in ("", ".")]
+    depth = 0
+    cleaned: list[str] = []
+    for part in parts:
+        if part == "..":
+            depth -= 1
+            if depth < 0:
+                raise EligibilityError(
+                    f"path com escape '..' fora do root: {path}"
+                )
+            if cleaned:
+                cleaned.pop()
+            continue
+        depth += 1
+        cleaned.append(part)
+
+    if not cleaned:
+        raise EligibilityError(f"path inválido (não é arquivo): {path}")
+
+    return "/".join(cleaned)
+
+
+def _is_windows_absolute(path: str) -> bool:
+    return len(path) >= 2 and path[0].isalpha() and path[1] == ":"
+
+
+def _is_source_applicable(relative_dir: str, path: str) -> bool:
+    if relative_dir == "":
+        return True
+    return path == relative_dir or path.startswith(relative_dir + "/")
+
+
+def _path_relative_to_source(path: str, relative_dir: str) -> str:
+    if relative_dir == "":
+        return path
+    prefix = relative_dir + "/"
+    if path.startswith(prefix):
+        return path[len(prefix) :]
+    return ""
+
+
+def _source_depth(relative_dir: str) -> tuple[int, str]:
+    if relative_dir == "":
+        return (0, "")
+    return (relative_dir.count("/") + 1, relative_dir)
+
+
+def _is_ignored(
+    path: str,
+    gitignore_sources: Sequence[GitignoreSource],
+) -> bool:
+    """Last-match wins entre fontes aplicáveis (D-T09-003 / I-T09-008)."""
+    applicable = [
+        source
+        for source in gitignore_sources
+        if _is_source_applicable(source.relative_dir, path)
+    ]
+    applicable.sort(key=lambda s: _source_depth(s.relative_dir))
+
+    ignored = False
+    for source in applicable:
+        rel = _path_relative_to_source(path, source.relative_dir)
+        if rel == "" and source.relative_dir != "":
+            continue
+        spec = PathSpec.from_lines("gitwildmatch", source.lines)
+        for pattern in spec.patterns:
+            if pattern.include is None:
+                continue
+            if pattern.match_file(rel) is not None:
+                ignored = bool(pattern.include)
+    return ignored
+
+
+def _is_denied_by_extension(path: str, rules: EligibilityRules) -> bool:
+    suffix = PurePosixPath(path).suffix.lower()
+    if not suffix:
+        return not rules.include_extensionless
+    if suffix in {ext.lower() for ext in rules.csv_extensions}:
+        return True
+    if suffix in {ext.lower() for ext in rules.image_extensions}:
+        return True
+    return False
