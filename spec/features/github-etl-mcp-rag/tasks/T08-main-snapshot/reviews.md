@@ -73,3 +73,38 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — BDD v0.1.0. Prosseguir para interfaces (após materializar pytest BDD em red, conforme S-BDD-01).
+
+## Review — Interfaces v0.1.0
+
+| Campo | Valor |
+|---|---|
+| Data | 2026-07-18 |
+| Revisor | Tech Lead Architect |
+| Artefato | `interfaces.md` v0.1.0 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Design base | `0.1.1` (`APPROVED_BY_ARCHITECT`) |
+| BDD base | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Porta `MainSnapshotProvider` + diff + `FirstIndexSignal` | OK | §2.3–2.4, §2.7 (`diff_files` → `FileDiffSet \| FirstIndexSignal`) |
+| Comentários responsabilidade / motivo da separação | OK | §2.1–2.7 |
+| D-T08-001..009 | OK | porta única; GitPython/PyGithub; FirstIndexSignal; arquivo completo; `GitClonePort`; tip só `main`; rename deleted+added; SHAs resolvidos; `DefaultMainSnapshotProvider` pública |
+| D-T08-008 / S-05 (`diff_files`/`from_commit`) | OK | §2.6 (`commit_sha`/`from_commit` → `CommitNotFoundError`); §2.7 invariante `list_tree`/`read_file`/`diff_files` |
+| Sem expandir escopo | OK | §4 fronteiras T09/T14/T03/T05/T06/T18 |
+
+### Achados
+
+| ID | Severidade | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| — | — | Nenhum BLOCKING/MAJOR | — | `APPROVED_BY_ARCHITECT` |
+| S-05 | `SUGGESTION` | design §11 vs §4.6/§5 | Alinhado em interfaces §2.6/§2.7 | fechado |
+| S-IF-01 | `SUGGESTION` | §2.3 “independível” | Corrigir tipografia para “independente” na próxima edição cosméticas | aberto (não bloqueante) |
+| S-IF-02 | `SUGGESTION` | §3 exporta `FileDiffSet` mas não `FileDiff` | Opcional: re-exportar `FileDiff` se unitários/consumidores precisarem do DTO unitário | aberto (não bloqueante) |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — interfaces v0.1.0. Prosseguir para testes unitários (QA).

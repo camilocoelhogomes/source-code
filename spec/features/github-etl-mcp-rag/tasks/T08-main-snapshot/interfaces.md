@@ -4,16 +4,17 @@
 |---|---|
 | Feature | `github-etl-mcp-rag` |
 | Task | `T08-main-snapshot` |
-| Estado | `PENDING_ARCHITECT_REVIEW` |
+| Estado | `APPROVED_BY_ARCHITECT` |
 | Versão | `0.1.0` |
 | Design base | `0.1.1` |
 | BDD base | `0.1.0` |
+| Aprovação Architect | `APPROVED_BY_ARCHITECT` em 2026-07-18 (pipeline autônomo) |
 
 ## 0. Histórico Architect
 
 | Data | Autor | Decisão | Versão |
 |---|---|---|---|
-| — | — | — | `0.1.0` |
+| 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.0` |
 
 ## 1. Escopo
 
