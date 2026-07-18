@@ -170,6 +170,29 @@ class TestGitFilesystemInspector(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.inspector.parse_file_url("https://example.com/x")
 
+    def test_parse_empty_path_raises(self) -> None:
+        with self.assertRaises(ValueError):
+            self.inspector.parse_file_url("file://")
+
+    def test_parse_relative_path_raises(self) -> None:
+        with self.assertRaises(ValueError):
+            self.inspector.parse_file_url("file:relative/path")
+
+    def test_expand_candidates_base_not_directory(self) -> None:
+        f = self.root / "not-dir"
+        f.write_text("x", encoding="utf-8")
+        self.assertEqual(self.inspector.expand_candidates(f, "*"), ())
+
+    def test_expand_candidates_non_star_prefix_pattern(self) -> None:
+        nested = self.root / "nest" / "svc"
+        nested.mkdir(parents=True)
+        found = self.inspector.expand_candidates(self.root, "svc")
+        self.assertEqual(list(found), [nested])
+
+    def test_to_native_path_windows_drive_without_leading_slash(self) -> None:
+        with mock.patch.object(git_fs.os, "name", "nt"):
+            self.assertEqual(git_fs._to_native_path("C:/repos"), Path("C:/repos"))
+
     # --- T20: conformidade GitPython / DT-001 ---
 
     def test_t20_inspect_uses_gitpython_repo(self) -> None:
