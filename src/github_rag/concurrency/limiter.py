@@ -12,6 +12,7 @@ Motivo da separação
 
 from __future__ import annotations
 
+import threading
 from collections.abc import Iterator
 from contextlib import AbstractContextManager, contextmanager
 from typing import Protocol, runtime_checkable
@@ -94,6 +95,13 @@ class WorkerLimiter(Protocol):
         ...
 
 
+def _validate_capacity(*, capacity: int, pool: str) -> None:
+    if capacity < MIN_WORKERS:
+        raise WorkerLimiterError(
+            f"{pool}: capacity must be >= {MIN_WORKERS}, got {capacity}"
+        )
+
+
 class SemaphoreWorkerLimiter:
     """Implementação de ``WorkerLimiter`` baseada em ``threading.Semaphore``.
 
@@ -113,14 +121,25 @@ class SemaphoreWorkerLimiter:
     """
 
     def __init__(self, *, capacity: int, pool: str) -> None:
-        ...
+        _validate_capacity(capacity=capacity, pool=pool)
+        self._capacity = capacity
+        self._pool = pool
+        self._semaphore = threading.Semaphore(capacity)
 
     @property
     def capacity(self) -> int:
-        ...
+        return self._capacity
 
     def acquire(self) -> AbstractContextManager[None]:
-        ...
+        @contextmanager
+        def _slot() -> Iterator[None]:
+            self._semaphore.acquire()
+            try:
+                yield
+            finally:
+                self._semaphore.release()
+
+        return _slot()
 
 
 def create_index_limiter(settings: AppSettings) -> WorkerLimiter:
@@ -140,7 +159,10 @@ def create_index_limiter(settings: AppSettings) -> WorkerLimiter:
     Erros
         ``WorkerLimiterError`` se a capacidade do snapshot for ``< 1``.
     """
-    ...
+    return SemaphoreWorkerLimiter(
+        capacity=settings.index_workers,
+        pool="index",
+    )
 
 
 def create_query_limiter(settings: AppSettings) -> WorkerLimiter:
@@ -159,4 +181,7 @@ def create_query_limiter(settings: AppSettings) -> WorkerLimiter:
     Erros
         ``WorkerLimiterError`` se a capacidade do snapshot for ``< 1``.
     """
-    ...
+    return SemaphoreWorkerLimiter(
+        capacity=settings.query_workers,
+        pool="query",
+    )
