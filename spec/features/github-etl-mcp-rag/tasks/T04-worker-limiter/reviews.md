@@ -64,3 +64,38 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — BDD v0.1.0. Prosseguir para interfaces.
+
+## Review — Interfaces (v0.1.0)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `interfaces.md`, `src/github_rag/concurrency/limiter.py`, `src/github_rag/concurrency/__init__.py` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Design base | `0.1.1` (`APPROVED_BY_ARCHITECT`) |
+| BDD base | `APPROVED_BY_ARCHITECT` |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Comentários de responsabilidade e motivo da separação em cada contrato | OK | Docstrings em `WorkerLimiterError`, `WorkerLimiter`, `SemaphoreWorkerLimiter`, factories, `MIN_WORKERS`; espelhados em `interfaces.md` §3 |
+| API mínima: `capacity` + `acquire()` CM | OK | Protocol L74–L94; I-T04-001; sem `try_acquire`/métricas (I-T04-007 fecha SUGGESTION do design) |
+| Dois factories isolados | OK | `create_index_limiter` / `create_query_limiter`; I-T04-002; mapa §4 |
+| `capacity < 1` → `WorkerLimiterError` | OK | I-T04-004; construtor e factories; `MIN_WORKERS = 1` |
+| Alinhamento design (sync semaphore, sem reparse env) | OK | I-T04-003, I-T04-005; D-T04-001..004 |
+| Sem extrapolar escopo | OK | Fora de escopo §1: T14/T16/T17/T18, asyncio, métricas |
+| Protocol + stubs nesta etapa | OK | `...` em construtor/factories; reexports em `__init__.py` |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` | — | — |
+| `SUGGESTION` | Imports `Iterator` e `contextmanager` ainda não usados no stub | `limiter.py` L15–L16 | Remover ou usar na implementação (etapa Developer); não bloqueia gate de interfaces |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — interfaces v0.1.0. Prosseguir para unit-test-plan / TDD.
