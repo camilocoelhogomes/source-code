@@ -129,3 +129,61 @@ AssertionError de comportamento verde: 0
 ### Parecer
 
 Gate UNIT_TESTS v0.1.0: cobertura CS/UT aderente às interfaces aprovadas; RED demonstrado (28× NIE). Sem BLOCKING/MAJOR. `APPROVED_BY_ARCHITECT`.
+
+## Gate IMPLEMENTAÇÃO — 2026-07-18
+
+| Campo | Valor |
+|---|---|
+| Artefato | `src/github_rag/catalog/sync.py`, `app/bootstrap.py`, `catalog/__init__.py` + suíte GREEN |
+| Reviewer | Tech Lead Architect |
+| Decisão | `APPROVED_BY_ARCHITECT` |
+
+### Checklist
+
+| # | Critério | Resultado |
+|---|---|---|
+| 1 | Contratos `interfaces.md` (algoritmo §3.3; I-T07-001..010) | OK |
+| 2 | S-01: `GitHubDiscoveryError` → `CatalogSyncError` sem `upsert`/`deactivate` | OK (`sync.py` L138–154; UT-07/CS-08) |
+| 3 | S-02: mapeamento GitHub/local + `local_issues` passthrough | OK (`_from_github`/`_from_local`; UT-01/02/08) |
+| 4 | Soft-delete; sem indexação/reconcile; estados só REQ-020 | OK (UT-04/09/11; CS-05/10/12) |
+| 5 | U-1: `CatalogSyncError.__cause__` é `GitHubDiscoveryError` | OK (`test_sync.py` L169) |
+| 6 | U-2: soft-delete preserva `RepoState.INDEXING` | OK (`test_sync.py` L232–234) |
+| 7 | Reexport público + `run_catalog_sync` sync-only | OK (`catalog/__init__.py`; `bootstrap.py`) |
+| 8 | Cobertura / suíte | OK — 335 passed; `sync.py` 100%; total 97.99% |
+
+### Achados
+
+| ID | Severidade | Evidência | Correção esperada | Resultado |
+|---|---|---|---|---|
+| U-1 | SUGGESTION | Gate UNIT_TESTS | Assert `__cause__` | **Resolvido** — UT-07 L169 |
+| U-2 | SUGGESTION | Gate UNIT_TESTS | Assert `INDEXING` no soft-delete | **Resolvido** — UT-11 L232–234 |
+| — | — | — | Sem BLOCKING/MAJOR abertos | — |
+
+### Parecer
+
+Gate IMPLEMENTAÇÃO: orquestração linear discovery→upsert→soft-delete aderente às interfaces; S-01/S-02 e U-1/U-2 fechados; sem indexação/reconcile. Sem BLOCKING/MAJOR. `APPROVED_BY_ARCHITECT`.
+
+## Gate BLUE — 2026-07-18
+
+| Campo | Valor |
+|---|---|
+| Artefato | `refactoring.md` v0.1.0 (baseline no-op) |
+| Reviewer | Tech Lead Architect |
+| Decisão | `BLUE_APPROVED_BY_ARCHITECT` |
+
+### Checklist
+
+| # | Critério | Resultado |
+|---|---|---|
+| 1 | Baseline documentado; sem otimização especulativa | OK |
+| 2 | Simplificação segura óbvia sem mudar comportamento | Nenhuma necessária — sync linear, coberto a 100% |
+| 3 | Contratos / cobertura preservados | OK (sem diff de código na Yellow→Blue) |
+| 4 | Testes verdes (evidência prévia do gate impl) | OK — 335 passed; `sync.py` 100% |
+
+### Achados
+
+Nenhum.
+
+### Parecer
+
+Blue no-op: sem refatoração de comportamento; caminho Yellow→Blue fechado. `BLUE_APPROVED_BY_ARCHITECT`.
