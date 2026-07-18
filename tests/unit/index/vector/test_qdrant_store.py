@@ -6,6 +6,8 @@ import inspect
 import unittest
 from unittest.mock import MagicMock
 
+from qdrant_client.models import PayloadSchemaType
+
 from github_rag.index.chunk.types import SemanticChunk, SourceLanguage
 from github_rag.index.vector.errors import (
     VectorDimensionError,
@@ -23,6 +25,29 @@ from tests.unit.index.vector.fixtures import (
     make_store,
     normalize,
 )
+
+_PAYLOAD_INDEX_FIELDS = frozenset({"repo_id", "commit_sha", "path"})
+
+
+def _index_field_names(client: MagicMock) -> set[str]:
+    fields: set[str] = set()
+    for c in client.create_payload_index.call_args_list:
+        name = c.kwargs.get("field_name")
+        if name is None and len(c.args) >= 2:
+            name = c.args[1]
+        if name is not None:
+            fields.add(name)
+    return fields
+
+
+def _index_schemas(client: MagicMock) -> list[object]:
+    schemas: list[object] = []
+    for c in client.create_payload_index.call_args_list:
+        schema = c.kwargs.get("field_schema")
+        if schema is None:
+            schema = c.kwargs.get("field_type")
+        schemas.append(schema)
+    return schemas
 
 
 class TestUpsertAndSearch(unittest.TestCase):
@@ -625,6 +650,92 @@ class TestCoverageBranches(unittest.TestCase):
             store._invoke("upsert", boom)
         self.assertIn("qdrant upsert failed", str(ctx.exception))
         self.assertIn("network", str(ctx.exception))
+
+
+class TestPayloadIndexes(unittest.TestCase):
+    """UT-Q22, UT-Q23, UT-Q24, UT-Q25 — create_payload_index no setup."""
+
+    def test_ut_q22_indexes_requested_on_new_collection(self) -> None:
+        client = MagicMock()
+        client.get_collection.side_effect = RuntimeError("missing")
+        client.create_collection.return_value = MagicMock()
+        store = QdrantVectorStore(
+            client=client,
+            collection_name="new-coll",
+            vector_size=VECTOR_SIZE,
+        )
+        store._ensure_collection()
+        client.create_collection.assert_called_once()
+        self.assertEqual(_index_field_names(client), _PAYLOAD_INDEX_FIELDS)
+        self.assertEqual(len(client.create_payload_index.call_args_list), 3)
+        for schema in _index_schemas(client):
+            self.assertEqual(schema, PayloadSchemaType.KEYWORD)
+        for c in client.create_payload_index.call_args_list:
+            self.assertEqual(c.kwargs.get("collection_name"), "new-coll")
+        self.assertTrue(store._collection_ready)
+
+    def test_ut_q23_indexes_requested_when_collection_exists(self) -> None:
+        client = MagicMock()
+        client.get_collection.return_value = MagicMock()
+        store = QdrantVectorStore(
+            client=client,
+            collection_name="existing",
+            vector_size=VECTOR_SIZE,
+        )
+        store._ensure_collection()
+        client.create_collection.assert_not_called()
+        self.assertEqual(_index_field_names(client), _PAYLOAD_INDEX_FIELDS)
+        self.assertEqual(len(client.create_payload_index.call_args_list), 3)
+        for schema in _index_schemas(client):
+            self.assertEqual(schema, PayloadSchemaType.KEYWORD)
+        self.assertTrue(store._collection_ready)
+
+    def test_ut_q24_index_failure_does_not_abort_setup(self) -> None:
+        client = MagicMock()
+        client.get_collection.return_value = MagicMock()
+        client.create_payload_index.side_effect = RuntimeError("already exists")
+        store = QdrantVectorStore(
+            client=client,
+            collection_name="idx-fail",
+            vector_size=VECTOR_SIZE,
+        )
+        store._ensure_collection()
+        self.assertTrue(store._collection_ready)
+        self.assertEqual(client.create_payload_index.call_count, 3)
+
+    def test_ut_q25_ready_skips_reindex_calls(self) -> None:
+        client = MagicMock()
+        client.get_collection.return_value = MagicMock()
+        store = QdrantVectorStore(
+            client=client,
+            collection_name="cached",
+            vector_size=VECTOR_SIZE,
+        )
+        store._ensure_collection()
+        first_count = client.create_payload_index.call_count
+        self.assertEqual(first_count, 3)
+        store._ensure_collection()
+        self.assertEqual(client.create_payload_index.call_count, first_count)
+        self.assertEqual(client.get_collection.call_count, 1)
+
+    def test_ut_q22_memory_client_setup_ok_with_warning(self) -> None:
+        """`:memory:` emite UserWarning; setup e filtros seguem ok."""
+        import warnings
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            store = make_store()
+            store._ensure_collection()
+        self.assertTrue(store._collection_ready)
+        # Warning may or may not surface depending on SDK; filters must work.
+        vec = normalize((1.0, 0.0, 0.0, 0.0))
+        store.upsert(
+            RepoCommitScope("repo-a", "c1"),
+            [make_record(make_enriched(make_chunk(chunk_id="ix"), summary="ok"), vec)],
+        )
+        hits = store.search(vec, limit=5, repo_ids=["repo-a"])
+        self.assertEqual(len(hits), 1)
+        del caught  # recorded for debug; not asserted as SDK-dependent
 
 
 if __name__ == "__main__":
