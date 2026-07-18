@@ -236,3 +236,41 @@ PYTHONPATH=src .venv/bin/python -m pytest tests/unit/index/chunk tests/bdd/test_
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — implementação alinhada a design/interfaces/BDD após correções MAJOR acima. Prosseguir para etapa Blue (`refactoring.md`).
+
+---
+
+## Review — Design (v0.2.0 — escopo config PR #9)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `design.md` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Trigger | Review humano PR #9 (`r3609409543`) — yaml/json/xml/toml |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Escopo autorizado pelo humano | OK | §0 histórico; Trigger; D-T11-011 |
+| DEC-003 — sem fallback tamanho/linhas | OK | §3 fluxo erro; §3.1; §4.4.1 root estrutural (não genérico); D-T11-001 |
+| DEC-015 / BR-023 — só grammars oficiais PyPI | OK | §4.2 pins + origens; yaml/toml = tree-sitter-grammars (sem pacote no org core); json/xml = tree-sitter; D-T11-002/011 |
+| Matriz `SourceLanguage` MVP | OK | §4.2: python/java/js/ts/markdown + yaml/json/xml/toml; extensões e variantes |
+| Nós-alvo config | OK | §4.4: yaml `document`/`block_mapping_pair` (+ root `stream`); json `object`/`pair`/`array`; xml `element`; toml `table`/`pair` — tipos existem nos grammars |
+| XML `language_xml` | OK | §4.2 / §4.7 / D-T11-012; pacote expõe `language_xml` e `language_dtd` |
+| Compatibilidade T12/T13/T14 | OK | §8 amplia enum; contratos `SemanticChunk`/`chunk_id` inalterados |
+| Riscos / rollback | OK | §10–§11; pins §8 |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+| `SUGGESTION` | YAML MVP omite `flow_pair` (só `block_mapping_pair`) — YAML flow-only cobre via `document`/root | design §4.4; node-types yaml | Incluir `flow_pair` se BDD de configs flow exigir |
+| `SUGGESTION` | TOML MVP omite `table_array_element` — `[[tables]]` cobertos indiretamente via `pair` | design §4.4; node-types toml | Incluir se BDD de Cargo/pyproject exigir unidade de tabela-array |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — design v0.2.0. Prosseguir para atualização de BDD/interfaces/unitários/implementação alinhados à matriz ampliada.
