@@ -144,7 +144,7 @@ class TestLocalSnapshot(unittest.TestCase):
         source = local_mod.__file__
         assert source is not None
         text = Path(source).read_text(encoding="utf-8")
-        self.assertIn("from git", text.replace(" ", ""))
+        self.assertIn("from git import", text)
         # não deve abrir refs/heads/main via pathlib ad-hoc como estratégia principal
         self.assertNotIn('refs" / "heads" / "main"', text)
 
