@@ -229,3 +229,172 @@ Nenhum.
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — unitários suficientes e aderentes ao contrato aprovado; falham pelo stub pelas razões corretas. Pronto para gate HITL de aprovação humana dos testes unitários.
+
+---
+
+## Review implementação — Tech Lead Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | Implementação T01 (`settings.py`, layout `src/github_rag`, `pyproject.toml`, README, `.gitignore`, `.gitattributes`) |
+| Design base | `0.2.0` (`HUMAN_DESIGN_APPROVED`) |
+| Interfaces base | `0.2.0` (`HUMAN_INTERFACES_APPROVED`) |
+| BDD base | `0.2.0` (`HUMAN_BDD_APPROVED` / Architect `APPROVED_BY_ARCHITECT`) |
+| Unitários base | `0.1.0` (`HUMAN_UNIT_TESTS_APPROVAL` / Architect `APPROVED_BY_ARCHITECT` / candidato `507b6ac`) |
+| Data | 2026-07-18 |
+| Branch | `feature/github-etl-mcp-rag-T01-project-foundation` |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Checks executados
+
+| Check | Resultado |
+|---|---|
+| Leitura design `0.2.0` / interfaces `0.2.0` / BDD / unitários aprovados / `settings.py` / README / `pyproject.toml` / layout | OK |
+| `git diff 507b6ac -- tests/` | **vazio** — testes BDD/unitários **não** alterados para passar |
+| `.venv/bin/python -m pytest tests/unit tests/bdd -v` | **37 passed** (27 unit + 10 BDD); cobertura **100%**; `fail_under=95` respeitado |
+| `load_settings` vs contrato I-T01-* | **OK** |
+| Sem domínio (parser/JSON/DB/segredos/min-max) | **OK** |
+| Windows first-class + Docker/T19 sem `.venv` do host (README + docs do módulo) | **OK** |
+| Layout §2.6 + `pyproject` + coverage 95 | **OK** |
+
+### Matriz de aderência
+
+| Área | Evidência | Veredito |
+|---|---|---|
+| Constantes env + defaults `2`/`4`/`CONFIG_PATH→None` | `settings.py` L39–L92; UT-01..UT-06 | OK — I-T01-003/004/006 |
+| `load_settings(environ\|None)` → `AppSettings`; não muta mapping | L212–L271; `_AppSettingsSnapshot` frozen; UT-15..UT-18 | OK — I-T01-001/002/014 |
+| Int inválido → `SettingsBootstrapError` (nome + razão; sem shell) | `_load_worker` L205–L209; UT-09..UT-11 | OK — I-T01-007/015 |
+| Sem min/max workers | aceita 0/negativo; UT-07 | OK — I-T01-008 |
+| `CONFIG_PATH` via `pathlib` / `_NativePath`; sem I/O | L253–L258; UT-12..UT-14/UT-19 | OK — I-T01-005/009/016 |
+| OS-agnostic (sem ramificar por shell/OS para defaults) | corpo sem `os.name`/activate; UT-22 | OK — I-T01-012/014 |
+| Sem domínio | sem JSON/DB/secrets; FND-08 + UT-19 | OK — I-T01-009 / D-T01-006 |
+| Layout placeholders + `__init__.py` | árvore `src/github_rag/...`; FND-06 | OK — D-T01-005 |
+| `pyproject` Python ≥3.12; pytest-cov; `fail_under=95` | `pyproject.toml`; FND-05/FND-07 | OK — D-T01-002/004 |
+| README PowerShell + cmd + Unix; Docker sem `.venv` host; install ≠ sistema | `README.md`; FND-01..04/FND-10 | OK — D-T01-003/007/009 |
+| `.gitignore` `.venv/`; `.gitattributes` EOL | FND-09/FND-10 | OK — D-T01-011 |
+| Testes aprovados intactos | diff `507b6ac` em `tests/` = 0 | OK |
+
+### Achados abertos
+
+Nenhum `BLOCKING` ou `MAJOR`.
+
+| ID | Severidade | Evidência | Achado | Correção esperada |
+|---|---|---|---|---|
+| S-I01 | `SUGGESTION` | `settings.py` L247–L250 | Nota de pipeline ainda descreve o gate de interfaces (“corpo após unitários”); implementação já existe. | Remover/atualizar a nota na etapa Blue (docs only). |
+| S-I02 | `SUGGESTION` | `settings.py` L33, L257 | `_NativePath = type(Path())` é equivalente a `Path(...)`; indirection desnecessária. | Preferir `Path(raw)` na Blue se tocar o trecho. |
+| S-I03 | `SUGGESTION` | design §2.6 vs repo | `tests/conftest.py` previsto no design; ausente. BDD não exige. | Opcional na Blue ou task futura se fixtures forem necessárias. |
+
+### O que está aderente (não bloqueia)
+
+- Contrato `load_settings` / `AppSettings` / `SettingsBootstrapError` implementado sem portas de domínio.
+- Windows first-class no README (PowerShell, cmd, `py -3.12`, ExecutionPolicy, invoke sem activate) e Docker/T19 explícito sem `.venv` do host.
+- Harness com cobertura 100% (≥95%); suíte aprovada verde sem alteração dos testes.
+- Snapshot privado `_AppSettingsSnapshot` satisfaz o Protocol sem expor API de domínio.
+
+### Bloqueios para aprovação
+
+Nenhum.
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — implementação aderente a design `0.2.0`, interfaces `0.2.0`, BDD e unitários aprovados. Pronto para gate HITL de aprovação humana da implementação. **Não iniciar Blue** até aprovação humana; sugestões S-I01..S-I03 podem entrar na Blue após HITL.
+
+---
+
+## Review Blue — Tech Lead Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | Refatoração Blue (`refactoring.md`, `settings.py` pós B-01) |
+| Metas base | B-01, B-02, B-03, B-P (`refactoring.md` passo 16) |
+| Data | 2026-07-18 |
+| Branch | `feature/github-etl-mcp-rag-T01-project-foundation` |
+| Resultado | `BLUE_APPROVED_BY_ARCHITECT` |
+
+### Checks executados
+
+| Check | Resultado |
+|---|---|
+| Leitura `refactoring.md` §5 / `settings.py` / UT-22 | OK |
+| B-01 (nota pipeline) | **DONE** — docstring “Implementação” (L247–L249); sem stub pendente |
+| B-02 (`Path` direto) | Tentativa falhou UT-22; revertida; meta → **`WONT_APPLY`** |
+| B-03 (`conftest.py`) | **DEFERRED** |
+| `.venv/bin/python -m pytest tests/unit tests/bdd -q` | 37 passed; cobertura 100% |
+| Microbenchmark §2.1 | typed ~11.8 ms / empty ~6.8 ms ×10k — ordem do baseline (B-P OK) |
+| Testes aprovados alterados? | **Não** |
+
+### Achados
+
+| ID | Severidade | Evidência | Achado | Decisão |
+|---|---|---|---|---|
+| B-02 / S-I02 | — (meta revisada) | UT-22 L315–L330; Python 3.14 `Path` vs `os.name`; `settings.py` L33 `_NativePath` | Premissa “`_NativePath` ≡ `Path(...)`” é falsa sob mock de `os.name`: `Path` instancia `PosixPath`/`WindowsPath` e quebra igualdade exigida por I-T01-014/UT-22. | **WONT_APPLY** — manter `_NativePath = type(Path())` (classe nativa fixada no import). Sem mudança de testes. |
+| — | `BLOCKING`/`MAJOR` | — | Nenhum aberto | — |
+
+### Resolução das metas
+
+| Meta | Status |
+|---|---|
+| B-01 | `APPLIED` |
+| B-02 | `WONT_APPLY` (manter `_NativePath` por compatibilidade OS-agnostic / UT-22) |
+| B-03 | `DEFERRED` |
+| B-P | `OK` |
+
+### Decisão
+
+`BLUE_APPROVED_BY_ARCHITECT` — Blue concluída sem regressão de comportamento, contrato ou cobertura. Pode seguir para QA (passo 19: suites, regressão, cobertura ≥95%).
+
+---
+
+## QA final — validação pré-HITL de implementação
+
+| Campo | Valor |
+|---|---|
+| Autor | QA Engineer |
+| Data | 2026-07-18 |
+| Branch | `feature/github-etl-mcp-rag-T01-project-foundation` |
+| Pré-condição | Blue `BLUE_APPROVED_BY_ARCHITECT` |
+| Unitários base | `0.1.0` / candidato `507b6ac` (`HUMAN_UNIT_TESTS_APPROVED`) |
+| Resultado | `VERIFICATION_PASSED` |
+
+### Integridade dos testes aprovados
+
+| Check | Resultado |
+|---|---|
+| `git diff 507b6ac -- tests/` | **vazio** (0 bytes) — BDD e unitários **não** adulterados pós-aprovação |
+
+### Comandos executados
+
+```bash
+git diff 507b6ac -- tests/
+.venv/bin/python -m pytest tests/unit -q --cov=github_rag --cov-fail-under=95
+.venv/bin/python -m pytest tests/bdd -q --no-cov
+.venv/bin/python -m pytest tests/ -q --cov=github_rag --cov-fail-under=95
+.venv/bin/python -m pytest tests/unit tests/bdd -v --cov=github_rag --cov-report=term-missing --cov-fail-under=95
+```
+
+### Resultados
+
+| Suite | Resultado |
+|---|---|
+| Unitários (`tests/unit`) | **27 passed** (36 subtests) |
+| BDD (`tests/bdd`) | **10 passed** (FND-01..FND-10) |
+| Regressão completa (`tests/`) | **37 passed** |
+
+### Cobertura
+
+| Item | Valor |
+|---|---|
+| `pyproject.toml` `[tool.coverage.report] fail_under` | **95** (confirmado) |
+| Cobertura total (`github_rag`) | **100.00%** (44 stmts, 0 miss, 2 branches, 0 partial) |
+| `settings.py` | **100%** |
+| Gate `--cov-fail-under=95` | **atingido** |
+
+### Achados
+
+Nenhum. Sem regressão; sem adulteração de testes; cobertura ≥95%.
+
+### Decisão
+
+`VERIFICATION_PASSED` — pronto para **HITL de aprovação humana da implementação**.

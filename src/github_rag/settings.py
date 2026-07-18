@@ -12,21 +12,25 @@ Motivo da separação
 Compatibilidade — Windows / macOS / Linux = primeira classe (não best-effort)
     Metade da equipe desenvolve em Windows; o contrato trata Windows com a mesma
     obrigatoriedade que macOS e Linux. Nomes de env são OS-agnostic. Paths usam
-    ``pathlib.Path`` (sem hardcode de ``\\`` ou ``/``). ``CONFIG_PATH`` aceita
+    ``pathlib.Path`` sem hardcode de separadores. ``CONFIG_PATH`` aceita
     paths nativos Windows (drive/UNC) e POSIX.
 
 venv (dev local) × Docker/T19 (entrega)
     Dev local: processo pode rodar no venv do host (Windows PowerShell/cmd,
     macOS ou Linux). Entrega padronizada (T19): imagem **não monta** e **não
     usa** o ``.venv`` do host — motivo alinhado à entrega via Docker para equipe
-    mista. Este módulo não depende de layout ``Scripts\\`` vs ``bin/``.
+    mista. Este módulo não depende do layout do ambiente virtual.
 """
 
 from __future__ import annotations
 
+import os
 from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol, runtime_checkable
+
+_NativePath = type(Path())
 
 # ---------------------------------------------------------------------------
 # Constantes de contrato (nomes de env + defaults aprovados)
@@ -179,6 +183,32 @@ class AppSettings(Protocol):
         ...
 
 
+@dataclass(frozen=True)
+class _AppSettingsSnapshot:
+    """Snapshot concreto e imutável do contrato ``AppSettings``."""
+
+    index_workers: int
+    query_workers: int
+    config_path: Path | None
+
+
+def _load_worker(
+    environ: Mapping[str, str],
+    name: str,
+    default: int,
+) -> int:
+    """Converte uma env de worker ou aplica seu default quando blank."""
+    raw_value = environ.get(name)
+    if raw_value is None or not raw_value.strip():
+        return default
+    try:
+        return int(raw_value)
+    except ValueError as error:
+        raise SettingsBootstrapError(
+            f"{name}: value must be a valid integer"
+        ) from error
+
+
 def load_settings(
     environ: Mapping[str, str] | None = None,
 ) -> AppSettings:
@@ -199,7 +229,7 @@ def load_settings(
         - Sem I/O de arquivo, rede, DB ou parse JSON.
         - Sem logging de valores de env.
         - Sem validação min/max de workers (T04).
-        - OS-agnostic: não assume shell, ``Scripts\\``, ``bin/activate`` nem
+        - OS-agnostic: não assume shell ou layout do ambiente virtual, nem
           ramifica defaults por sistema operacional.
 
     Erros
@@ -214,9 +244,26 @@ def load_settings(
         nem usa o ``.venv`` do host. Diferença de OS só no formato do string de
         ``CONFIG_PATH``, sempre via ``pathlib.Path``.
 
-    Nota de pipeline (T01 — gate de interfaces)
-        Esta assinatura é a superfície de contrato. O corpo concreto (leitura,
-        conversão, construção do snapshot) é implementado pelo Developer após
-        aprovação dos testes unitários — não nesta etapa. Stub permanece ``...``.
+    Implementação
+        A carga produz um snapshot imutável que satisfaz ``AppSettings``.
     """
-    ...
+    source = os.environ if environ is None else environ
+    raw_config_path = source.get(ENV_CONFIG_PATH)
+    config_path = (
+        None
+        if raw_config_path is None or not raw_config_path.strip()
+        else _NativePath(raw_config_path)
+    )
+    return _AppSettingsSnapshot(
+        index_workers=_load_worker(
+            source,
+            ENV_INDEX_WORKERS,
+            DEFAULT_INDEX_WORKERS,
+        ),
+        query_workers=_load_worker(
+            source,
+            ENV_QUERY_WORKERS,
+            DEFAULT_QUERY_WORKERS,
+        ),
+        config_path=config_path,
+    )
