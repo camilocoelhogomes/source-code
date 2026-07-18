@@ -278,3 +278,25 @@ Falha na coleta com `ModuleNotFoundError: No module named 'github_rag.index.vect
 ### Decisão
 
 `BLUE_APPROVED_BY_ARCHITECT` — Blue encerrado; seguir documentação/changelog e PR.
+
+---
+
+## Review — Docs / changelog
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `CHANGELOG.md` + `README.md` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — entrada T13 no changelog e seção README `index.vector`.

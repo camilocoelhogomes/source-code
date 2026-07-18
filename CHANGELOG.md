@@ -15,6 +15,15 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 ### Adicionado
 
 - Dependência de projeto `GitPython>=3.1`.
+- Índice vetorial Qdrant + embeddings (T13): módulo `github_rag.index.vector`
+  com portas `VectorStore` / `Embedder`, adaptadores `QdrantVectorStore`
+  (`qdrant-client`) e `OpenAICompatibleEmbedder` (`openai`, só embeddings) —
+  DEC-004/015, BR-023, BDD-010/024.
+- Contrato `EnrichedChunk` / `ChunkMetadata` (chunk Tree-sitter + metadados
+  SLM), `replace_repo_commit` (substitui vetores do commit anterior), payload
+  Qdrant com schema estável e point id UUID v5; erros tipados
+  (`VectorStoreError`, `EmbeddingError` e subclasses).
+- Dependências de projeto `qdrant-client>=1.12` e `openai>=1.40`.
 - Chunking semântico Tree-sitter (T11): porta `ContextualChunker` e
   implementação `TreeSitterContextualChunker` com grammars oficiais
   (`tree-sitter` + python/java/javascript/typescript/markdown) — única fonte
@@ -62,8 +71,8 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 - Desenvolvimento local com `.venv` documentado para Windows PowerShell,
   Windows cmd, macOS e Linux.
 - Harness pytest/pytest-cov com falha automática abaixo de 95% de cobertura.
-- Testes unitários e BDD: 367 testes aprovados (1 pulado sem Docker),
-  cobertura ≥95% (inclui T11 Tree-sitter chunker).
+- Testes unitários e BDD com cobertura ≥95% (inclui T11 Tree-sitter e T13
+  Qdrant/embeddings).
 - Normalização cross-platform de EOL e ignores para `.venv`, cobertura,
   caches e `*.egg-info`.
 
