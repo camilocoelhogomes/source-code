@@ -146,13 +146,20 @@ class OpenAICompatibleMetadataGenerator:
                 path=chunk.path,
             ) from exc
 
-        if content is None or (isinstance(content, str) and not content.strip()):
+        if content is None:
             raise MetadataModelError(
                 "resposta vazia do modelo",
                 chunk_id=chunk.chunk_id,
                 path=chunk.path,
             )
-        return content if isinstance(content, str) else str(content)
+        text = content if isinstance(content, str) else str(content)
+        if not text.strip():
+            raise MetadataModelError(
+                "resposta vazia do modelo",
+                chunk_id=chunk.chunk_id,
+                path=chunk.path,
+            )
+        return text
 
     def _parse_metadata(self, content: str, chunk: SemanticChunk) -> ChunkMetadata:
         try:

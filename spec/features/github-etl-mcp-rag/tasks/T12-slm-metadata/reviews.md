@@ -147,3 +147,58 @@ Artefatos BDD, interfaces e unit-test-plan estão prontos para review. **Não ma
 ### Decisão
 
 `READY_FOR_ARCHITECT_REVIEW` — implementação pronta para review Architect. **Não** `BLUE_READY_FOR_REVIEW`.
+
+---
+
+## Review — Implementação (vs design/interfaces APPROVED)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `src/github_rag/index/metadata/*` + testes T12 |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| SDK oficial `openai` (não HTTP caseiro) | OK | `openai_slm.py` importa `openai`; UT-O09; sem httpx/requests/urllib |
+| Entrada per-chunk `SemanticChunk` | OK | `generate(self, chunk)`; porta Protocol; Fake N× |
+| Default Qwen Coder 3B | OK | `SlmClientSettings.model` / `_DEFAULT_MODEL` = `qwen2.5-coder:3b`; UT-O06 |
+| Erros tipados sem fallback | OK | hierarquia `MetadataGenerationError`; SDK→Model; parse→Parse; config→Config |
+| `ChunkMetadata` frozen + `extra` imutável | OK | `@dataclass(frozen=True)`; `extra` tuple de pares; `to_payload()` |
+| Proibições BR-010 | OK | não inventa chunk_id; sem API MCP; handoff T17 não consome |
+| Construtor settings/client | OK | settings→valida; client-only→defaults; ambos None→`MetadataConfigError`; cria `openai.OpenAI` |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| `MAJOR` | Cobertura `openai_slm.py` ~81% com branches críticas descobertas (criação `OpenAI`, ambos None, choices vazios, intent/symbols inválidos, extra escalar) | coverage term-missing L62,69,74,134,140-143,195+ | Testes mínimos sem enfraquecer contratos | Corrigido — módulo 100% |
+| `SUGGESTION` | `response_format` JSON opcional do design §4.4 não usado | `openai_slm.generate` | Aceitável: parse estrito cobre MVP; runtime local pode não suportar | Aceito |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — implementação alinhada a design/interfaces. Prosseguir para etapa Blue.
+
+---
+
+## Review — Blue refactor
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `refactoring.md` + simplificações em `openai_slm.py` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous |
+| Resultado | `BLUE_APPROVED_BY_ARCHITECT` |
+
+Ver `refactoring.md` (baseline + resultados). Sem mudança de comportamento/contratos; suite verde.
