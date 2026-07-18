@@ -12,6 +12,7 @@ Motivo da separação
 
 from __future__ import annotations
 
+import os
 from collections.abc import Mapping
 from typing import Protocol, runtime_checkable
 
@@ -65,9 +66,17 @@ class EnvironSecretResolver:
     """
 
     def __init__(self, environ: Mapping[str, str] | None = None) -> None:
-        """``environ is None`` ⇒ ambiente do processo (contrato; sem lógica aqui)."""
-        ...
+        """``environ is None`` ⇒ ambiente do processo."""
+        self._environ = os.environ if environ is None else environ
 
     def resolve(self, env_name: str) -> str:
-        """Stub de contrato — implementação real no gate Developer."""
-        ...
+        """Resolve a env sem expor valores em mensagens de falha."""
+        if not isinstance(env_name, str) or not env_name.strip():
+            raise SecretResolutionError("nome de variável de ambiente inválido")
+
+        value = self._environ.get(env_name)
+        if not isinstance(value, str) or not value.strip():
+            raise SecretResolutionError(
+                f"variável de ambiente {env_name!r} ausente ou vazia"
+            )
+        return value

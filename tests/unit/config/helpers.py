@@ -29,13 +29,23 @@ def github_connection(
     orgs: list[str] | None = None,
     repos: list[str] | None = None,
     branches: list[str] | None = None,
-    token: Any = None,
+    token: Any = ...,
     token_env: str = TOKEN_ENV_NAME,
     extra: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    """Monta conexão github de teste.
+
+    ``token=...`` (default/Ellipsis): usa ``{"env": token_env}`` válido.
+    ``token=None``: grava JSON null (formato inválido — UT-L17).
+    Qualquer outro valor: usado como campo ``token`` literal.
+    """
+    if token is ...:
+        token_value: Any = {"env": token_env}
+    else:
+        token_value = token
     conn: dict[str, Any] = {
         "type": "github",
-        "token": {"env": token_env} if token is None else token,
+        "token": token_value,
         "orgs": orgs if orgs is not None else ["my-org"],
         "repos": (
             repos

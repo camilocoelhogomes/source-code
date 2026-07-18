@@ -712,6 +712,41 @@ class TestLoaderPartialAndInjection(unittest.TestCase):
             list(second.connections["gh"].repos),
         )
 
+    def test_ut_l36_path_not_pathlib_raises(self) -> None:
+        with self.assertRaises(ConfigLoadError) as ctx:
+            ConfigLoader().load("/tmp/not-a-path-object.json")  # type: ignore[arg-type]
+        self.assertIn("inválido", str(ctx.exception).lower())
+
+    def test_ut_l37_root_json_array_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = write_raw("[]", Path(tmp))
+            exc = _assert_raises_load_error(
+                lambda: load_with_environ(path, environ={})
+            )
+        self.assertIn("objeto", str(exc).lower())
+
+    def test_ut_l38_connection_value_not_object(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = write_config({"connections": {"gh": "not-an-object"}}, Path(tmp))
+            exc = _assert_raises_load_error(
+                lambda: load_with_environ(path, environ={})
+            )
+        self.assertIn("gh", str(exc))
+
+    def test_ut_l39_resolver_returns_blank_translated(self) -> None:
+        class BlankResolver:
+            def resolve(self, env_name: str) -> str:
+                return "   "
+
+        payload = {"connections": {"gh": github_connection()}}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = write_config(payload, Path(tmp))
+            loader = ConfigLoader(secret_resolver=BlankResolver())
+            with self.assertRaises(ConfigLoadError) as ctx:
+                loader.load(path)
+        self.assertIn(TOKEN_ENV_NAME, str(ctx.exception))
+        self.assertNotIn(SECRET_TOKEN_VALUE, str(ctx.exception))
+
 
 class TestLoaderSecretNotInErrors(unittest.TestCase):
     """UT-M06 / CFG-13 — valor ausente em mensagens de erro do loader."""

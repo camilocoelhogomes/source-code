@@ -14,6 +14,8 @@ Motivo da separação
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, field
+from types import MappingProxyType
 from typing import Literal, Protocol, runtime_checkable
 
 
@@ -160,3 +162,69 @@ class AppConfig(Protocol):
     def connections(self) -> Mapping[str, GitHubConnection | GitConnection]:
         """Mapa nome → conexão; ``{}`` é válido."""
         ...
+
+
+@dataclass(frozen=True)
+class _EnvSecretRef:
+    """Implementação imutável da referência declarada no JSON."""
+
+    env: str
+
+
+@dataclass(frozen=True)
+class _ResolvedSecret:
+    """Implementação opaca cujo valor não participa de str/repr."""
+
+    _value: str = field(repr=False)
+
+    def get_value(self) -> str:
+        """Retorna o valor somente por acesso explícito."""
+        return self._value
+
+    def __str__(self) -> str:
+        return "<redacted>"
+
+    def __repr__(self) -> str:
+        return "_ResolvedSecret(<redacted>)"
+
+
+@dataclass(frozen=True)
+class _Revisions:
+    """Implementação imutável de revisions."""
+
+    branches: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class _GitHubConnection:
+    """Implementação imutável da conexão GitHub validada."""
+
+    orgs: tuple[str, ...]
+    repos: tuple[str, ...]
+    token: _EnvSecretRef
+    secret: _ResolvedSecret
+    revisions: _Revisions
+    type: Literal["github"] = field(default="github", init=False)
+
+
+@dataclass(frozen=True)
+class _GitConnection:
+    """Implementação imutável da conexão Git validada."""
+
+    url: str
+    revisions: _Revisions
+    type: Literal["git"] = field(default="git", init=False)
+
+
+@dataclass(frozen=True)
+class _AppConfig:
+    """Implementação imutável do snapshot completo."""
+
+    connections: Mapping[str, GitHubConnection | GitConnection]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "connections",
+            MappingProxyType(dict(self.connections)),
+        )
