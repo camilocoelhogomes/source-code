@@ -4,8 +4,9 @@
 
 - **Feature ID:** `github-etl-mcp-rag`
 - **Versão:** 0.3.0
-- **Estado:** `HUMAN_REQUIREMENTS_APPROVAL`
-- **Natureza:** candidato aguardando aprovação humana; nenhuma aprovação está registrada.
+- **Estado:** `ENGINEERING_REFINEMENT`
+- **Natureza:** requisitos aprovados; em refinamento de engenharia.
+- **Aprovação humana:** `aprovo` em 2026-07-18 por `camilocoelhogomes` (commit candidato `71ed647`).
 - **Rastreabilidade:** requisitos `REQ-*`, regras `BR-*`, decisões `DEC-*` e cenários `BDD-*`.
 
 ## Problema
