@@ -4,6 +4,14 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ## [Unreleased]
 
+### Alterado
+
+- Descoberta local (T20 / DT-001): `GitFilesystemInspector.inspect_repo` passa a
+  usar **GitPython** (`git.Repo`) em vez de parse ad-hoc de `.git` / refs /
+  `packed-refs` (BR-023, DEC-015). Contrato `LocalRepoDiscovery` e BDD-016/018
+  preservados; bare continua rejeitado; runtime requer pacote GitPython e
+  binário `git` no PATH.
+
 ### Adicionado
 
 - Sync do catálogo (T07): `CatalogSync` orquestra discovery GitHub + local →
@@ -11,6 +19,7 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
   sem indexação nem reconcile (handoff ENG-011 → T14). Origem/conexão no
   catálogo ativo (BDD-001/016/021/023); ausência = soft-delete sem estado
   extra fora de REQ-020.
+- Dependência de projeto `GitPython>=3.1`.
 - Descoberta GitHub (T05): `GitHubRepoDiscovery` lista repositórios por org
   via token resolvido em T02, filtra por wildcards de inclusão (BR-022) e
   expõe `DiscoveredGitHubRepo` sem serializar o segredo (BDD-001/014/019).
