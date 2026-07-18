@@ -9,7 +9,12 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 - Descoberta GitHub (T05): `GitHubRepoDiscovery` lista repositórios por org
   via token resolvido em T02, filtra por wildcards de inclusão (BR-022) e
   expõe `DiscoveredGitHubRepo` sem serializar o segredo (BDD-001/014/019).
-- Porta HTTP mockável `GitHubApiClient` com paginação da API GitHub.
+- Porta mockável `GitHubApiClient` com iteração de repositórios via PyGithub.
+- `LocalRepoDiscovery` (T06): expande URLs `file://` com glob em volumes montados,
+  valida repositório Git e branch `main`, identifica origem `local` e registra
+  issues por conexão/path sem abortar outras conexões (BDD-016, BDD-018).
+- Camada `github_rag.sources.local` com `GitFilesystemInspector` injetável para
+  testes; convenção de mount `/repos` documentada (ENG-005).
 - Camada de persistência do catálogo (T03): domínio puro (`RepoState`,
   `RepoOrigin`, `FileStage`, máquina de estados fechada REQ-020), porta
   `CatalogRepository`, fake in-memory e adaptador PostgreSQL (SQLAlchemy 2.x +
@@ -40,8 +45,7 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 - Desenvolvimento local com `.venv` documentado para Windows PowerShell,
   Windows cmd, macOS e Linux.
 - Harness pytest/pytest-cov com falha automática abaixo de 95% de cobertura.
-- Testes unitários e BDD: 277 testes aprovados (1 pulado sem Docker),
-  161 subtests, cobertura de 99.18% (T01+T02+T03+T04+T05).
+- Testes unitários e BDD: cobertura ≥95% (T01+T02+T03+T04+T05+T06).
 - Normalização cross-platform de EOL e ignores para `.venv`, cobertura,
   caches e `*.egg-info`.
 

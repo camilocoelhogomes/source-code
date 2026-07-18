@@ -59,8 +59,8 @@ python -m pytest
 
 O comando executa testes unitários e BDD com relatório de cobertura no
 terminal. O projeto exige cobertura mínima de 95%; a execução falha
-automaticamente abaixo desse limite. A suíte completa atual está em 277
-testes (1 pulado sem Docker) com cobertura de 99.18% (T01–T05).
+automaticamente abaixo desse limite. A suíte completa atual cobre T01–T06
+com cobertura mínima de 95% (1 teste pulado sem Docker).
 
 ## Configuração de conexões (T02)
 
