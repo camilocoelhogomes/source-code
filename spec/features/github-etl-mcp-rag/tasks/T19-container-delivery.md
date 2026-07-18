@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T19-container-delivery` |
 | Feature | `github-etl-mcp-rag` |
-| Estado | `HUMAN_PLAN_APPROVAL` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Onda | W8 |
 
 ## Objetivo

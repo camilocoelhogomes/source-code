@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T14-indexing-orchestrator` |
 | Feature | `github-etl-mcp-rag` |
-| Estado | `HUMAN_PLAN_APPROVAL` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Onda | W5 |
 
 ## Objetivo

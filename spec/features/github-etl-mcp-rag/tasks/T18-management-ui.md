@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T18-management-ui` |
 | Feature | `github-etl-mcp-rag` |
-| Estado | `HUMAN_PLAN_APPROVAL` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Onda | W7 |
 
 ## Objetivo

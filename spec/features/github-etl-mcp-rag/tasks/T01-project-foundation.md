@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T01-project-foundation` |
 | Feature | `github-etl-mcp-rag` |
-| Estado | `HUMAN_PLAN_APPROVAL` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Onda | W0 |
 
 ## Objetivo

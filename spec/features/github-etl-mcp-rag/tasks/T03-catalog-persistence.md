@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T03-catalog-persistence` |
 | Feature | `github-etl-mcp-rag` |
-| Estado | `HUMAN_PLAN_APPROVAL` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Onda | W1 |
 
 ## Objetivo

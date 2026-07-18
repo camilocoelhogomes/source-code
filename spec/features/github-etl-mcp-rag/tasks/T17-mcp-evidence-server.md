@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T17-mcp-evidence-server` |
 | Feature | `github-etl-mcp-rag` |
-| Estado | `HUMAN_PLAN_APPROVAL` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Onda | W7 |
 
 ## Objetivo

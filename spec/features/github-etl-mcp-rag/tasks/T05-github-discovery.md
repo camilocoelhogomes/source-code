@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T05-github-discovery` |
 | Feature | `github-etl-mcp-rag` |
-| Estado | `HUMAN_PLAN_APPROVAL` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Onda | W2 |
 
 ## Objetivo

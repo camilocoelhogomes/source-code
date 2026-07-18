@@ -4,11 +4,11 @@
 |---|---|
 | Feature ID | `github-etl-mcp-rag` |
 | Versão do plano | `0.1.5` |
-| Estado | `HUMAN_PLAN_APPROVAL` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Requisitos base | `requirements.md` v0.3.0 (aprovado 2026-07-18, commit `71ed647`) |
 | Natureza | greenfield; sem código de aplicação pré-existente |
-| Revisão humana | rejeição parcial do candidato `f6272ef` (startup reconcile + reindex arquivo inteiro) em v0.1.5 |
-| Revisão PO | `PO_PLAN_APPROVED` em 2026-07-18 (v0.1.5); candidato aguardando aprovação humana do plano |
+| Revisão humana | plano v0.1.5 aprovado em 2026-07-18 por `camilocoelhogomes` (commit candidato `bfc9189`) |
+| Revisão PO | `PO_PLAN_APPROVED` em 2026-07-18 (v0.1.5) |
 
 ## 1. Arquitetura
 
@@ -259,4 +259,4 @@ Greenfield: sem migração de dados legados. Rollback = não promover imagem/tag
 - ENG-012: arquivos modificados reindexados por arquivo inteiro (T08/T14).
 - Sem regressão: cron; venv; Tree-sitter→SLM→Qdrant; REQ-020.
 
-Estado atual: `HUMAN_PLAN_APPROVAL` — candidato pronto para aprovação humana do plano. Nenhuma aprovação humana do plano está registrada neste artefato.
+Estado atual: `READY_FOR_IMPLEMENTATION` — plano aprovado; tasks `T01`–`T19` prontas para o pipeline de implementação.
