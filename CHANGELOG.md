@@ -36,7 +36,8 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 - Desenvolvimento local com `.venv` documentado para Windows PowerShell,
   Windows cmd, macOS e Linux.
 - Harness pytest/pytest-cov com falha automática abaixo de 95% de cobertura.
-- Testes unitários e BDD: suíte completa com cobertura ≥ 95% (T01+T02+T03+T04).
+- Testes unitários e BDD: 244 testes aprovados (1 pulado sem Docker),
+  161 subtests, cobertura de 99.29% (T01+T02+T03+T04).
 - Normalização cross-platform de EOL e ignores para `.venv`, cobertura,
   caches e `*.egg-info`.
 
