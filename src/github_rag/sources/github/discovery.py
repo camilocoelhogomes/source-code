@@ -11,7 +11,7 @@ Motivo da separação
 from __future__ import annotations
 
 from github_rag.config.schema import GitHubConnection
-from github_rag.sources.github.client import GitHubApiClient, HttpGitHubApiClient
+from github_rag.sources.github.client import GitHubApiClient, PyGithubApiClient
 from github_rag.sources.github.errors import GitHubDiscoveryError
 from github_rag.sources.github.models import DiscoveredGitHubRepo, GitHubRepoRaw
 from github_rag.sources.github.wildcard import matches_any_inclusion_pattern
@@ -24,11 +24,11 @@ class GitHubRepoDiscovery:
         Orquestrar listagem por org + filtro BR-022 usando ``connection.secret``.
 
     Motivo da separação
-        Consumidor T07 depende desta porta, não de urllib ou REST.
+        Consumidor T07 depende desta porta, não de PyGithub ou REST.
     """
 
     def __init__(self, client: GitHubApiClient | None = None) -> None:
-        self._client = client if client is not None else HttpGitHubApiClient()
+        self._client = client if client is not None else PyGithubApiClient()
 
     def discover(
         self,

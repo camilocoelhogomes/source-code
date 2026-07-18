@@ -1,26 +1,32 @@
-"""Porta HTTP para API GitHub — listagem de repos por org (T05).
+"""Porta GitHub — listagem de repos por org via PyGithub (T05).
 
 Responsabilidade deste módulo
-    Declarar ``GitHubApiClient`` e ``HttpGitHubApiClient`` com paginação
-    completa de ``/orgs/{org}/repos``.
+    Declarar ``GitHubApiClient`` e ``PyGithubApiClient`` com iteração
+    paginada de repositórios de organização.
 
 Motivo da separação
     Isola I/O de rede da orquestração e do filtro wildcard; permite mocks nos
-    testes (DEC-014).
+    testes (DEC-014). A iteração usa PyGithub para paginação e tipagem da API.
 """
 
 from __future__ import annotations
 
-import json
-import urllib.error
-import urllib.request
+from collections.abc import Callable, Iterator
 from typing import Protocol, runtime_checkable
+
+from github import Auth, Github, GithubException
+from github.GithubException import RateLimitExceededException
+from requests.exceptions import RequestException
 
 from github_rag.sources.github.errors import GitHubDiscoveryError
 from github_rag.sources.github.models import GitHubRepoRaw
 
-GITHUB_API_BASE = "https://api.github.com"
-DEFAULT_PER_PAGE = 100
+GithubFactory = Callable[[str], Github]
+
+
+def _default_github(token: str) -> Github:
+    """Cria cliente PyGithub autenticado por token Bearer."""
+    return Github(auth=Auth.Token(token))
 
 
 @runtime_checkable
@@ -31,115 +37,92 @@ class GitHubApiClient(Protocol):
         Retornar todos os repos acessíveis pelo token para a org informada.
 
     Motivo da separação
-        ``GitHubRepoDiscovery`` depende desta abstração, não de urllib/requests.
+        ``GitHubRepoDiscovery`` depende desta abstração, não de PyGithub.
     """
 
+    def iter_org_repos(self, org: str, *, token: str) -> Iterator[GitHubRepoRaw]:
+        """Itera repos da org; implementação deve paginar até esgotar."""
+        ...
+
     def list_org_repos(self, org: str, *, token: str) -> tuple[GitHubRepoRaw, ...]:
-        """Lista repos da org; implementação deve paginar até esgotar."""
+        """Lista repos da org materializando a iteração completa."""
         ...
 
 
-class HttpGitHubApiClient:
-    """Implementação HTTP via stdlib (urllib).
+class PyGithubApiClient:
+    """Implementação via PyGithub (iteração paginada nativa).
 
     Responsabilidade
-        Chamar REST GitHub com Bearer token e agregar páginas.
+        Expor ``iter_org_repos`` / ``list_org_repos`` sobre
+        ``Organization.get_repos``, sem vazar o token em erros.
 
     Motivo da separação
-        Implementação concreta injetável; produção usa stdlib sem nova dep.
+        Implementação concreta injetável; produção usa PyGithub em vez de
+        urllib manual.
     """
 
     def __init__(
         self,
         *,
-        api_base: str = GITHUB_API_BASE,
-        per_page: int = DEFAULT_PER_PAGE,
-        opener: urllib.request.OpenerDirector | None = None,
+        github_factory: GithubFactory | None = None,
+        repo_type: str = "all",
     ) -> None:
-        self._api_base = api_base.rstrip("/")
-        self._per_page = per_page
-        self._opener = opener if opener is not None else urllib.request.build_opener()
+        self._github_factory = (
+            github_factory if github_factory is not None else _default_github
+        )
+        self._repo_type = repo_type
 
-    def list_org_repos(self, org: str, *, token: str) -> tuple[GitHubRepoRaw, ...]:
-        """Lista todos os repos da org com paginação."""
+    def iter_org_repos(self, org: str, *, token: str) -> Iterator[GitHubRepoRaw]:
+        """Itera todos os repos da org via PyGithub (paginação automática)."""
         if not org.strip():
             raise GitHubDiscoveryError("organização GitHub inválida")
 
-        collected: list[GitHubRepoRaw] = []
-        page = 1
-
-        while True:
-            url = (
-                f"{self._api_base}/orgs/{org}/repos"
-                f"?page={page}&per_page={self._per_page}&type=all"
-            )
-            request = urllib.request.Request(
-                url,
-                headers={
-                    "Accept": "application/vnd.github+json",
-                    "Authorization": f"Bearer {token}",
-                    "X-GitHub-Api-Version": "2022-11-28",
-                },
-                method="GET",
-            )
-            try:
-                with self._opener.open(request, timeout=30) as response:
-                    payload = json.loads(response.read().decode("utf-8"))
-            except urllib.error.HTTPError as exc:
-                raise _http_error_to_discovery(exc, org=org) from exc
-            except urllib.error.URLError as exc:
-                raise GitHubDiscoveryError(
-                    f"falha de rede ao listar repositórios da org {org!r}"
-                ) from exc
-
-            if not isinstance(payload, list):
-                raise GitHubDiscoveryError(
-                    f"resposta inesperada da API GitHub para org {org!r}"
-                )
-
-            if not payload:
-                break
-
-            for item in payload:
-                if not isinstance(item, dict):
-                    continue
-                full_name = item.get("full_name")
-                name = item.get("name")
-                private = item.get("private", False)
+        try:
+            github = self._github_factory(token)
+            organization = github.get_organization(org)
+            for repo in organization.get_repos(type=self._repo_type):
+                full_name = getattr(repo, "full_name", None)
+                name = getattr(repo, "name", None)
+                private = getattr(repo, "private", False)
                 if (
                     isinstance(full_name, str)
                     and isinstance(name, str)
                     and "/" in full_name
                 ):
-                    collected.append(
-                        GitHubRepoRaw(
-                            full_name=full_name,
-                            name=name,
-                            private=bool(private),
-                        )
+                    yield GitHubRepoRaw(
+                        full_name=full_name,
+                        name=name,
+                        private=bool(private),
                     )
+        except RateLimitExceededException as exc:
+            raise GitHubDiscoveryError(
+                f"limite de taxa da API GitHub excedido ao listar org {org!r}"
+            ) from exc
+        except GithubException as exc:
+            raise _github_exception_to_discovery(exc, org=org) from exc
+        except RequestException as exc:
+            raise GitHubDiscoveryError(
+                f"falha de rede ao listar repositórios da org {org!r}"
+            ) from exc
 
-            if len(payload) < self._per_page:
-                break
-            page += 1
-
-        return tuple(collected)
+    def list_org_repos(self, org: str, *, token: str) -> tuple[GitHubRepoRaw, ...]:
+        """Lista todos os repos da org materializando ``iter_org_repos``."""
+        return tuple(self.iter_org_repos(org, token=token))
 
 
-def _http_error_to_discovery(
-    exc: urllib.error.HTTPError,
+# Alias de compatibilidade com artefatos T05 anteriores à revisão PyGithub.
+HttpGitHubApiClient = PyGithubApiClient
+
+
+def _github_exception_to_discovery(
+    exc: GithubException,
     *,
     org: str,
 ) -> GitHubDiscoveryError:
-    """Traduz HTTPError em GitHubDiscoveryError sem expor token."""
-    status = exc.code
-    remaining = exc.headers.get("X-RateLimit-Remaining") if exc.headers else None
+    """Traduz GithubException em GitHubDiscoveryError sem expor token."""
+    status = exc.status
 
     if status in (401, 403):
-        if remaining == "0":
-            return GitHubDiscoveryError(
-                f"limite de taxa da API GitHub excedido ao listar org {org!r}"
-            )
         return GitHubDiscoveryError(
             f"acesso negado ou token inválido ao listar org {org!r} (HTTP {status})"
         )

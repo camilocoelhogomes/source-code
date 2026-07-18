@@ -8,7 +8,11 @@ Motivo da separação
     ao layout interno ``client`` / ``wildcard`` / ``discovery``.
 """
 
-from github_rag.sources.github.client import GitHubApiClient, HttpGitHubApiClient
+from github_rag.sources.github.client import (
+    GitHubApiClient,
+    HttpGitHubApiClient,
+    PyGithubApiClient,
+)
 from github_rag.sources.github.discovery import GitHubRepoDiscovery
 from github_rag.sources.github.errors import GitHubDiscoveryError
 from github_rag.sources.github.models import DiscoveredGitHubRepo, GitHubRepoRaw
@@ -24,6 +28,7 @@ __all__ = [
     "GitHubRepoDiscovery",
     "GitHubRepoRaw",
     "HttpGitHubApiClient",
+    "PyGithubApiClient",
     "matches_any_inclusion_pattern",
     "matches_inclusion_pattern",
 ]

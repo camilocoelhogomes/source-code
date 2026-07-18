@@ -24,8 +24,11 @@ class FakeClient:
     def __init__(self, repos_by_org: dict[str, list[GitHubRepoRaw]]) -> None:
         self._repos_by_org = repos_by_org
 
+    def iter_org_repos(self, org: str, *, token: str):
+        yield from self._repos_by_org.get(org, [])
+
     def list_org_repos(self, org: str, *, token: str) -> tuple[GitHubRepoRaw, ...]:
-        return tuple(self._repos_by_org.get(org, []))
+        return tuple(self.iter_org_repos(org, token=token))
 
 
 class TestGH01DiscoverByWildcards(unittest.TestCase):

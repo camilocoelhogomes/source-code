@@ -18,9 +18,12 @@ class FakeGitHubClient:
         self._repos_by_org = repos_by_org
         self.calls: list[tuple[str, str]] = []
 
-    def list_org_repos(self, org: str, *, token: str) -> tuple[GitHubRepoRaw, ...]:
+    def iter_org_repos(self, org: str, *, token: str):
         self.calls.append((org, token))
-        return tuple(self._repos_by_org.get(org, []))
+        yield from self._repos_by_org.get(org, [])
+
+    def list_org_repos(self, org: str, *, token: str) -> tuple[GitHubRepoRaw, ...]:
+        return tuple(self.iter_org_repos(org, token=token))
 
 
 class TestGitHubRepoDiscovery(unittest.TestCase):

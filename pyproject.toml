@@ -12,6 +12,7 @@ dependencies = [
     "sqlalchemy>=2",
     "alembic",
     "psycopg[binary]",
+    "PyGithub>=2",
 ]
 
 [project.optional-dependencies]
@@ -28,7 +29,8 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=github_rag --cov-report=term-missing"
+# importlib evita colisão do dir tests/.../github com o pacote PyGithub `github`.
+addopts = "--import-mode=importlib --cov=github_rag --cov-report=term-missing"
 markers = [
     "integration: testes que exigem PostgreSQL real (Docker/testcontainers); pulados se indisponível",
 ]

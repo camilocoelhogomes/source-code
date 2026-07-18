@@ -20,8 +20,9 @@
 |---|---|---|
 | `DiscoveredGitHubRepo` | `sources/github/models.py` | Snapshot de repo descoberto |
 | `GitHubRepoRaw` | `sources/github/models.py` | DTO da API (interno ao client) |
-| `GitHubApiClient` | `sources/github/client.py` | Porta HTTP mockável |
-| `HttpGitHubApiClient` | `sources/github/client.py` | Implementação urllib |
+| `GitHubApiClient` | `sources/github/client.py` | Porta mockável |
+| `PyGithubApiClient` | `sources/github/client.py` | Implementação via PyGithub |
+| `HttpGitHubApiClient` | `sources/github/client.py` | Alias de `PyGithubApiClient` |
 | `GitHubDiscoveryError` | `sources/github/discovery.py` | Erro tipado sem segredo |
 | `GitHubRepoDiscovery` | `sources/github/discovery.py` | Orquestrador de descoberta |
 | `matches_inclusion_pattern` | `sources/github/wildcard.py` | Filtro BR-022 |
@@ -70,10 +71,11 @@ class DiscoveredGitHubRepo:
 ```python
 @runtime_checkable
 class GitHubApiClient(Protocol):
+    def iter_org_repos(self, org: str, *, token: str) -> Iterator[GitHubRepoRaw]: ...
     def list_org_repos(self, org: str, *, token: str) -> Sequence[GitHubRepoRaw]: ...
 ```
 
-- **Responsabilidade:** listar todos os repos de uma org (paginação interna na implementação HTTP).
+- **Responsabilidade:** iterar/listar todos os repos de uma org (paginação via PyGithub).
 - **Motivo da separação:** isola I/O de rede da lógica de wildcard e do modelo T02; testes injetam fake.
 - **Erros:** implementação levanta `GitHubDiscoveryError` (sem token na mensagem).
 
@@ -91,7 +93,7 @@ class GitHubRepoDiscovery:
 ```
 
 - **Responsabilidade:** orquestrar listagem por org + filtro de inclusão usando `connection.secret`.
-- **Motivo da separação:** consumidor T07 depende de uma porta de domínio, não de urllib nem da API REST.
+- **Motivo da separação:** consumidor T07 depende de uma porta de domínio, não de PyGithub nem da API REST.
 - **Invariantes:** assume `GitHubConnection` válida (T02); deduplica por `full_name`; ordena por `full_name`.
 - **Erros:** `GitHubDiscoveryError` propagado do client ou envolvido com contexto de conexão/org.
 
@@ -112,7 +114,7 @@ class GitHubRepoDiscovery:
 ```python
 from github_rag.sources.github.discovery import GitHubDiscoveryError, GitHubRepoDiscovery
 from github_rag.sources.github.models import DiscoveredGitHubRepo
-from github_rag.sources.github.client import GitHubApiClient, HttpGitHubApiClient
+from github_rag.sources.github.client import GitHubApiClient, PyGithubApiClient
 ```
 
 ## 5. Handoff T07

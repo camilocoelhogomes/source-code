@@ -75,12 +75,13 @@ falha API/auth/rede → GitHubDiscoveryError (mensagem sem valor do token)
 
 ### 4.2 `GitHubApiClient` (Protocol)
 
-- `list_org_repos(org: str, *, token: str) -> Sequence[GitHubRepoRaw]`.
+- `iter_org_repos(org: str, *, token: str) -> Iterator[GitHubRepoRaw]`.
+- `list_org_repos(org: str, *, token: str) -> Sequence[GitHubRepoRaw]` (materializa a iteração).
 - `GitHubRepoRaw`: `full_name`, `name`, `private`.
-- Implementação default `HttpGitHubApiClient` usa `urllib.request` (stdlib — sem nova dep).
-- Paginação: `page`/`per_page=100` até resposta vazia ou `< per_page`.
+- Implementação default `PyGithubApiClient` usa `github.Github` / `Organization.get_repos`.
+- Paginação: nativa do `PaginatedList` do PyGithub.
 - Erros HTTP 401/403 → `GitHubDiscoveryError` genérico de autenticação/acesso.
-- Rate limit 403 com header `X-RateLimit-Remaining: 0` → mensagem de rate limit (sem token).
+- `RateLimitExceededException` → mensagem de rate limit (sem token).
 
 ### 4.3 Wildcard de inclusão
 
