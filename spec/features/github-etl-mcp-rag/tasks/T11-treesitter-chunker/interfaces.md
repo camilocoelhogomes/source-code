@@ -6,10 +6,10 @@
 | Task | `T11-treesitter-chunker` |
 | Autor | Implementation Task Runner + Tech Lead Architect |
 | Data | 2026-07-18 |
-| Estado | `PENDING_ARCHITECT_REVIEW` |
+| Estado | `APPROVED_BY_ARCHITECT` |
 | Versão | `0.2.0` |
 | Design base | `0.2.0` (`APPROVED_BY_ARCHITECT`) |
-| BDD base | `0.2.0` (`PENDING_ARCHITECT_REVIEW`) |
+| BDD base | `0.2.0` (`APPROVED_BY_ARCHITECT`) |
 | Branch | `feature/github-etl-mcp-rag-T11-treesitter-chunker` |
 | Trigger | Review humano PR #9 — yaml/json/xml/toml |
 
@@ -19,6 +19,7 @@
 |---|---|---|---|---|
 | 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.1` | Correções: `language_from_path` → `None`; `OfficialGrammarRegistry` + TS/TSX; `SelectedNode`; `path_extension` com ponto; `ChunkingError.__init__`. |
 | 2026-07-18 | Tech Lead Architect | `PENDING` | `0.2.0` | Ampliação enum/extensões/registry/seletores para yaml/json/xml/toml. |
+| 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.2.0` | Gate conjunto com BDD + unit-test-plan v0.2.1; MAJORs kinds estruturais fechados. |
 
 ## 1. Escopo e exclusões
 

@@ -344,3 +344,48 @@ Resultado: falhas pela razão esperada (impl v0.1 ainda sem config):
 ### Decisão
 
 `CHANGES_REQUIRED` — corrigir asserts/plan (MAJORs) e reapresentar o trio BDD/interfaces/unit-tests para aprovação Architect. Não avançar implementação config até gate limpo.
+
+---
+
+## Review — BDD / Interfaces / Unit+BDD red (v0.2.1 — re-review MAJOR)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `bdd.md` 0.2.0 + `interfaces.md` 0.2.0 + `unit-test-plan.md` 0.2.1 + testes RED |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Trigger | Correção MAJOR commits `02cc081` / follow-up `caa7fc3` |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| MAJORs anteriores fechados | OK | TS-16/C20: só `document`/`block_mapping_pair`; TS-17/C21: só `object`/`pair`/`array`; TS-18/C22: `len(element_ranges) >= 2`; TS-19/C23: só `table`/`pair`; plano UT-C20..C23 Esperado alinhado |
+| DEC-003 — chunking estrutural config | OK | Asserts feliz path não aceitam root-only; BDD TS-16..19 + UT-N05 |
+| DEC-015 — grammars oficiais | OK | interfaces §3.9; UT-G06; design §4.2 |
+| Alinhamento design v0.2.0 | OK | enum/extensões/seletores/XML `language_xml` |
+| RED | OK | `GrammarUnavailableError` / `AttributeError` (enum incompleto) — impl config ainda ausente |
+
+### Achados anteriores — status
+
+| Severidade | Achado | Status |
+|---|---|---|
+| `MAJOR` | kinds YAML aceitam `stream` | Corrigido |
+| `MAJOR` | kinds JSON/TOML aceitam `document` sozinho | Corrigido |
+| `MAJOR` | XML ninhos `>= 1` | Corrigido (`>= 2`) |
+| `MAJOR` | plano UT-C20..C23 sem kinds | Corrigido (v0.2.1) |
+| `SUGGESTION` | docstring BDD TS-01..15 | Corrigido (TS-01..TS-19) |
+| `SUGGESTION` | TS-18 não prova `language_xml` vs `language_dtd` | Aberto (não bloqueia) |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+| `SUGGESTION` | TS-18 resolve só `assertIsNotNone` — não compara `language_xml` ≠ `language_dtd` | `test_treesitter_chunker.py` TS-18 | Opcional na impl/test GREEN |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — BDD 0.2.0, interfaces 0.2.0, unit-test-plan 0.2.1. Prosseguir para implementação config (Developer).

@@ -10,4 +10,7 @@
 | Implementação | — | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | Correções MAJOR (points, path, pins) |
 | Blue refactor | — | `BLUE_APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | Sem otimização especulativa |
 | BDD + Interfaces + Unit (config v0.2.0) | `0.2.0` | `CHANGES_REQUIRED` | Tech Lead Architect | 2026-07-18 | Asserts/plan enfraquecem kinds estruturais TS-16..19; RED OK; sem commit de aprovação |
+| BDD | `0.2.0` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | Config languages; gate conjunto v0.2.1 |
+| Interfaces | `0.2.0` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | SourceLanguage + language_xml + seletores config |
+| Unit tests | `0.2.1` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | MAJORs kinds estruturais fechados; RED OK |
 | Gate humano | PR | pendente | — | — | Único gate humano: review/merge no GitHub |

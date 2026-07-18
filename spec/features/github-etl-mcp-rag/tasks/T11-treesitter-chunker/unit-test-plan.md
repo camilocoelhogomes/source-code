@@ -6,7 +6,7 @@
 | Task | `T11-treesitter-chunker` |
 | Autor | QA Engineer |
 | Data | 2026-07-18 |
-| Estado | `PENDING_ARCHITECT_REVIEW` |
+| Estado | `APPROVED_BY_ARCHITECT` |
 | Versão | `0.2.1` |
 | Interfaces base | `0.2.0` |
 | Trigger | Review humano PR #9 — yaml/json/xml/toml; correção MAJOR (kinds estruturais) |

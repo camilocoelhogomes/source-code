@@ -4,7 +4,7 @@
 |---|---|
 | Feature | `github-etl-mcp-rag` |
 | Task | `T11-treesitter-chunker` |
-| Estado | `PENDING_ARCHITECT_REVIEW` |
+| Estado | `APPROVED_BY_ARCHITECT` |
 | Versão | `0.2.0` |
 | Design base | `0.2.0` (`APPROVED_BY_ARCHITECT`) |
 | Rastreabilidade | BDD-007 (etapa Tree-sitter); BDD-024; DEC-003, DEC-015; BR-005, BR-023; ENG-008 |
