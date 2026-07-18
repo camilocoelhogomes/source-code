@@ -6,6 +6,11 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- T02 config-loader: `ConfigLoader`, `SecretResolver`, schema tipado
+  (`AppConfig`, conexões `github`/`git`) — carga integral do JSON
+  Sourcebot-like em `CONFIG_PATH`, resolução `{ "env": "..." }` sem
+  vazamento de segredo, rejeição total sem cadastro parcial.
+- Exemplo de configuração em `examples/config.json`.
 - Fundação Python 3.12+ da T01 com layout `src/github_rag` e fronteiras de
   pacotes para as próximas tasks.
 - Contrato de bootstrap `AppSettings`, `load_settings` e

@@ -1,0 +1,31 @@
+{
+  "connections": {
+    "github-microservices": {
+      "type": "github",
+      "token": {
+        "env": "GITHUB_TOKEN"
+      },
+      "orgs": [
+        "my-org"
+      ],
+      "repos": [
+        "my-org/microservice-*",
+        "my-org/*-api"
+      ],
+      "revisions": {
+        "branches": [
+          "main"
+        ]
+      }
+    },
+    "local-microservices": {
+      "type": "git",
+      "url": "file:///repos/*",
+      "revisions": {
+        "branches": [
+          "main"
+        ]
+      }
+    }
+  }
+}
