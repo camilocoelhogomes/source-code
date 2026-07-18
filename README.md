@@ -76,6 +76,27 @@ chunks = TreeSitterContextualChunker().chunk(
 )
 ```
 
+## Metadados SLM por chunk (T12)
+
+Cada `SemanticChunk` (T11) é enriquecido via porta `MetadataGenerator`
+(`github_rag.index.metadata`). O adaptador default usa o SDK `openai`
+apontando a um runtime local OpenAI-compatible; modelo default
+`qwen2.5-coder:3b` (Qwen Coder 3B). Uma chamada = um chunk. Falhas são
+tipadas (`MetadataGenerationError` e subclasses). Tools MCP não usam esta
+porta (BR-010).
+
+```python
+from github_rag.index.metadata import (
+    OpenAICompatibleMetadataGenerator,
+    SlmClientSettings,
+)
+
+gen = OpenAICompatibleMetadataGenerator(
+    settings=SlmClientSettings(base_url="http://127.0.0.1:11434/v1"),
+)
+metadata = gen.generate(chunk)  # ChunkMetadata → metadata.to_payload()
+```
+
 ## Configuração de conexões (T02)
 
 O arquivo JSON apontado por `CONFIG_PATH` (via `AppSettings.config_path`)

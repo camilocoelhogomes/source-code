@@ -15,6 +15,13 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 ### Adicionado
 
 - Dependência de projeto `GitPython>=3.1`.
+- Metadados contextuais SLM por chunk (T12): porta `MetadataGenerator` e
+  adaptador `OpenAICompatibleMetadataGenerator` via SDK oficial `openai`
+  (OpenAI-compatible local; DEC-015/BDD-024). Default de modelo Qwen Coder 3B
+  (`qwen2.5-coder:3b`; DEC-006). Saída `ChunkMetadata` frozen + `to_payload()`
+  JSON-safe; erros tipados (`MetadataConfigError`, `MetadataModelError`,
+  `MetadataResponseParseError`); `FakeMetadataGenerator` para testes/T14.
+  Dependência `openai`. Proibido inventar chunks ou prosa MCP (BR-010).
 - Chunking semântico Tree-sitter (T11): porta `ContextualChunker` e
   implementação `TreeSitterContextualChunker` com grammars oficiais
   (`tree-sitter` + python/java/javascript/typescript/markdown) — única fonte
@@ -62,8 +69,8 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 - Desenvolvimento local com `.venv` documentado para Windows PowerShell,
   Windows cmd, macOS e Linux.
 - Harness pytest/pytest-cov com falha automática abaixo de 95% de cobertura.
-- Testes unitários e BDD: 367 testes aprovados (1 pulado sem Docker),
-  cobertura ≥95% (inclui T11 Tree-sitter chunker).
+- Testes unitários e BDD: cobertura ≥95% (inclui T11 Tree-sitter chunker e
+  T12 MetadataGenerator / SLM).
 - Normalização cross-platform de EOL e ignores para `.venv`, cobertura,
   caches e `*.egg-info`.
 
