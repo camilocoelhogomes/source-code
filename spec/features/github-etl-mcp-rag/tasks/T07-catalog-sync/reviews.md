@@ -59,3 +59,34 @@ Gate DESIGN v0.1.0: sync-only (sem indexação/ENG-011); soft-delete via T03 (`u
 ### Parecer
 
 Gate BDD v0.1.0: cenários CS-01..12 cobrem aceite, política de ausência, preservação, S-01 e exclusão de indexação/UI/reconcile. Sem BLOCKING/MAJOR. `APPROVED_BY_ARCHITECT`.
+
+## Gate INTERFACES — 2026-07-18
+
+| Campo | Valor |
+|---|---|
+| Artefato | `interfaces.md` v0.1.0 |
+| Reviewer | Tech Lead Architect |
+| Decisão | `APPROVED_BY_ARCHITECT` |
+
+### Checklist
+
+| # | Critério | Resultado |
+|---|---|---|
+| 1 | `CatalogSync` injeta discoveries + `CatalogRepository` | OK (`I-T07-001`, §3.3) |
+| 2 | Comentários de responsabilidade e motivo da separação em cada contrato | OK (§3.1–3.4) |
+| 3 | S-01: abort sem `upsert`/`deactivate` em `GitHubDiscoveryError` | OK (`I-T07-007`, algoritmo passo 1) |
+| 4 | S-02: mapeamento GitHub/local → `upsert_repository` + `local_issues` | OK (§4; `I-T07-004`..006) |
+| 5 | Sem CRUD de definições; sem indexação/reconcile | OK (§1, §5; `I-T07-009`) |
+| 6 | Compatível com contratos T02/T03/T05/T06 | OK (§6; assinaturas alinhadas a `repository.py` / discoveries) |
+
+### Achados
+
+| ID | Severidade | Evidência | Correção esperada | Resultado |
+|---|---|---|---|---|
+| S-01 | SUGGESTION | Gate DESIGN → `interfaces.md` `I-T07-007` / algoritmo passo 1 | Abort antes de qualquer mutação nesta execução | **Resolvido** |
+| S-02 | SUGGESTION | Gate DESIGN → `interfaces.md` §4 | Mapear `RepoOrigin` e `LocalDiscoveryResult.repos`/`issues` | **Resolvido** |
+| — | — | — | Sem BLOCKING/MAJOR abertos | — |
+
+### Parecer
+
+Gate INTERFACES v0.1.0: superfície sync-only com DI hexagonal; S-01/S-02 fechados; sem CRUD/reconcile/indexação. Sem BLOCKING/MAJOR. `APPROVED_BY_ARCHITECT`.

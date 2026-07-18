@@ -6,7 +6,7 @@
 | Task | `T07-catalog-sync` |
 | Autor | Implementation Task Runner + Tech Lead Architect |
 | Data | 2026-07-18 |
-| Estado | `DRAFT` |
+| Estado | `APPROVED_BY_ARCHITECT` |
 | Versão | `0.1.0` |
 | Design base | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
 | BDD base | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
@@ -158,7 +158,7 @@ Pacote `github_rag.app` exporta `run_catalog_sync`.
 
 ## 7. Checklist de aceite das interfaces
 
-- [ ] Comentários de responsabilidade e motivo da separação em cada contrato
-- [ ] S-01 (abort sem mutação) e S-02 (mapeamento origin/local) explicitados
-- [ ] Sem reconcile/indexação na superfície
-- [ ] Stubs/corpo `...` apenas até o gate de implementação (TDD)
+- [x] Comentários de responsabilidade e motivo da separação em cada contrato
+- [x] S-01 (abort sem mutação) e S-02 (mapeamento origin/local) explicitados
+- [x] Sem reconcile/indexação na superfície
+- [x] Stubs/corpo `...` apenas até o gate de implementação (TDD)
