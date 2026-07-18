@@ -175,3 +175,62 @@ Nenhum `BLOCKING` ou `MAJOR`.
 ### Resumo
 
 `APPROVED_BY_ARCHITECT` — M-UT-01/M-UT-02/S-UT-01 fechados; asserts SDK não colidem mais com `RepoInspection`. Pronto para implementação de produção (Developer).
+
+## Review — Implementação T20 (GitPython)
+
+| Campo | Valor |
+|---|---|
+| Data | 2026-07-18 |
+| Revisor | Tech Lead Architect |
+| Artefato | `src/github_rag/sources/local/git_fs.py` + `pyproject.toml` + testes T20 |
+| Design / interfaces base | design `0.1.1` / interfaces `0.1.0` |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Achados
+
+Nenhum `BLOCKING`, `MAJOR` ou `SUGGESTION`.
+
+### Critérios vs design 0.1.1 / interfaces
+
+| Critério | Evidência | Status |
+|---|---|---|
+| Zero parse ad-hoc refs/`packed-refs` | Removidos `_resolve_git_dir`, `_has_main_branch`, `_PACKED_REF_MAIN`; fonte sem `packed-refs` / `refs/heads` | OK |
+| `with Repo(...)` | `git_fs.py` L110 `with Repo(path) as repo:` | OK |
+| Bare rejeitado (D-T20-006) | L112–L117 → `reason="not a git repository"` | OK |
+| Reasons §3.2 / §7 | `not a directory` / `not a git repository` / `main branch not found`; `"main" in repo.heads` | OK |
+| SDK confinado | `from git import Repo` + `git.exc` só em `git_fs.py` | OK |
+| `GitPython>=3.1` | `pyproject.toml` L16 | OK |
+| `LocalRepoDiscovery` intacto | `discovery.py` fora do diff; assinaturas/orquestração T06 preservadas | OK |
+| Cobertura / testes | Evidência orquestrador: 318 passed, 99.43% global, `git_fs` 100%; smoke T20 unit+BDD verdes | OK |
+
+### Resumo
+
+`APPROVED_BY_ARCHITECT` — implementação fecha DT-001 no adaptador local conforme design 0.1.1. Autorizado avançar para etapa Blue (refatoração sem mudança de comportamento/contratos).
+
+## Review — Blue (refactoring.md) v0.1.0
+
+| Campo | Valor |
+|---|---|
+| Data | 2026-07-18 |
+| Revisor | Tech Lead Architect |
+| Artefato | `refactoring.md` v0.1.0 |
+| Resultado | `BLUE_APPROVED_BY_ARCHITECT` |
+
+### Achados
+
+| ID | Severidade | Evidência | Correção esperada |
+|---|---|---|---|
+| S-BLUE-01 | `SUGGESTION` | Worktree: `__init__.py` docstring T20; `test_git_fs._init_gitdir_file_repo` simplificado; `refactoring.md` §2 lista só B-01/B-02 | Opcional: registrar deltas Blue do worktree em §2 (docstring pacote + helper de fixture). Não altera contratos. |
+
+### Critérios Blue
+
+| Critério | Evidência | Status |
+|---|---|---|
+| Sem mudança de comportamento/contratos | B-01 docstring; B-02 sem merge/split; produção `inspect_repo`/`LocalRepoDiscovery` intactos pós-impl | OK |
+| Só simplificação justificada | Módulos já coesos pós-GitPython; helpers ad-hoc removidos na impl; Blue sem churn estrutural | OK |
+| Sem otimização especulativa | §2: I/O-bound; zero micro-opt; sem alegação de perf a validar | OK |
+| Baseline testes/cobertura | 318 passed / 99.43%; `git_fs` 100%; pós-Blue = baseline | OK |
+
+### Resumo
+
+`BLUE_APPROVED_BY_ARCHITECT` — Blue adequado: sem alteração de contratos, sem otimizações especulativas, fronteira adaptador já coesa. S-BLUE-01 não bloqueia.

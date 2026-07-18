@@ -38,33 +38,17 @@ def _init_git_repo(path: Path, *, with_main: bool = True) -> Repo:
 
 
 def _init_gitdir_file_repo(work_dir: Path, git_dir: Path) -> None:
-    work_dir.mkdir(parents=True, exist_ok=True)
-    repo = Repo.init(git_dir, mkdir=True)
-    # populate via a temp worktree then convert — simpler: init in work, move
-    # Use separate: init bare-like structure via clone of a real repo
-    donor = work_dir.parent / f"{work_dir.name}-donor"
-    donor.mkdir(parents=True, exist_ok=True)
-    drepo = Repo.init(donor)
-    (donor / "f").write_text("y", encoding="utf-8")
-    drepo.index.add(["f"])
-    drepo.index.commit("c")
-    if "main" not in drepo.heads:
-        drepo.create_head("main")
-        drepo.heads.main.checkout()
-    if git_dir.exists():
-        import shutil
-
-        shutil.rmtree(git_dir)
-    drepo.clone(git_dir, bare=True)
-    # non-bare worktree with gitdir file pointing to bare is awkward;
-    # instead create worktree .git file pointing to donor's .git
+    """Worktree com `.git` file apontando para um git dir real."""
     import shutil
 
-    shutil.rmtree(git_dir)
-    actual = git_dir
-    shutil.copytree(donor / ".git", actual)
+    donor = work_dir.parent / f"{work_dir.name}-donor"
+    _init_git_repo(donor)
+    work_dir.mkdir(parents=True, exist_ok=True)
+    if git_dir.exists():
+        shutil.rmtree(git_dir)
+    shutil.copytree(donor / ".git", git_dir)
     (work_dir / ".git").write_text(
-        f"gitdir: {actual.resolve()}\n", encoding="utf-8"
+        f"gitdir: {git_dir.resolve()}\n", encoding="utf-8"
     )
 
 
