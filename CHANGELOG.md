@@ -14,6 +14,13 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- Elegibilidade de arquivos (T09): porta `FileEligibilityFilter` com
+  implementação `PathspecFileEligibilityFilter` — inclui textuais de
+  desenvolvimento (Markdown, Java, etc.), exclui CSV/imagens e paths
+  cobertos por `.gitignore` via **pathspec** GitWildMatch (BDD-006,
+  DEC-015 / BR-023); sem caps de tamanho (REQ-019).
+- Helper `load_gitignore_sources` para `.gitignore` aninhados; política
+  documentada para arquivos sem extensão (include-by-default).
 - Sync do catálogo (T07): `CatalogSync` orquestra discovery GitHub + local →
   upsert/`deactivate` no `CatalogRepository`; `run_catalog_sync` no bootstrap
   sem indexação nem reconcile (handoff ENG-011 → T14). Origem/conexão no
