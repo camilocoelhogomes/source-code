@@ -133,3 +133,48 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — design v0.1.2. Prosseguir para BDD/interfaces (QA).
+
+---
+
+## Review — BDD (v0.1.0)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `bdd.md` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (gate Architect substitui HITL) |
+| Design base | `0.1.2` (`APPROVED_BY_ARCHITECT`) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| BDD-002 | OK | IO-01 (queued→indexing→up_to_date); IO-02 (pico ≤ `WorkerLimiter.capacity`) |
+| BDD-004 | OK | IO-03 — tip==processado → portas não chamadas; permanece `up_to_date` |
+| BDD-005 | OK | IO-04 — tip≠processado → processa tip; carimba `last_processed_commit` |
+| BDD-007 / REQ-021–022 | OK | IO-05 progresso agregado; IO-06 stages `zoekt`/`tree_sitter`/`metadata_persisted` |
+| BDD-008 / BR-005 | OK | IO-07 — `error` + msg/horário; `last_processed` não avança; retry = restart total |
+| ENG-011 | OK | IO-08 stale enqueue; IO-09 recover `indexing`→error→queued→enqueue + `queued` re-enqueue |
+| ENG-012 + Zoekt set-replace | OK | IO-10 arquivo inteiro; IO-11 uma `index(all_eligible)`; IO-12 `delete_paths` + sem `purge_other_commits` |
+| ENG-013 | OK | IO-14 — AST sem SDKs no pacote `indexing` |
+| REQ-020 | OK | IO-13 — enum fechado 5 slugs; sem extras |
+| Alinhamento design v0.1.2 | OK | D-T14-006/011; §3.2/§3.3/§3.4/§3.5; sem expansão (fora: T15/T18/T19) |
+| Sem expansão de escopo | OK | Escopo/exclusões L49–64 alinhados à task |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Achados sem bloqueio
+
+| Severidade | Achado | Evidência | Nota |
+|---|---|---|---|
+| `SUGGESTION` | IO-07 usa “e/ou” no wipe Zoekt/vetorial no retry | `bdd.md` IO-07 | Design §3.5 exige wipe Zoekt **e** Qdrant no restart; asserts de unit/interfaces podem tornar ambos obrigatórios. Não bloqueia aceite BDD (restart total vs resume já está assertado). |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — BDD v0.1.0 aprovado. Prosseguir para interfaces (Architect/QA).
