@@ -59,8 +59,8 @@ python -m pytest
 
 O comando executa testes unitários e BDD com relatório de cobertura no
 terminal. O projeto exige cobertura mínima de 95%; a execução falha
-automaticamente abaixo desse limite. A suíte completa atual está em 271
-testes (1 pulado sem Docker) com cobertura de 97.55% (T01+T02+T03+T04+T06).
+automaticamente abaixo desse limite. A suíte completa atual está em 305
+testes (1 pulado sem Docker) com cobertura de 97.82% (T01–T06).
 
 ## Configuração de conexões (T02)
 
@@ -90,6 +90,29 @@ Defaults de engenharia (via env / `load_settings`):
 
 Capacidade `< 1` é rejeitada por `WorkerLimiterError`. Pools de indexação e
 consulta são isolados (`create_index_limiter` / `create_query_limiter`).
+
+## Descoberta GitHub (T05)
+
+Repositórios remotos são descobertos a partir de conexões `type: "github"`
+já validadas pelo `ConfigLoader`. A listagem usa PyGithub
+(`PyGithubApiClient.iter_org_repos`). O token é lido somente via
+`GitHubConnection.secret` (referência `{ "env": "..." }` resolvida em T02);
+nunca aparece no resultado nem em mensagens de erro da descoberta.
+
+```python
+from github_rag.config import ConfigLoader
+from github_rag.sources.github import GitHubRepoDiscovery
+
+config = ConfigLoader().load(config_path)
+discovery = GitHubRepoDiscovery()
+for name, conn in config.connections.items():
+    if conn.type != "github":
+        continue
+    repos = discovery.discover(name, conn)
+```
+
+Wildcards em `repos` são filtros exclusivos de inclusão (`prefix*`, `*suffix`,
+`org/*`, exato). Lista vazia ⇒ nenhum repositório descoberto.
 
 ## Catálogo (PostgreSQL)
 
