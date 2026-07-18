@@ -12,7 +12,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from git import InvalidGitRepositoryError, NoSuchPathError, Repo
-from git.exc import BadName, GitCommandError
+from git.exc import GitCommandError
 
 from github_rag.catalog.models import RepoOrigin
 from github_rag.snapshot.diff import FileDiffSet
@@ -86,13 +86,10 @@ def _open_repo(local_path: str) -> Repo:
 def _main_commit(repo: Repo):
     try:
         return repo.heads.main.commit
-    except (AttributeError, IndexError, ValueError) as exc:
+    except Exception as exc:  # noqa: BLE001 — GitPython varia o tipo da falha
+        if _has_main_head(repo):
+            raise CorruptRepositoryError("falha ao resolver tip da main") from exc
         raise MainBranchMissingError("branch main ausente") from exc
-    except Exception as exc:  # noqa: BLE001
-        # heads.main pode falhar de formas variadas se a ref não existe
-        if "main" in str(exc).lower() or not _has_main_head(repo):
-            raise MainBranchMissingError("branch main ausente") from exc
-        raise CorruptRepositoryError("falha ao resolver tip da main") from exc
 
 
 def _has_main_head(repo: Repo) -> bool:
@@ -105,9 +102,7 @@ def _has_main_head(repo: Repo) -> bool:
 def _resolve_commit(repo: Repo, commit_sha: str):
     try:
         return repo.commit(commit_sha)
-    except (BadName, ValueError, GitCommandError) as exc:
-        raise CommitNotFoundError(f"commit não encontrado: {commit_sha}") from exc
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001 — BadName/ValueError/GitCommandError etc.
         raise CommitNotFoundError(f"commit não encontrado: {commit_sha}") from exc
 
 

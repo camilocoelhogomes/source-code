@@ -14,7 +14,6 @@ from typing import Any, Protocol, runtime_checkable
 
 from github_rag.snapshot.clone import GitClonePort, ShallowGitClonePort
 from github_rag.snapshot.diff import FileDiffSet
-from github_rag.snapshot.errors import SnapshotError
 from github_rag.snapshot.github import GitHubGitSnapshotAdapter
 from github_rag.snapshot.local import LocalGitSnapshotAdapter
 from github_rag.snapshot.models import (
@@ -108,7 +107,3 @@ class DefaultMainSnapshotProvider:
                 source, from_commit=from_commit, to_commit=to_commit
             )
         raise TypeError(f"SnapshotSource inválido: {type(source)!r}")
-
-
-# SnapshotError re-export hint for callers catching invalid sources as SnapshotError
-_ = SnapshotError

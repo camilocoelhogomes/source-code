@@ -6,6 +6,13 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- Snapshot da `main` (T08): `MainSnapshotProvider` / `DefaultMainSnapshotProvider`
+  obtém tip, árvore, conteúdo completo de arquivo e diff de paths entre commits
+  (BDD-005, BDD-017, ENG-012); local via GitPython; tip GitHub via PyGithub com
+  `GitClonePort` mockável; `FirstIndexSignal` quando não há commit anterior;
+  erros tipados (`MainBranchMissingError`, `CorruptRepositoryError`,
+  `GitHubSnapshotNetworkError`, `CommitNotFoundError`, `FileNotFoundInCommitError`).
+- Dependência `GitPython>=3.1` (DEC-015 / BR-023).
 - Descoberta GitHub (T05): `GitHubRepoDiscovery` lista repositórios por org
   via token resolvido em T02, filtra por wildcards de inclusão (BR-022) e
   expõe `DiscoveredGitHubRepo` sem serializar o segredo (BDD-001/014/019).
