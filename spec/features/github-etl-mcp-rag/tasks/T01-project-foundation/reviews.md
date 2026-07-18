@@ -398,3 +398,18 @@ Nenhum. Sem regressão; sem adulteração de testes; cobertura ≥95%.
 ### Decisão
 
 `VERIFICATION_PASSED` — pronto para **HITL de aprovação humana da implementação**.
+
+---
+
+## Aprovação humana — implementação + Blue
+
+| Campo | Valor |
+|---|---|
+| Gate | `HUMAN_IMPLEMENTATION_APPROVAL` |
+| Decisão | `APROVADO` |
+| Autor | camilocoelhogomes |
+| Data | 2026-07-18 |
+| Commit candidato | `819204d` |
+| Escopo aprovado | Implementação + refatoração Blue da T01 |
+
+Aprovação humana explícita registrada após `BLUE_APPROVED_BY_ARCHITECT` e `VERIFICATION_PASSED`. O histórico técnico anterior permanece inalterado.

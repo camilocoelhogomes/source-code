@@ -7,9 +7,9 @@
 | Autor | Tech Lead Architect |
 | Data | 2026-07-18 |
 | Branch | `feature/github-etl-mcp-rag-T01-project-foundation` |
-| Etapa | Passo 18 — review Architect pós-Developer |
-| Estado | `BLUE_APPROVED_BY_ARCHITECT` |
-| Implementação | `APPROVED_BY_ARCHITECT` (reviews.md) |
+| Etapa | Passo 20 — aprovação humana da implementação + Blue |
+| Estado | `HUMAN_IMPLEMENTATION_APPROVED` |
+| Implementação | Aprovada por camilocoelhogomes em 2026-07-18, candidato `819204d` |
 
 ## 1. Escopo Blue
 
