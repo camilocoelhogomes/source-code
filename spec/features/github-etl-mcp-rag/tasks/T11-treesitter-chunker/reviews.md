@@ -274,3 +274,73 @@ PYTHONPATH=src .venv/bin/python -m pytest tests/unit/index/chunk tests/bdd/test_
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — design v0.2.0. Prosseguir para atualização de BDD/interfaces/unitários/implementação alinhados à matriz ampliada.
+
+---
+
+## Review — BDD / Interfaces / Unit+BDD red (v0.2.0 — config PR #9)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `bdd.md` + `interfaces.md` + `unit-test-plan.md` + testes RED config |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Trigger | Review humano PR #9 — yaml/json/xml/toml |
+| Resultado | `CHANGES_REQUIRED` |
+
+### Decisão por artefato
+
+| Artefato | Decisão | Notas |
+|---|---|---|
+| `bdd.md` v0.2.0 (TS-16..TS-19) | Conteúdo OK (não marcado APPROVED enquanto gate conjunto falha) | DEC-003 explícito; kinds estruturais alinhados design §4.4; XML `language_xml` (TS-18) |
+| `interfaces.md` v0.2.0 | Conteúdo OK (idem) | `SourceLanguage` + extensões; `language_xml`; seletores config §3.11; I-T11-008 intacto |
+| `unit-test-plan.md` v0.2.0 + testes executáveis | `CHANGES_REQUIRED` | UT-C20..C23 / BDD TS-16..19 enfraquecem kinds estruturais vs `bdd.md` / design §4.4 |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| DEC-003 — cenários config exigem chunking estrutural (sem fallback tamanho/linhas) | FALHA parcial | `bdd.md` TS-16..19 OK no texto; asserts executáveis aceitam só root (`stream`/`document`) — ver MAJOR |
+| DEC-015 — grammars oficiais | OK (contratos) | interfaces §3.9; design §4.2; UT-G06 planejado |
+| Alinhamento design v0.2.0 | FALHA parcial | seletores/enum/extensões OK nos docs; testes feliz path não fecham kinds §4.4 |
+| Extremos/corners | OK no plano | UT-N05 cobre alvos; corners pré-existentes mantidos |
+| RED pela razão esperada | OK | ver evidência abaixo |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| `MAJOR` | Asserts TS-16 / UT-C20 aceitam `stream` no conjunto de kinds — root-only passa sem `document`/`block_mapping_pair` (enfraquece DEC-003 / bdd TS-16) | `tests/bdd/test_treesitter_chunker.py` ~353; `test_treesitter.py` UT-C20 ~238 | Intersecção só com `{"document", "block_mapping_pair"}` (root `stream` só via fallback testado noutro caso, se necessário) |
+| `MAJOR` | Asserts TS-17 / UT-C21 e TS-19 / UT-C23 aceitam `document` sozinho — root fallback satisfaz sem `object`/`pair`/`array` ou `table`/`pair` | BDD + unit happy paths | Exigir intersecção com alvos design §4.4 (sem contar root como suficiente no feliz path) |
+| `MAJOR` | TS-18 / fixture aninhada: BDD exige ninhos com ranges distintos → ambos; teste só `len(element_ranges) >= 1` | `test_treesitter_chunker.py` TS-18 ~380–383; bdd TS-18 | `assertGreaterEqual(len(element_ranges), 2)` para `_XML_CFG` |
+| `MAJOR` | `unit-test-plan.md` UT-C20..C23 coluna Esperado só `len>=1, language` — não rastreia kinds estruturais de TS-16..19 | `unit-test-plan.md` matriz | Atualizar Esperado + asserts para kinds §4.4 / BDD |
+| `SUGGESTION` | TS-18 não prova variante `language_xml` vs `language_dtd` | resolve só `assertIsNotNone` | Comparar com `tree_sitter_xml.language_xml()` (e ≠ `language_dtd`) |
+| `SUGGESTION` | Docstring do módulo BDD ainda cita TS-01..TS-15 | `test_treesitter_chunker.py` L1–7 | Atualizar para TS-01..TS-19 / v0.2.0 |
+
+### Evidência RED (subset config)
+
+```bash
+PYTHONPATH=src .venv/bin/python -m pytest \
+  tests/unit/index/chunk/test_types.py::TestFrozenDataclasses::test_source_language_closed_values \
+  tests/unit/index/chunk/test_types.py::TestLanguageFromPath::test_ut_t04_mvp_extensions \
+  tests/unit/index/chunk/test_grammar_registry.py::TestOfficialGrammarRegistry::test_ut_g06_resolve_config_languages \
+  tests/unit/index/chunk/test_node_selectors.py::TestSelectSemanticNodes::test_ut_n05_config_language_targets \
+  tests/unit/index/chunk/test_treesitter.py::TestTreeSitterContextualChunker::test_ut_c20_yaml \
+  tests/unit/index/chunk/test_treesitter.py::TestTreeSitterContextualChunker::test_ut_c21_json \
+  tests/unit/index/chunk/test_treesitter.py::TestTreeSitterContextualChunker::test_ut_c22_xml \
+  tests/unit/index/chunk/test_treesitter.py::TestTreeSitterContextualChunker::test_ut_c23_toml \
+  tests/bdd/test_treesitter_chunker.py::TestTS16YamlStructural \
+  tests/bdd/test_treesitter_chunker.py::TestTS17JsonStructural \
+  tests/bdd/test_treesitter_chunker.py::TestTS18XmlStructural \
+  tests/bdd/test_treesitter_chunker.py::TestTS19TomlStructural \
+  -q --no-cov
+```
+
+Resultado: falhas pela razão esperada (impl v0.1 ainda sem config):
+- `AttributeError: SourceLanguage has no attribute 'YAML'|'XML'` (enum incompleto)
+- `AssertionError` em UT-T07 (faltam `yaml`/`json`/`xml`/`toml` no enum)
+- `GrammarUnavailableError` nos happy paths chunker/BDD (extensão fora do mapa MVP atual)
+
+### Decisão
+
+`CHANGES_REQUIRED` — corrigir asserts/plan (MAJORs) e reapresentar o trio BDD/interfaces/unit-tests para aprovação Architect. Não avançar implementação config até gate limpo.

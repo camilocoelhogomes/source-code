@@ -1,7 +1,8 @@
 """
 BDD executável — T11-treesitter-chunker.
 
-Valida TS-01..TS-15 (BDD-007, BDD-024, DEC-003, corners tipados) conforme bdd.md 0.1.1.
+Valida TS-01..TS-19 (BDD-007, BDD-024, DEC-003, corners tipados, config yaml/json/xml/toml)
+conforme bdd.md 0.2.0.
 
 Execução:
     python -m pytest tests/bdd/test_treesitter_chunker.py -q
