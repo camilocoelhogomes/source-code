@@ -123,3 +123,109 @@ Nenhum `BLOCKING` ou `MAJOR`.
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — BDD `0.2.0` aderente ao design aprovado, executável, falha pelas razões corretas no greenfield, sem antecipar interfaces/implementação. Pronto para gate HITL de aprovação humana dos testes BDD.
+
+---
+
+## QA Engineer — testes unitários `0.1.0` (pós `HUMAN_INTERFACES_APPROVED`)
+
+| Campo | Valor |
+|---|---|
+| Autor | QA Engineer |
+| Data | 2026-07-18 |
+| Artefato | `unit-test-plan.md` v0.1.0, `tests/unit/test_settings.py` |
+| Interfaces base | `0.2.0` aprovadas (`41056ff`) |
+| Estado | `TESTS_READY_FOR_REVIEW` |
+| Produção alterada | Nenhuma — `load_settings` permanece stub `...` |
+
+### Casos cobertos (UT-01..UT-22)
+
+Defaults 2/4/`CONFIG_PATH=None`; env ausente/whitespace → defaults; int válido; int inválido → `SettingsBootstrapError` sem fallback; `CONFIG_PATH` POSIX/Windows drive/UNC via `Path`; environ injetado vs `None`/`os.environ`; imutabilidade do mapping; Protocol `AppSettings`; OS-agnostic; sem domínio; pathlib sem hardcode de separadores; mensagens sem jargão de shell.
+
+### Comando
+
+```bash
+PYTHONPATH=src python3 -m unittest discover -s tests/unit -p "test_*.py" -v
+```
+
+### Resultados (red esperado)
+
+| Métrica | Valor |
+|---|---|
+| testsRun | 27 |
+| métodos ok | 7 (UT-01, UT-02, UT-17, UT-19×2, UT-20, UT-21) |
+| métodos falhos | 20 |
+| failure records (com subTest) | 35 |
+| errors | 0 |
+
+Razão dominante das falhas: `load_settings` retorna `None` (corpo `...`) — não levanta `SettingsBootstrapError` nem devolve snapshot `AppSettings`. Red correto pré-implementação.
+
+### Cobertura
+
+Não medida nesta etapa (stub sem implementação mensurável de carga). Gate ≥95% após implementação.
+
+### Próximo passo
+
+Review Architect dos unitários → HITL → implementação Developer.
+
+---
+
+## Review unitários — Tech Lead Architect (`0.1.0`)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `unit-test-plan.md` v0.1.0, `tests/unit/test_settings.py` |
+| Interfaces base | `0.2.0` (`HUMAN_INTERFACES_APPROVED` / registro `3b3f378` / candidato `41056ff`) |
+| Data | 2026-07-18 |
+| Branch | `feature/github-etl-mcp-rag-T01-project-foundation` |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Checks executados
+
+| Check | Resultado |
+|---|---|
+| Leitura `interfaces.md` 0.2.0 / `design.md` / `unit-test-plan.md` / `settings.py` (stub) / `test_settings.py` | OK |
+| `PYTHONPATH=src python3 -m unittest discover -s tests/unit -p "test_*.py" -v` | 27 tests; 7 ok; 20 falhos; 35 failure records (subTest); 0 errors |
+| Red pelas razões corretas (stub `...` → `None`) | **OK** — carga tipada falha via `_assert_app_settings` (“stub sem implementação”) ou `SettingsBootstrapError not raised`; constantes/Protocol/estáticos passam |
+| Aderência ao contrato (defaults, blank, erros, paths, environ, Protocol, sem domínio) | **OK** |
+| Antecipação além do contrato / implementação concreta | **OK** — sem classe concreta prescrita; só `AppSettings` Protocol; stub intacto |
+
+### Matriz de aderência (contrato × suíte)
+
+| Área | Evidência | Veredito |
+|---|---|---|
+| Defaults `2` / `4` / `CONFIG_PATH→None` | UT-02..UT-04; L80–L108 | OK — I-T01-004 |
+| Ausente / blank / whitespace → defaults | UT-05, UT-06 (`""`, espaços, `\t`, `\n`) | OK — I-T01-006 |
+| Int válido + zero/negativo sem min/max | UT-07, UT-08, `test_ut07_zero_and_negative_*` | OK — I-T01-003/007/008 |
+| Int inválido → `SettingsBootstrapError` sem fallback | UT-09..UT-10; `test_ut09_invalid_index_does_not_return_default_snapshot` | OK — I-T01-007 |
+| Mensagem cita env; sem jargão de shell | UT-09/10 (`assertIn` nome); UT-11 (`SHELL_JARGON`) | OK — I-T01-015 |
+| `CONFIG_PATH` POSIX / Windows drive / UNC via `Path` | UT-12..UT-14; inexistência de arquivo | OK — I-T01-005/016/009 |
+| `environ` injetado vs `None`/`os.environ`; não muta mapping | UT-15..UT-17 | OK — I-T01-002/014 |
+| Retorno satisfaz `AppSettings`; OS-agnostic | UT-18, UT-22 (`os.name` posix/nt) | OK — I-T01-001/014 |
+| Sem domínio; pathlib sem hardcode de separador | UT-19, UT-20 | OK — I-T01-005/009 |
+| Superfície estática (constantes, `Exception`) | UT-01, UT-02, UT-21 | OK |
+
+### Achados abertos
+
+Nenhum `BLOCKING` ou `MAJOR`.
+
+| ID | Severidade | Evidência | Achado | Correção esperada |
+|---|---|---|---|---|
+| S-U01 | `SUGGESTION` | `test_settings.py` L186–L187 | `assertNotIsInstance(ctx.exception, type(None))` é no-op após `assertRaises` bem-sucedido. | Remover ou substituir por assert útil (ex.: mensagem não vazia / contém razão tipada). |
+| S-U02 | `SUGGESTION` | `test_settings.py` L368–L377 | Loop AST em UT-20 não aplica asserções (código morto); a proteção real está nos regex em `load_settings`. | Remover o loop inerte ou completar a verificação. |
+| S-U03 | `SUGGESTION` | plano §4 vs UT-17 L285–L293 | Plano lista UT-17 como red obrigatório; o caso só verifica imutabilidade do mapping e **passa** com stub (vacuamente correto). | Ajustar plano §4 (UT-17 pode passar no stub) ou exigir também snapshot válido no mesmo teste — sem mudar o invariante. |
+
+### O que está aderente (não bloqueia)
+
+- Cobertura UT-01..UT-22 alinhada a `interfaces.md` 0.2.0 e ao plano.
+- Paths nativos como **entrada** de teste (não hardcode de lógica no módulo sob teste).
+- Sem parser/DB/secrets/min-max; sem exigir implementação concreta além do Protocol + stub.
+- Red pré-implementação pelas razões corretas; produção (`settings.py`) não alterada nesta etapa.
+
+### Bloqueios para aprovação
+
+Nenhum.
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — unitários suficientes e aderentes ao contrato aprovado; falham pelo stub pelas razões corretas. Pronto para gate HITL de aprovação humana dos testes unitários.
