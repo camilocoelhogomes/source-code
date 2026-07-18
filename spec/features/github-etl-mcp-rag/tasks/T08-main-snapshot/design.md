@@ -7,7 +7,7 @@
 | Autor | Implementation Task Runner |
 | Data | 2026-07-18 |
 | Estado | `PENDING_ARCHITECT_REVIEW` |
-| Versão | `0.1.0` |
+| Versão | `0.1.1` |
 | Branch | `feature/github-etl-mcp-rag-T08-main-snapshot` |
 | Base | `main` |
 | Rastreabilidade | REQ-013; BR-002–004, BR-015, BR-023; DEC-015; BDD-005, BDD-017, BDD-024; ENG-012 |
@@ -16,7 +16,8 @@
 
 | Data | Autor | Decisão | Versão | Observações |
 |---|---|---|---|---|
-| — | — | — | `0.1.0` | Aguardando review. |
+| 2026-07-18 | Tech Lead Architect | `CHANGES_REQUIRED` | `0.1.0` | MAJOR: list_tree/read_file GitHub devem resolver commit_sha pedido. |
+| — | — | — | `0.1.1` | Correções MAJOR + SUGGESTION; aguardando re-review. |
 
 ## 1. Contexto
 
@@ -43,8 +44,9 @@ Módulo `github_rag.snapshot` com porta única `MainSnapshotProvider` e adaptado
 | Modelos + erros tipados | `models.py`, `errors.py` | DTOs imutáveis e exceções de domínio |
 | Porta `MainSnapshotProvider` | `provider.py` | Contrato unificado tip/árvore/read/diff |
 | Diff de arquivos | `diff.py` | `FileDiff` + classificação add/mod/del |
-| Adaptador local | `local.py` | GitPython sobre path local |
-| Adaptador GitHub | `github.py` | PyGithub tip + clone shallow mockável (GitPython) |
+| Adaptador local (interno) | `local.py` | GitPython sobre path local |
+| Adaptador GitHub (interno) | `github.py` | PyGithub tip + clone shallow mockável (GitPython) |
+| Clone port | `clone.py` | `GitClonePort` mockável |
 | Re-exports | `__init__.py` | Superfície pública |
 
 Fluxo feliz (local):
@@ -52,7 +54,7 @@ Fluxo feliz (local):
 ```text
 local_path
   → GitPython Repo(local_path)
-  → ref refs/heads/main (ou main remota equivalente) → tip SHA
+  → tip = refs/heads/main (somente branch local main; BR-015)
   → tree = commit.tree → list paths
   → blob data_stream → conteúdo completo do path no tip
   → git.diff(last..current, name-status) → FileDiffSet
@@ -63,8 +65,9 @@ Fluxo feliz (GitHub):
 ```text
 owner/repo + token
   → PyGithub: repo.get_branch("main").commit.sha  (tip)
-  → para árvore/conteúdo/diff: porta GitClonePort (clone shallow mockável)
-       → GitPython sobre clone local temporário / workspace
+  → para árvore/conteúdo/diff: porta GitClonePort (clone mockável)
+       → materializa workspace com o(s) commit(s) pedidos
+       → GitPython sobre clone local temporário
   → mesmos contratos de Snapshot / FileDiffSet
 ```
 
@@ -99,6 +102,8 @@ Campos imutáveis:
 
 Semântica ENG-012: paths add/mod → reindex arquivo **inteiro** no tip; deleted → limpeza de índices (T14). Conteúdo não faz parte do diff.
 
+**Renames (D-T08-007):** diff sem detecção de rename (`-M` off). Um rename aparece como `deleted` (path antigo) + `added` (path novo). T14 reindexa o novo path por inteiro e limpa o antigo.
+
 ### 4.3 `MainSnapshotProvider` (Protocol)
 
 ```python
@@ -126,24 +131,25 @@ class MainSnapshotProvider(Protocol):
 
 Quando `from_commit is None` (primeiro index), `diff_files` **não** inventa lista de todos os arquivos: retorna `FirstIndexSignal` tipado. T14 interpreta como “todos os elegíveis”. Evita acoplar snapshot a elegibilidade (T09).
 
-### 4.5 Adaptador local — `LocalMainSnapshotProvider` / fachada
+### 4.5 Adaptador local — `LocalGitSnapshotAdapter` (interno)
 
 - Usa **somente** GitPython (`git.Repo`); proibido parse ad-hoc de `.git` (BR-023 / DEC-015).
-- Tip: `repo.refs["refs/heads/main"].commit` (ou `repo.heads.main.commit`).
+- Tip: exclusivamente `refs/heads/main` / `repo.heads.main` (não usa `origin/main` como substituto).
 - Working tree suja / arquivos untracked **não** entram em tip, tree nem `read_file`.
 - Branches ≠ `main` ignoradas.
 - Erros: `MainBranchMissingError`, `CorruptRepositoryError`, `SnapshotError`.
 
-### 4.6 Adaptador GitHub — `GitHubMainSnapshotProvider`
+### 4.6 Adaptador GitHub — `GitHubGitSnapshotAdapter` (interno)
 
 - Tip de `main`: **PyGithub** (`get_repo` → `get_branch("main")`).
-- Árvore / conteúdo / diff: via `GitClonePort` (protocolo injetável) que faz clone shallow da branch `main` em diretório temporário e devolve path para GitPython — **sem** client HTTP inventado.
-- Default `ShallowGitClonePort` usa GitPython `Repo.clone_from(..., depth=1, branch="main")` (ou depth suficiente para diff quando `from_commit` conhecido — ver §5).
+- Árvore / conteúdo / diff: via `GitClonePort` (protocolo injetável) — **sem** client HTTP inventado.
+- **Obrigatório:** `list_tree` / `read_file` / `diff_files` devem resolver o `commit_sha` (e `from_commit` quando houver) pedido pelo chamador. Se o SHA não estiver no workspace, o port faz fetch/depth adequado; se impossível, falha com `CommitNotFoundError` — nunca devolver árvore/conteúdo de outro commit (ex.: tip do shallow) silenciosamente. Necessário para T16 (read/tree do commit indexado, que pode ≠ tip atual).
+- Default `ShallowGitClonePort` usa GitPython `Repo.clone_from` com auth por token injetado **somente em memória** (URL com credencial efêmera ou `GIT_ASKPASS`/config transitória); token **nunca** em `str(exc)`, logs ou remote URL persistente no disk do usuário (BR-008).
 - Mockável nos testes unitários (não exige rede).
 
-### 4.7 Fachada unificada
+### 4.7 Fachada unificada — porta pública
 
-`DefaultMainSnapshotProvider` despacha por `SnapshotSource` para adaptador local ou GitHub. Superfície única para T14/T16.
+`DefaultMainSnapshotProvider` é a **única** implementação pública de `MainSnapshotProvider`. Despacha por `SnapshotSource` para os adaptadores internos local/GitHub. T14/T16 dependem só da porta/`DefaultMainSnapshotProvider`; adaptadores não são API estável.
 
 ## 5. Fluxo de dados
 
@@ -160,7 +166,7 @@ T14/T16
        deleted → handoff limpeza (T14)
 ```
 
-Diff com histórico: para GitHub, se `from_commit` não estiver no shallow clone depth=1, o clone port pode usar `depth` maior ou fetch do SHA — contrato: implementação deve obter diff correto ou falhar com `SnapshotError` tipado (não inventar estados).
+Histórico no clone GitHub: o `GitClonePort` deve garantir presença de todo SHA referenciado (`to_commit`, `from_commit` quando não-`None`, e `commit_sha` de `list_tree`/`read_file`). Estratégia (depth maior, fetch por SHA, etc.) é detalhe do adaptador; contrato: diff/árvore/conteúdo corretos para os SHAs pedidos ou `CommitNotFoundError` / `SnapshotError` tipado — nunca inventar estados nem servir tip errado.
 
 ## 6. Erros tipados
 
@@ -178,6 +184,7 @@ Mensagens **nunca** incluem o valor do token (BR-008).
 ## 7. Segurança
 
 - Token GitHub apenas parâmetro em memória / factory; não logar, não incluir em `str(exc)`.
+- Clone: credencial efêmera (env/`GIT_ASKPASS`/URL transitória); não persistir remote com token embutido após a operação.
 - Sem mutação de working tree do usuário: clone GitHub em temp; local só leitura via GitPython.
 
 ## 8. Compatibilidade
@@ -195,7 +202,7 @@ Mensagens **nunca** incluem o valor do token (BR-008).
 
 | Risco | Mitigação |
 |---|---|
-| Shallow clone insuficiente para diff | Fetch/depth adaptativo ou erro tipado |
+| Shallow clone insuficiente para diff/read | Fetch/depth adaptativo ou `CommitNotFoundError` |
 | Repos bare / gitdir file | GitPython resolve; testes de corner |
 | Performance em monorepos grandes | Fora de MVP (REQ-019); sem limite funcional |
 
@@ -210,7 +217,10 @@ Rollback: reverter merge da branch; módulo isolado em `snapshot/`.
 | D-T08-003 | `from_commit is None` → `FirstIndexSignal` (não lista todos os paths aqui) |
 | D-T08-004 | Conteúdo = arquivo completo no tip; diff só paths + kind |
 | D-T08-005 | Clone GitHub via porta `GitClonePort` mockável |
-| D-T08-006 | Snapshot local ignora working tree e branches ≠ `main` |
+| D-T08-006 | Snapshot local ignora working tree e branches ≠ `main`; tip só `refs/heads/main` |
+| D-T08-007 | Renames = deleted + added (sem `-M`) |
+| D-T08-008 | `list_tree`/`read_file` no GitHub resolvem o `commit_sha` pedido ou `CommitNotFoundError` |
+| D-T08-009 | Única porta pública: `DefaultMainSnapshotProvider` implementa `MainSnapshotProvider` |
 
 ## 12. Arquivos previstos
 
