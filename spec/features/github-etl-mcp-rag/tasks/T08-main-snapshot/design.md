@@ -6,8 +6,9 @@
 | Task | `T08-main-snapshot` |
 | Autor | Implementation Task Runner |
 | Data | 2026-07-18 |
-| Estado | `PENDING_ARCHITECT_REVIEW` |
+| Estado | `APPROVED_BY_ARCHITECT` |
 | Versão | `0.1.1` |
+| Aprovação Architect | `APPROVED_BY_ARCHITECT` em 2026-07-18 (re-review design v0.1.1) |
 | Branch | `feature/github-etl-mcp-rag-T08-main-snapshot` |
 | Base | `main` |
 | Rastreabilidade | REQ-013; BR-002–004, BR-015, BR-023; DEC-015; BDD-005, BDD-017, BDD-024; ENG-012 |
@@ -17,7 +18,7 @@
 | Data | Autor | Decisão | Versão | Observações |
 |---|---|---|---|---|
 | 2026-07-18 | Tech Lead Architect | `CHANGES_REQUIRED` | `0.1.0` | MAJOR: list_tree/read_file GitHub devem resolver commit_sha pedido. |
-| — | — | — | `0.1.1` | Correções MAJOR + SUGGESTION; aguardando re-review. |
+| 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.1` | MAJOR M-01 e SUGGESTION S-01..S-04 fechados (D-T08-006..009; §4.6/§5/§7). Sem BLOCKING/MAJOR abertos. |
 
 ## 1. Contexto
 
