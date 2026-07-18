@@ -244,12 +244,6 @@ class TestFakeQueryService(unittest.TestCase):
         with self.assertRaises(QueryValidationError):
             fake.search_exact(ExactSearchRequest(pattern="x"))
 
-
-if __name__ == "__main__":
-    unittest.main()
-
-
-
 class TestCoverageCorners(unittest.TestCase):
     def test_matching_repo_key_and_id(self) -> None:
         catalog = InMemoryCatalogRepository()
@@ -370,3 +364,8 @@ class TestCoverageCorners(unittest.TestCase):
         self.assertEqual(
             fake.search_semantic(SemanticSearchRequest(query="q")).hits, ()
         )
+
+if __name__ == "__main__":
+    unittest.main()
+
+

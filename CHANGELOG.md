@@ -18,6 +18,12 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- QueryService compartilhado (T16): fachada `DefaultQueryService` com
+  `search_exact`, `search_semantic`, `read_file` e `list_tree` sobre portas
+  T10/T13/T08/T07; projeção `DetailFields` (BDD-012); `QueryReformulator`
+  opcional (REQ-027/BR-011); erros tipados; fakes em `github_rag.query.fake`.
+  Sem client paralelo (BR-023/BDD-024). Consumidores: T17/T18.
+
 - Metadados contextuais SLM por chunk (T12): porta `MetadataGenerator` e
   adaptador `OpenAICompatibleMetadataGenerator` via SDK oficial `openai`
   (OpenAI-compatible local; DEC-015/BDD-024). Default de modelo Qwen Coder 3B

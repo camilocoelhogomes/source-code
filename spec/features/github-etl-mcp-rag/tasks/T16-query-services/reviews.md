@@ -124,3 +124,53 @@
 | `interfaces.md` | `0.1.0` | `APPROVED_BY_ARCHITECT` | 2026-07-18 |
 
 Achados `BLOCKING`/`MAJOR` abertos: nenhum.
+
+---
+
+## Review — Implementação (v0.1.0)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `src/github_rag/query/*` + testes T16 |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário; aprovação Architect substitui HITL) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| `DefaultQueryService` keyword-only + deps I-T16-002/013 | OK | `service.py` L51–68 |
+| `search_exact` → ExactCodeIndex + projection; pattern blank → `()` | OK | `service.py` L70–95; QS-01/12 |
+| `search_semantic` → Embedder+VectorStore; reformulate no-op I-T16-007 | OK | `service.py` L97–140; QS-02/09 |
+| Projeção BDD-012 (`None` quando flag False) | OK | `projection.py` L17–41; QS-03/04 |
+| Browse `last_processed_commit` / `QueryCommitUnavailableError` | OK | `resolve.py` L75–87; `service.py` L142–199; QS-06/07/11 |
+| Escopo repo: conflito / ausente / inativo | OK | `resolve.py` L22–72; QS-10; UT-V03/V04 |
+| Erros tipados + `__cause__` (exact/vector/embed/snapshot/reformulator) | OK | `service.py` L91–92, L113–135, L160–161; QS-08 |
+| Sem client paralelo (I-T16-014 / QS-05) | OK | AST BDD; imports só portas/domínio |
+| Fakes I-T16-015 | OK | `fake.py`; BDD/unit |
+| Cobertura pacote `query` ≥95% | OK | query 98–100%; suíte 767 passed / 98.86% |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| `SUGGESTION` | `__init__.py` não reexporta `project_exact` / `project_semantic` listados em interfaces §4 | `query/__init__.py` L10–62 vs `interfaces.md` §4 | Reexport opcional no `__init__` (import direto de `projection` já funciona) | Aceito — não bloqueia T17/T18 |
+| `SUGGESTION` | `TestCoverageCorners` declarado após `if __name__ == "__main__"` | `tests/unit/query/test_service.py` L248+ | Mover classe acima do bloco main (pytest já coleta) | Aceito — cosmético |
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — implementação aderente a design/interfaces/BDD; sem correção de código nesta review. Prosseguir Blue.
+
+---
+
+## Review consolidado — implementação + Blue
+
+| Artefato | Versão | Resultado | Data |
+|---|---|---|---|
+| Implementação `github_rag.query` | `0.1.0` | `APPROVED_BY_ARCHITECT` | 2026-07-18 |
+| Blue / `refactoring.md` | `0.1.0` | `BLUE_APPROVED_BY_ARCHITECT` | 2026-07-18 |
+
+Achados `BLOCKING`/`MAJOR` abertos: nenhum.
