@@ -349,8 +349,9 @@ class TestTS16YamlStructural(unittest.TestCase):
                 self.assertGreaterEqual(len(chunks), 1)
                 self.assertTrue(all(c.language == SourceLanguage.YAML for c in chunks))
                 self.assertTrue(all(c.text for c in chunks))
+                # Alvos §4.4 — `stream` root-only NÃO satisfaz.
                 self.assertTrue(
-                    {c.kind for c in chunks} & {"document", "block_mapping_pair", "stream"}
+                    {c.kind for c in chunks} & {"document", "block_mapping_pair"}
                 )
 
 
@@ -362,7 +363,8 @@ class TestTS17JsonStructural(unittest.TestCase):
         chunks = chunker.chunk(ChunkSourceFile(path="package.json", content=_JSON_CFG))
         self.assertGreaterEqual(len(chunks), 1)
         self.assertTrue(all(c.language == SourceLanguage.JSON for c in chunks))
-        self.assertTrue({c.kind for c in chunks} & {"object", "pair", "array", "document"})
+        # Alvos §4.4 — `document` root-only NÃO satisfaz.
+        self.assertTrue({c.kind for c in chunks} & {"object", "pair", "array"})
 
 
 class TestTS18XmlStructural(unittest.TestCase):
@@ -376,11 +378,11 @@ class TestTS18XmlStructural(unittest.TestCase):
         chunks = chunker.chunk(ChunkSourceFile(path="pom.xml", content=_XML_CFG))
         self.assertGreaterEqual(len(chunks), 1)
         self.assertTrue(all(c.language == SourceLanguage.XML for c in chunks))
-        self.assertTrue(any(c.kind == "element" for c in chunks))
         element_ranges = {
             (c.start_byte, c.end_byte) for c in chunks if c.kind == "element"
         }
-        self.assertGreaterEqual(len(element_ranges), 1)
+        # Ninhos com ranges distintos → ambos (design §4.4.1).
+        self.assertGreaterEqual(len(element_ranges), 2)
 
 
 class TestTS19TomlStructural(unittest.TestCase):
@@ -391,7 +393,8 @@ class TestTS19TomlStructural(unittest.TestCase):
         chunks = chunker.chunk(ChunkSourceFile(path="pyproject.toml", content=_TOML_CFG))
         self.assertGreaterEqual(len(chunks), 1)
         self.assertTrue(all(c.language == SourceLanguage.TOML for c in chunks))
-        self.assertTrue({c.kind for c in chunks} & {"table", "pair", "document"})
+        # Alvos §4.4 — `document` root-only NÃO satisfaz.
+        self.assertTrue({c.kind for c in chunks} & {"table", "pair"})
 
 
 if __name__ == "__main__":

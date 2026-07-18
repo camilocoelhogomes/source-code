@@ -6,7 +6,7 @@
 | Task | `T11-treesitter-chunker` |
 | Autor | QA Engineer |
 | Data | 2026-07-18 |
-| Estado | `PENDING_ARCHITECT_REVIEW` |
+| Estado | `CHANGES_REQUIRED` |
 | Versão | `0.2.0` |
 | Interfaces base | `0.2.0` |
 | Trigger | Review humano PR #9 — yaml/json/xml/toml |
@@ -44,10 +44,10 @@
 | UT-G03 | language sem pacote | registry fake | GrammarUnavailableError | TS-07 | `test_grammar_registry.py` |
 | UT-G06 | resolve yaml/json/xml/toml | OfficialGrammarRegistry | Language não None cada | TS-16..19, BDD-024 | `test_grammar_registry.py` |
 | UT-N05 | seletores config | árvores fake yaml/json/xml/toml | alvos design §4.4 | TS-16..19 | `test_node_selectors.py` |
-| UT-C20 | YAML feliz | mapping | len>=1, language yaml | TS-16 | `test_treesitter.py` |
-| UT-C21 | JSON feliz | object+pairs | len>=1, language json | TS-17 | `test_treesitter.py` |
-| UT-C22 | XML feliz | elements aninhados | len>=1, kind element | TS-18 | `test_treesitter.py` |
-| UT-C23 | TOML feliz | tables+pairs | len>=1, language toml | TS-19 | `test_treesitter.py` |
+| UT-C20 | YAML feliz | mapping | len>=1; language yaml; kind ∈ {document, block_mapping_pair} (não só stream) | TS-16 | `test_treesitter.py` |
+| UT-C21 | JSON feliz | object+pairs | len>=1; language json; kind ∈ {object, pair, array} (não só document) | TS-17 | `test_treesitter.py` |
+| UT-C22 | XML feliz | elements aninhados | len>=1; ≥2 ranges `element` distintos | TS-18 | `test_treesitter.py` |
+| UT-C23 | TOML feliz | tables+pairs | len>=1; language toml; kind ∈ {table, pair} (não só document) | TS-19 | `test_treesitter.py` |
 | UT-C01 | Python feliz | class+def | len>=1, texts não vazios | TS-01 | `test_treesitter.py` |
 | UT-C02 | vazio | `b""` | EmptySourceError | TS-05 | `test_treesitter.py` |
 | UT-C03 | NUL | `b"a\x00b"` | BinarySourceError | TS-06 | `test_treesitter.py` |
