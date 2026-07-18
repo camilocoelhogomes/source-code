@@ -8,4 +8,5 @@
 | Unit tests | `0.1.0` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | RED 28 failed (NIE) / 2 passed (CS-04/UT-15); U-1/U-2 SUGGESTION |
 | Implementação | `c305730` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | Pipeline autônomo; S-01/S-02/U-1/U-2 resolvidos; 335 passed; sync.py 100% |
 | Blue | `refactoring.md` `0.1.0` | `BLUE_APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | No-op; sync linear; sem mudança de comportamento |
+| Documentação | README + CHANGELOG | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | Pipeline autônomo; seção T07 + changelog |
 | Gate humano | PR | pendente | — | — | Único gate humano: review/merge no GitHub |
