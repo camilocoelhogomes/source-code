@@ -62,6 +62,27 @@ terminal. O projeto exige cobertura mínima de 95%; a execução falha
 automaticamente abaixo desse limite. A entrega T01 foi validada com 37 testes.
 aprovados e cobertura de 100%.
 
+## Catálogo (PostgreSQL)
+
+O catálogo de repositórios usa PostgreSQL como fonte de verdade (`src/github_rag/catalog/`).
+O domínio (estados, transições, comparação de commit) é puro e testável sem PG via
+fake in-memory; o adaptador PostgreSQL (`catalog/postgres/`) implementa a mesma
+porta `CatalogRepository` com SQLAlchemy 2.x + psycopg3.
+
+Configuração via variável de ambiente `DATABASE_URL`
+(`postgresql+psycopg://usuario:senha@host:porta/banco`).
+
+Schema versionado com Alembic:
+
+```bash
+alembic upgrade head
+```
+
+Os testes de integração contra PostgreSQL real usam o marcador `integration`
+(`pytest -m integration`) e são pulados automaticamente quando não há PG/Docker
+disponível; o run padrão (`python -m pytest`) cobre domínio e fake, sem exigir
+PostgreSQL.
+
 ## Entrega por container
 
 O venv é exclusivo do desenvolvimento local. Docker/T19 é a entrega

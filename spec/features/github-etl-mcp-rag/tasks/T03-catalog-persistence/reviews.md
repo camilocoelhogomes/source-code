@@ -216,3 +216,31 @@ Implementação correta, aderente às interfaces congeladas e ao design aprovado
 ### Conclusão
 
 Complexidade adequada ao escopo (camada de persistência); nenhum gargalo de performance comprovado por medição. As alegações de simplificação disponíveis (deduplicação fake×adaptador) são especulativas e contrariam a separação hexagonal aprovada — não devem ser exigidas na etapa Blue. Testes verdes e baseline reproduzível registrados em `refactoring.md`. **Nenhum gargalo comprovado ⇒ nenhuma meta Blue.** Resultado: `BLUE_APPROVED_BY_ARCHITECT`.
+
+## Review Documentação — Tech Lead Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | tech-lead-architect (modo REVIEW) |
+| Artefato | `README.md` (seção "Catálogo (PostgreSQL)") + `CHANGELOG.md` `[Unreleased]` |
+| Branch | `feature/github-etl-mcp-rag-T03-catalog-persistence` |
+| Data | 2026-07-18 |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios verificados
+
+| # | Critério | Veredito | Evidência |
+|---|---|---|---|
+| 1 | Seção catálogo/PostgreSQL/`DATABASE_URL`/Alembic no `README.md` | OK | Nova seção "Catálogo (PostgreSQL)"; menciona domínio puro + fake, adaptador PG, `DATABASE_URL`, `alembic upgrade head` |
+| 2 | Menciona marcador `integration` para testes PG | OK | "Os testes de integração ... usam o marcador `integration` (`pytest -m integration`)" |
+| 3 | Seções T01 de venv Windows/Unix preservadas | OK | Seções "Windows — PowerShell/cmd" e "macOS e Linux" inalteradas; nova seção inserida entre "Testes e cobertura" e "Entrega por container" |
+| 4 | `CHANGELOG.md [Unreleased]` reflete o que a T03 adicionou | OK | Itens: domínio+porta+fake+adaptador PG, migrations Alembic, reconcile/progresso/file stages/histórico, soft-delete+lock otimista, `DATABASE_URL`, testes `integration`, contagem de testes/cobertura (137/98.71%) |
+| 5 | Concisão (sem reescrita desnecessária) | OK | Apenas inserções pontuais; nenhuma seção pré-existente reescrita |
+
+### Achados
+
+Nenhum achado `BLOCKING`, `MAJOR` ou `SUGGESTION`.
+
+### Conclusão
+
+Documentação e changelog atualizados de forma concisa, sem romper as seções T01 de venv Windows/Unix, cobrindo catálogo/PostgreSQL/`DATABASE_URL`/Alembic e o marcador `integration`. Resultado: `APPROVED_BY_ARCHITECT` (gate DOCUMENTATION).
