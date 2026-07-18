@@ -3,12 +3,14 @@
 ## Identificação
 
 - **Feature ID:** `github-etl-mcp-rag`
-- **Versão:** 0.3.0
-- **Estado:** `READY_FOR_IMPLEMENTATION`
-- **Natureza:** requisitos aprovados; plano de engenharia v0.1.5 aprovado pelo PO (`PO_PLAN_APPROVED`); candidato aguardando aprovação humana do plano.
-- **Aprovação humana (requisitos):** `aprovo` em 2026-07-18 por `camilocoelhogomes` (commit candidato `71ed647`).
-- **Artefatos de engenharia:** `implementation-plan.md` v0.1.5 aprovado; tasks `T01`–`T19` em `READY_FOR_IMPLEMENTATION`.
+- **Versão:** 0.4.0
+- **Estado:** `PENDING_HUMAN_APPROVAL`
+- **Natureza:** delta sobre integrações via SDK OSS de mercado e PostgreSQL via ORM; o conteúdo funcional de `0.3.0` permanece válido e aprovado; este delta aguarda aprovação humana antes de o Principal Engineer revisar o plano e as tasks.
+- **Aprovação humana (requisitos 0.3.0):** `aprovo` em 2026-07-18 por `camilocoelhogomes` (commit candidato `71ed647`).
+- **Aprovação humana (requisitos 0.4.0):** pendente.
+- **Artefatos de engenharia:** `implementation-plan.md` v0.1.5 e tasks `T01`–`T19` permanecem como base; revisão de plano/tasks para este delta ocorre **após** aprovação humana de `0.4.0` (não alterados nesta rodada).
 - **Rastreabilidade:** requisitos `REQ-*`, regras `BR-*`, decisões `DEC-*` e cenários `BDD-*`.
+- **Histórico deste delta:** `0.3.0` → `0.4.0` — BR-023–024, DEC-015–016, BDD-024; dívida T06 (inspeção Git ad-hoc → GitPython) documentada para task de refactor no plano.
 
 ## Problema
 
@@ -111,6 +113,8 @@ Arquitetos precisam realizar Discovery sobre centenas ou milhares de microsservi
 - **BR-020:** O arquivo apontado por `CONFIG_PATH` deve ser carregado e validado na inicialização do container; alterações exigem reinicialização para serem aplicadas.
 - **BR-021:** Configuração ausente, JSON malformado, conexão inválida ou referência de segredo inexistente não pode produzir cadastro parcial silencioso.
 - **BR-022:** Wildcards de repositório em conexões GitHub são filtros exclusivamente de inclusão; somente repositórios correspondentes podem entrar no catálogo.
+- **BR-023:** Integrações com serviços ou protocolos externos devem usar SDK open source de mercado ou o cliente oficial do fornecedor; é proibido reinventar cliente HTTP, CLI ou protocolo do zero para esses serviços. Stdlib para I/O local genérico (ex.: `pathlib`, parse de URL `file://`) permanece permitido quando não substitui um cliente de serviço.
+- **BR-024:** O acesso ao PostgreSQL deve ocorrer obrigatoriamente via ORM **SQLAlchemy 2.x**, com migrations **Alembic** e driver **psycopg3**, alinhado à implementação já entregue em `T03-catalog-persistence`. É proibido SQL ad hoc paralelo fora do ORM/migrations para o catálogo.
 
 ## Contrato declarativo da configuração
 
@@ -180,6 +184,27 @@ O contrato mantém o padrão Sourcebot de arquivo externo, `CONFIG_PATH`, `conne
 - **DEC-012:** A configuração dos repositórios segue o padrão Sourcebot de arquivo JSON externo montado por volume e caminho informado em `CONFIG_PATH`, usando `connections`.
 - **DEC-013:** Definições de repositórios não são mantidas pela UI; a UI opera sobre o catálogo derivado da configuração de ambiente.
 - **DEC-014:** Wildcards de repositórios GitHub são usados somente para inclusão.
+- **DEC-015:** Defaults de SDK / cliente oficial para integrações externas (substituíveis apenas por outro SDK OSS de mercado equivalente, não por cliente caseiro). Ver tabela abaixo.
+- **DEC-016:** Zoekt não possui SDK Python maduro de mercado; a integração deve ser um **adaptador fino** sobre a API HTTP e/ou CLI **oficial** do Zoekt, sem reimplementar formato de índice nem protocolo proprietário do zero.
+
+Defaults de SDK (DEC-015):
+
+| Integração | SDK / cliente default |
+|---|---|
+| GitHub API | **PyGithub** |
+| Git (local, snapshot, diff) | **GitPython** |
+| Matching de `.gitignore` | **pathspec** (GitWildMatch) |
+| Tree-sitter (chunks) | pacote oficial **`tree-sitter`** + grammars |
+| Qdrant | **`qdrant-client`** |
+| SLM e embeddings | cliente **OpenAI-compatible** (`openai`) atrás da abstração BR-009, apontando a runtime local |
+| Agendamento cron | **APScheduler** ou equivalente maduro de cron em Python |
+| Servidor MCP | SDK oficial Python **`mcp`** |
+| API HTTP da UI | **FastAPI** (alinhado a ENG-001 do plano) |
+| PostgreSQL | **SQLAlchemy 2.x** + **Alembic** + **psycopg3** (BR-024; T03) |
+
+### Dívida técnica conhecida (integrações)
+
+- **DT-001 (T06):** A descoberta local já entregue inspeciona `.git` / `refs` / `packed-refs` de forma ad-hoc, sem GitPython. Isso viola BR-023 / DEC-015. O Principal Engineer deve criar no plano uma task de **refatoração** (provisoriamente `T20-refactor-local-discovery-git-sdk`) para migrar a inspeção Git de `T06-local-discovery` para **GitPython**, preservando o contrato de descoberta e os cenários BDD-016 e BDD-018. Esta dívida não altera o comportamento de produto já especificado; apenas a conformidade da integração.
 
 ## Fluxo principal
 
@@ -222,6 +247,7 @@ O contrato mantém o padrão Sourcebot de arquivo externo, `CONFIG_PATH`, `conne
 - Sem requisito de latência no MVP.
 - Cobertura mínima de testes do projeto: 95%.
 - O produto deve operar com centenas ou milhares de repositórios, sujeito aos recursos locais configurados.
+- Integrações externas conforme BR-023–024 e DEC-015–016 (SDK OSS / ORM; Zoekt via API/CLI oficial).
 
 ## Fora de escopo do MVP
 
@@ -410,6 +436,16 @@ O contrato mantém o padrão Sourcebot de arquivo externo, `CONFIG_PATH`, `conne
 **Então** deve conseguir visualizar estados, selecionar repositórios, disparar indexações e pesquisar  
 **E** não deve conseguir cadastrar, editar ou remover conexões ou definições de repositórios.
 
+### BDD-024 — Conformidade de integrações com SDK OSS / ORM
+
+**Dado** as integrações do produto com GitHub, Git, PostgreSQL, Qdrant, Tree-sitter, SLM/embeddings, agendamento cron, MCP e Zoekt  
+**Quando** a implementação (ou revisão) de cada integração for avaliada  
+**Então** GitHub, Git, `.gitignore`, Tree-sitter, Qdrant, SLM/embeddings, cron, MCP e PostgreSQL devem usar o SDK ou cliente oficial listado em DEC-015 (ou outro SDK OSS de mercado equivalente documentado)  
+**E** o PostgreSQL do catálogo deve ser acessado via SQLAlchemy 2.x com Alembic e psycopg3 (BR-024)  
+**E** Zoekt deve usar apenas adaptador fino sobre API/CLI oficial (DEC-016)  
+**E** nenhuma dessas integrações deve reinventar cliente HTTP, CLI ou protocolo do zero  
+**E** a dívida DT-001 (T06 ad-hoc → GitPython) deve ser eliminada pela task de refatoração correspondente no plano, sem mudar os critérios de BDD-016 e BDD-018.
+
 ## Riscos
 
 - Centenas ou milhares de repositórios, arquivos sem limite explícito e SLM local podem exceder CPU, memória, disco ou tempo aceitável.
@@ -421,6 +457,7 @@ O contrato mantém o padrão Sourcebot de arquivo externo, `CONFIG_PATH`, `conne
 - Montagens de volume incorretas podem expor diretórios locais indevidos ao container.
 - Diferenças de arquitetura e capacidade entre máquinas dos desenvolvedores podem afetar compatibilidade e desempenho das imagens.
 - Ausência de meta objetiva de latência e de um conjunto fechado de perguntas de avaliação limita a mensuração quantitativa do MVP.
+- Integrações implementadas sem SDK de mercado (ex.: DT-001 em T06) elevam custo de manutenção e risco de bugs em edge cases já resolvidos por bibliotecas maduras.
 
 ## Dúvidas não bloqueantes para refinamento técnico
 
@@ -429,6 +466,8 @@ O contrato mantém o padrão Sourcebot de arquivo externo, `CONFIG_PATH`, `conne
 - Convenção de nomes e caminhos internos dos volumes que conterão repositórios locais.
 - Registro corporativo, arquiteturas de CPU e plataformas suportadas pelas imagens de container.
 - Conjunto representativo de perguntas e repositórios para a validação humana da coerência.
+- Escolha entre APScheduler e outro scheduler cron maduro equivalente (DEC-015 permite equivalente).
+- Runtime local concreto por trás do cliente OpenAI-compatible para SLM/embeddings (Ollama, vLLM, etc.), sem alterar a porta abstrata BR-009.
 
 ## Matriz resumida de rastreabilidade
 
@@ -440,3 +479,4 @@ O contrato mantém o padrão Sourcebot de arquivo externo, `CONFIG_PATH`, `conne
 | Recuperar evidências via MCP | REQ-028–033, DEC-008 | BDD-011–013, BDD-015 |
 | Distribuir por containers | REQ-036–038, DEC-011–012 | BDD-020–022 |
 | Proteger credenciais | REQ-011, REQ-041, BR-008, BR-012, BR-019, DEC-009 | BDD-014, BDD-019, BDD-022 |
+| Integrar via SDK OSS / ORM | BR-023–024, DEC-015–016, DT-001 | BDD-024 |
