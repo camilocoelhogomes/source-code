@@ -9,26 +9,29 @@
 
 ## Objetivo
 
-Persistir e recuperar vetores/chunks no Qdrant para busca semântica baseada em embeddings.
+Persistir e recuperar no Qdrant **cada** unidade RAG como vetor + payload contendo o chunk Tree-sitter e os metadados contextuais gerados pela SLM para aquele chunk.
 
 ## Escopo
 
 - Porta `VectorStore`: upsert por repo/commit, delete/replace em reindexação completa, search semântico.
-- Associação a metadados contextuais e localização (repo, path, commit, trecho).
-- Geração/obtenção de embeddings atrás de porta (pode compor com T12 ou porta `Embedder` irmã — decidir no design sem acoplar ao MCP).
+- **Upsert por chunk enriquecido:** texto/localização do chunk Tree-sitter + metadados SLM no payload + vetor (embedding).
+- Não redefine a unidade de chunk (não chunka por tamanho/linhas); consome apenas chunks Tree-sitter já enriquecidos.
+- Porta `Embedder` (ou equivalente) para vetores — distinta da SLM de metadados; detalhe no design.
+- Busca semântica devolve evidências a partir desses pontos (BDD-010).
 
 ## Fora de escopo
 
-- Narrativa SLM; Zoekt; UI/MCP diretos.
+- Narrativa SLM; Zoekt; geração de chunks; UI/MCP diretos.
 
 ## Dependências
 
-- `T01-project-foundation`
+- `T11-treesitter-chunker` (contrato do chunk; metadados tipados alinhados a T12)
 
 ## Critérios de aceite
 
+- Persistência de um chunk exige payload com dados do chunk Tree-sitter **e** metadados SLM associados.
 - Upsert + search retornam evidências semanticamente relacionadas (base BDD-010).
-- Reindexação de repo substitui vetores do commit anterior de forma consistente com política de restart total.
+- Reindexação de repo substitui vetores do commit anterior (política de restart total).
 - Testes com Qdrant fake/testcontainer conforme design.
 
 ## Arquivos prováveis
@@ -39,9 +42,10 @@ Persistir e recuperar vetores/chunks no Qdrant para busca semântica baseada em 
 
 ## Rastreabilidade
 
-- DEC-004; REQ-002; BR-011; BDD-010.
+- DEC-004; DEC-003 (unidade de chunk); BR-010 (metadados no payload); REQ-002; BR-011; BDD-010.
 
 ## Handoff
 
-- Interfaces: `VectorStore`, opcionalmente `Embedder`.
+- Interfaces: `VectorStore`, `Embedder`.
 - Consumidores: `T14`, `T16`.
+- Fluxo esperado do orquestrador: chunk Tree-sitter → metadados SLM → upsert Qdrant.

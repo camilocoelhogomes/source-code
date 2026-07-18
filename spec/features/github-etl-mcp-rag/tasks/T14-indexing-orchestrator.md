@@ -9,24 +9,29 @@
 
 ## Objetivo
 
-Orquestrar indexação sob demanda e em lote: seleção de repos, fila, estados REQ-020, skip de commit já processado, pipeline Zoekt→Tree-sitter→metadados→persistência, progresso e reinício total do repositório em falha parcial.
+Orquestrar indexação sob demanda e em lote: seleção de repos, fila, estados REQ-020, skip de commit já processado, Zoekt para busca exata e pipeline RAG **Tree-sitter → SLM (por chunk) → Qdrant**, com progresso e reinício total do repositório em falha parcial.
 
 ## Escopo
 
 - `IndexingOrchestrator` + fila respeitando `WorkerLimiter`.
-- Estados exclusivamente REQ-020: `não indexado` | `na fila` | `indexando` | `atualizado` | `erro`. **Proibido** `desatualizado` ou qualquer outro.
+- Estados exclusivamente REQ-020: `não indexado` | `na fila` | `indexando` | `atualizado` | `erro`. Sem estados extras.
 - Transições: a partir de `não indexado` ou `erro` → `na fila` → `indexando` → `atualizado` | `erro`.
 - Comparar commit `main` vs último processado (BR-002–004).
-- **Commit novo na `main`:** se o tip de `main` ≠ último commit processado, o repositório **não** pode permanecer `atualizado` (BR-004). Transicionar para `não indexado` e torná-lo elegível a indexação. Sem estado intermediário inventado.
-- Skip: somente quando commit atual da `main` = último processado → permanece `atualizado` e não reprocessa.
-- Progresso: percentual, arquivos processados, etapa atual; flags por arquivo (Zoekt, Tree-sitter, metadata).
-- Falha em qualquer etapa: estado `erro`, mensagem, horário e histórico; nova tentativa reinicia repo inteiro (limpa artefatos parciais via portas).
-- Mesmo pipeline para GitHub e local (BR-014).
-- Disparo por seleção (checkbox) — API de aplicação; UI em T18.
+- **Commit novo na `main`:** tip ≠ último processado → `não indexado` (elegível); sem `desatualizado`.
+- Skip: tip `main` = último processado → permanece `atualizado`.
+- Por arquivo elegível:
+  1. Zoekt (índice exato)
+  2. Tree-sitter → lista de chunks semânticos (**única** fonte; sem chunking por tamanho/linhas)
+  3. Para **cada** chunk: SLM local → metadados contextuais (BR-010, DEC-006)
+  4. Para **cada** chunk enriquecido: persistir no Qdrant (vetor + payload com chunk + metadados) (DEC-004)
+- Progresso: percentual, arquivos, etapa; flags por arquivo Zoekt / Tree-sitter / metadados persistidos (REQ-022).
+- Falha em qualquer etapa (incl. SLM ou Qdrant no meio dos chunks): `erro` + histórico; nova tentativa reinicia o repo inteiro.
+- Mesmo pipeline GitHub e local (BR-014).
+- Disparo por checkbox — API; UI em T18.
 
 ## Fora de escopo
 
-- Scheduler diário (T15); MCP; implementação visual da UI.
+- Scheduler diário (T15); MCP; UI visual.
 
 ## Dependências
 
@@ -35,11 +40,12 @@ Orquestrar indexação sob demanda e em lote: seleção de repos, fila, estados 
 ## Critérios de aceite
 
 - BDD-002, BDD-004, BDD-005, BDD-007, BDD-008.
+- Pipeline RAG executa Tree-sitter → SLM por chunk → Qdrant; não grava no Qdrant chunks que não sejam Tree-sitter nem sem metadados SLM.
 - Workers respeitados.
 - Commit igual → sem reprocessamento e permanece `atualizado`.
-- Commit da `main` diferente do processado → estado `não indexado` (não `desatualizado`) e elegível a reindexação.
-- Falha parcial → `erro` + restart completo na próxima execução.
-- Enum de estados idêntico a REQ-020.
+- Commit diferente → `não indexado` e elegível.
+- Falha parcial → `erro` + restart completo.
+- Enum idêntico a REQ-020.
 
 ## Arquivos prováveis
 
@@ -51,10 +57,10 @@ Orquestrar indexação sob demanda e em lote: seleção de repos, fila, estados 
 
 ## Rastreabilidade
 
-- REQ-005,012,016,018–022,024; BR-002–005,014; BDD-002,004,005,007,008.
+- REQ-005,012,016,018–022,024; BR-002–005,010,014; DEC-003,004,006; BDD-002,004,005,007,008.
 
 ## Handoff
 
 - Interface: `IndexingOrchestrator`.
 - Consumidores: `T15`, `T18`.
-- Critical path task.
+- Critical path; dono da sequência RAG obrigatória.
