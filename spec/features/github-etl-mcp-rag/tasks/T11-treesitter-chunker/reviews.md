@@ -389,3 +389,49 @@ Resultado: falhas pela razão esperada (impl v0.1 ainda sem config):
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — BDD 0.2.0, interfaces 0.2.0, unit-test-plan 0.2.1. Prosseguir para implementação config (Developer).
+
+---
+
+## Review — Implementação config (v0.2 / commit `1d0a37b`)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `src/github_rag/index/chunk/{types,grammar_registry,node_selectors}.py` + `pyproject.toml` (pins config) |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Trigger | Implementação expandida após design/BDD/interfaces/unit APPROVED v0.2.x |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| DEC-003 / ENG-008 — sem chunk por tamanho/linhas | OK | Sem `max_chars`/`chunk_size`/`overlap`/split por linhas no pacote; seletores só por tipo de nó |
+| DEC-015 / BDD-024 — grammars oficiais PyPI | OK | `tree-sitter-yaml==0.7.2`, `json==0.24.8`, `xml==0.7.0`, `toml==0.7.0`; imports oficiais em `_language_ptr` |
+| `SourceLanguage` + extensões §4.2 | OK | enum YAML/JSON/XML/TOML; `.yaml`/`.yml`/`.json`/`.xml`/`.toml` em `language_from_path` |
+| Nós-alvo §4.4 | OK | `_TARGETS`: yaml `document`/`block_mapping_pair`; json `object`/`pair`/`array`; xml `element`; toml `table`/`pair` |
+| XML `language_xml` (D-T11-012) | OK | `pkg.language_xml()`; runtime `Language` == `language_xml`, ≠ `language_dtd` |
+| Eager registry inclui config | OK | `OfficialGrammarRegistry.__init__` resolve yaml/json/xml/toml |
+| Alinhamento BDD TS-16..19 / UT-C20..C23 | OK | kinds estruturais (não root-only); XML ninhos `>= 2` ranges |
+| Contrato T12/T13/T14 intacto | OK | `SemanticChunk` / `chunk_id` / erros tipados sem mudança de semântica |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+| `SUGGESTION` | TS-18 resolve só `assertIsNotNone` — não compara `language_xml` ≠ `language_dtd` (já verificado em review runtime) | `test_treesitter_chunker.py` TS-18 | Opcional endurecer assert |
+| `SUGGESTION` | Eager load de grammars (incl. config) — custo startup; sem medição | `grammar_registry.py` | Avaliar lazy só com baseline Blue |
+
+### Checks
+
+```bash
+PYTHONPATH=src .venv/bin/python -m pytest -q --cov=github_rag --cov-report=term-missing:skip-covered
+# 594 passed, 1 skipped; Total coverage: 98.51%
+# chunk modules ≥98% (node_selectors 98%; demais 100%)
+```
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — implementação config alinhada a design/interfaces/BDD v0.2.x (DEC-003/015). Prosseguir para etapa Blue.

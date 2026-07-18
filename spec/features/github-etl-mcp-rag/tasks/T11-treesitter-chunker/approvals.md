@@ -13,4 +13,5 @@
 | BDD | `0.2.0` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | Config languages; gate conjunto v0.2.1 |
 | Interfaces | `0.2.0` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | SourceLanguage + language_xml + seletores config |
 | Unit tests | `0.2.1` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | MAJORs kinds estruturais fechados; RED OK |
+| Implementação config | `1d0a37b` / v0.2 | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | yaml/json/xml/toml; pins; `language_xml`; cobertura 98.51% |
 | Gate humano | PR | pendente | — | — | Único gate humano: review/merge no GitHub |
