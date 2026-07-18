@@ -143,3 +143,38 @@
 ### Decisão
 
 `CHANGES_REQUIRED` — fechar M-UT-01 (U-P03) e reapresentar para review Architect. Não avançar para implementação.
+
+## Review — Unit test plan + fase vermelha v0.1.1
+
+| Campo | Valor |
+|---|---|
+| Data | 2026-07-18 |
+| Revisor | Tech Lead Architect |
+| Artefato | `unit-test-plan.md` v0.1.1 + `tests/unit/snapshot/*.py` + `tests/bdd/test_main_snapshot.py` |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Interfaces base | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
+| BDD base | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Contratos / IDs do plano materializados | OK | U-M01..04, U-D01..02, U-L01..12, U-G01..07, U-P01..03, U-X01..05; MS-01..12 |
+| Extremos / corners | OK | U-L07/U-G07/MS-06; U-L08/MS-07; U-G04..05/MS-08; U-L11/MS-05; U-X01..05 |
+| Evidência red | OK | `ModuleNotFoundError` nos 6 módulos (registrada no plan §4) |
+| Alinhamento às interfaces | OK | U-P03 → `(TypeError, SnapshotError)`; `FileChangeKind` de `models` |
+| Não enfraquecer critérios | OK | M-UT-01 fechado; MS-04 asserta `read_file` dirty |
+
+### Achados
+
+| ID | Severidade | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| M-UT-01 | `MAJOR` | `test_provider.py:73` `(TypeError, SnapshotError)` | — | fechado |
+| S-UT-01 | `SUGGESTION` | `test_diff.py:10` importa `FileChangeKind` de `models` | — | fechado |
+| S-UT-03 | `SUGGESTION` | `test_main_snapshot.py:120-123` `read_file` dirty → `FileNotFoundInCommitError` | — | fechado |
+| S-UT-02 | `SUGGESTION` | U-M04 sem token no construtor | Preferir caminho com token (já coberto U-G04/U-G06/MS-12) | aberto (não bloqueante) |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — unit-test-plan v0.1.1 + fase vermelha. Prosseguir para implementação (Developer).

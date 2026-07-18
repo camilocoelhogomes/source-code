@@ -4,17 +4,18 @@
 |---|---|
 | Feature | `github-etl-mcp-rag` |
 | Task | `T08-main-snapshot` |
-| Estado | `PENDING_ARCHITECT_REVIEW` |
+| Estado | `APPROVED_BY_ARCHITECT` |
 | Versão | `0.1.1` |
 | Interfaces base | `0.1.0` |
 | BDD base | `0.1.0` |
+| Aprovação Architect | `APPROVED_BY_ARCHITECT` em 2026-07-18 (pipeline autônomo) |
 
 ## 0. Histórico Architect
 
 | Data | Autor | Decisão | Versão |
 |---|---|---|---|
 | 2026-07-18 | Tech Lead Architect | `CHANGES_REQUIRED` | `0.1.0` | M-UT-01 U-P03 |
-| — | — | — | `0.1.1` | M-UT-01 fechado; re-review |
+| 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.1` | M-UT-01 fechado; S-UT-01/S-UT-03 aplicados |
 
 ## 1. Escopo
 
