@@ -14,6 +14,7 @@ Orquestrar indexação sob demanda, em lote, **no startup do container** e via c
 ## Escopo
 
 - `IndexingOrchestrator` + fila respeitando `WorkerLimiter`.
+- **Somente portas** (ENG-013): orquestrador **não importa** SDKs de integração (PyGithub, GitPython, Zoekt client, tree-sitter, openai, qdrant-client, etc.); só interfaces injetadas.
 - Estados exclusivamente REQ-020: `não indexado` | `na fila` | `indexando` | `atualizado` | `erro`. Sem estados extras.
 - Transições: a partir de `não indexado` ou `erro` → `na fila` → `indexando` → `atualizado` | `erro`.
 - Comparar commit `main` vs último processado no PostgreSQL (BR-002–004).
@@ -74,7 +75,7 @@ Orquestrar indexação sob demanda, em lote, **no startup do container** e via c
 
 ## Rastreabilidade
 
-- REQ-005,012,016,018–022,024; BR-002–005,010,014; DEC-003,004,006; BDD-002,004,005,007,008; ENG-011, ENG-012.
+- REQ-005,012,016,018–022,024; BR-002–005,010,014,023; DEC-003,004,006; BDD-002,004,005,007,008; ENG-011, ENG-012, ENG-013.
 
 ## Handoff
 

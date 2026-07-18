@@ -14,6 +14,7 @@ Estabelecer PostgreSQL como fonte de verdade do catálogo de repositórios, esta
 ## Escopo
 
 - Schema/migrations versionadas.
+- Persistência via **SQLAlchemy 2.x** + migrations **Alembic** + driver **psycopg3** (BR-024 / ENG-015); proibido SQL ad hoc paralelo fora do ORM/migrations para o catálogo.
 - Modelo de domínio: conexão, origem (`github`|`local`), repositório, estados fechados, último commit processado, progresso, erros, histórico.
 - `CatalogRepository` com operações necessárias ao sync e ao orquestrador.
 - Registro de etapas por arquivo: Zoekt, Tree-sitter, metadados persistidos.
@@ -43,10 +44,11 @@ Estabelecer PostgreSQL como fonte de verdade do catálogo de repositórios, esta
 
 ## Rastreabilidade
 
-- BR-001, BR-004; dados operacionais do requirements; BDD-004,007,008 (camada de persistência).
+- BR-001, BR-004, BR-024; DEC-015 (PostgreSQL); dados operacionais do requirements; BDD-004,007,008 (camada de persistência); BDD-024 (ORM).
 
 ## Handoff
 
 - Interface: `CatalogRepository`.
 - Consumidor principal: `T07`, depois `T14`, `T18`.
 - Decisão: schema versionado desde o início para evitar migrações ad hoc.
+- Conformidade ORM (BR-024) já alinhada; esta revisão 0.4.0 apenas confirma — sem mudança de escopo funcional.

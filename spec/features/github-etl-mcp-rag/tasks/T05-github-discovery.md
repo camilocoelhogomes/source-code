@@ -14,6 +14,7 @@ Descobrir repositórios GitHub a partir de conexões `type: github` (orgs + wild
 ## Escopo
 
 - `GitHubRepoDiscovery` usando token de `token.env`.
+- Integração GitHub API via **PyGithub** (DEC-015 / BR-023); proibido cliente HTTP ad-hoc.
 - Filtro exclusivo de inclusão por wildcards de prefixo/sufixo.
 - Público e privado conforme acesso do token.
 - Erros de token ausente/inválido/sem acesso sem expor o segredo.
@@ -36,13 +37,13 @@ Descobrir repositórios GitHub a partir de conexões `type: github` (orgs + wild
 ## Arquivos prováveis
 
 - `src/.../sources/github/discovery.py`
-- `src/.../sources/github/client.py` (porta HTTP mockável)
+- `src/.../sources/github/client.py` (adaptador PyGithub; porta mockável)
 - `tests/bdd/...`
 - `tests/unit/sources/github/...`
 
 ## Rastreabilidade
 
-- REQ-010, REQ-011, REQ-041; BR-007, BR-008, BR-019, BR-022; DEC-001, DEC-009, DEC-014.
+- REQ-010, REQ-011, REQ-041; BR-007, BR-008, BR-019, BR-022, BR-023; DEC-001, DEC-009, DEC-014, DEC-015; BDD-024.
 
 ## Handoff
 

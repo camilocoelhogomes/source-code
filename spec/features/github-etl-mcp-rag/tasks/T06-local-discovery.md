@@ -41,10 +41,14 @@ Descobrir repositórios locais declarados por conexões `type: git` com URL `fil
 
 ## Rastreabilidade
 
-- REQ-034, REQ-040; BR-013–015; DEC-010; BDD-016–018.
+- REQ-034, REQ-040; BR-013–015; DEC-010; BDD-016–018; DT-001 → T20.
+
+## Dívida técnica (DT-001)
+
+Inspeção Git ad-hoc de `.git` / `refs` / `packed-refs` (sem GitPython) viola BR-023 / DEC-015. Corrigida por `T20-refactor-local-discovery-git-sdk` (GitPython), preservando contrato e BDD-016/018. Esta task permanece entregável; T20 é o follow-up de conformidade.
 
 ## Handoff
 
 - Interface: `LocalRepoDiscovery`.
-- Consumidor: `T07`.
+- Consumidor: `T07`; conformidade Git SDK: `T20`.
 - Convenção ENG-005: `/repos` como mount padrão documentado.

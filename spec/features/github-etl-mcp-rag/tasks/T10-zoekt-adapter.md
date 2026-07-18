@@ -14,7 +14,7 @@ Adaptar indexação e busca exata via Zoekt, incluindo metadados necessários ao
 ## Escopo
 
 - Porta `ExactCodeIndex`: indexar conjunto de arquivos de um repo/commit; buscar correspondências exatas.
-- Integração com serviço Zoekt (cliente HTTP/CLI conforme design).
+- **Adaptador fino** sobre API HTTP e/ou CLI **oficial** do Zoekt (DEC-016); sem reinventar formato de índice nem protocolo proprietário; sem client inventado paralelo.
 - Metadados mínimos: repositório, caminho, commit, trechos.
 
 ## Fora de escopo
@@ -39,7 +39,7 @@ Adaptar indexação e busca exata via Zoekt, incluindo metadados necessários ao
 
 ## Rastreabilidade
 
-- DEC-002; REQ-002; BDD-009.
+- DEC-002, DEC-016; REQ-002; BR-023; BDD-009; BDD-024.
 
 ## Handoff
 

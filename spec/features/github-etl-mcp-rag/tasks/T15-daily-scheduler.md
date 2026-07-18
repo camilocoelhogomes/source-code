@@ -13,6 +13,7 @@ Agendar indexação periódica por **expressão cron**, configurável por variá
 
 ## Escopo
 
+- Scheduler via **APScheduler** (ou equivalente maduro de cron em Python — DEC-015); proibido cron ad-hoc reinventado.
 - `DailyScheduler` (nome histórico da task) dispara o orquestrador conforme a **expressão cron** ativa.
 - Configuração = expressão cron (ex.: uma vez ao dia, duas vezes ao dia, de hora em hora). O caso “uma vez ao dia” de REQ-017 / BDD-003 é um **caso especial** de cron (ex.: `0 2 * * *`), não um segundo modelo de configuração.
 - Variável de ambiente (ex.: `INDEX_CRON` ou nome fixado no design) fornece o default no boot.
@@ -47,7 +48,7 @@ Agendar indexação periódica por **expressão cron**, configurável por variá
 
 ## Rastreabilidade
 
-- REQ-017 (diário = caso especial de cron); BR-017; BDD-003 (cron UI/env); ENG-004; ENG-010.
+- REQ-017 (diário = caso especial de cron); BR-017, BR-023; DEC-015; BDD-003 (cron UI/env); BDD-024; ENG-004; ENG-010.
 
 ## Handoff
 

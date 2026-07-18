@@ -14,6 +14,7 @@ Filtrar arquivos do snapshot: incluir textuais de desenvolvimento (qualquer ling
 ## Escopo
 
 - `FileEligibilityFilter` puro e testável.
+- Matching de `.gitignore` via **pathspec** (GitWildMatch) — DEC-015 / BR-023; alternativa aceitável: GitPython check-ignore se documentada. Proibido reimplementar GitWildMatch do zero.
 - Regras de inclusão/exclusão alinhadas a REQ-014–015.
 - Sem limite funcional de tamanho no MVP (REQ-019) — não introduzir caps de produto.
 
@@ -39,7 +40,7 @@ Filtrar arquivos do snapshot: incluir textuais de desenvolvimento (qualquer ling
 
 ## Rastreabilidade
 
-- REQ-014, REQ-015, REQ-019; BDD-006.
+- REQ-014, REQ-015, REQ-019; BR-023; DEC-015; BDD-006; BDD-024.
 
 ## Handoff
 

@@ -13,7 +13,7 @@ Entregar UI simples de gestão e busca: listar repos (origem/conexão/estado REQ
 
 ## Escopo
 
-- API HTTP + frontend leve consumindo catálogo, orquestrador, scheduler (**cron**) e `QueryService`.
+- API HTTP em **FastAPI** (ENG-001 / DEC-015) + frontend leve consumindo catálogo, orquestrador, scheduler (**cron**) e `QueryService`.
 - Estados conforme REQ-020 apenas.
 - Progresso conforme REQ-021–022 (percentual, arquivos, etapa; flags Zoekt/Tree-sitter/metadados).
 - Em falhas (REQ-023): exibir **mensagem**, **horário** e **histórico de execuções** — **não** “logs” genéricos.
@@ -48,7 +48,7 @@ Entregar UI simples de gestão e busca: listar repos (origem/conexão/estado REQ
 
 ## Rastreabilidade
 
-- REQ-006,012,017,020–027,035; BR-012,017; BDD-002,003,007,009–010,016,023; ENG-010.
+- REQ-006,012,017,020–027,035; BR-012,017,023; DEC-015; BDD-002,003,007,009–010,016,023; BDD-024; ENG-001, ENG-010.
 
 ## Handoff
 

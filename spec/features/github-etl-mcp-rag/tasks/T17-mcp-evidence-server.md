@@ -13,6 +13,7 @@ Disponibilizar servidor MCP com as tools aprovadas, retornando somente evidênci
 
 ## Escopo
 
+- Servidor MCP via SDK oficial Python **`mcp`** (DEC-015 / BR-023); proibido protocolo MCP reinventado.
 - Tools: `list_repos`, `search_code`, `semantic_search`, `read_file`, `list_tree`.
 - Delegação a catálogo + `QueryService`.
 - Paralelismo via `QUERY_WORKERS` / `WorkerLimiter`.
@@ -43,7 +44,7 @@ Disponibilizar servidor MCP com as tools aprovadas, retornando somente evidênci
 
 ## Rastreabilidade
 
-- REQ-003,028–033; DEC-008; BR-008, BR-011; BDD-011–015.
+- REQ-003,028–033; DEC-008, DEC-015; BR-008, BR-011, BR-023; BDD-011–015; BDD-024.
 
 ## Handoff
 

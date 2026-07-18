@@ -14,6 +14,7 @@ Gerar metadados contextuais com a **SLM local** (abstrata; default Qwen Coder 3B
 ## Escopo
 
 - Porta `MetadataGenerator` (provedor/modelo substituível).
+- Adaptador default: cliente **OpenAI-compatible** (`openai`) apontando a runtime local (DEC-015 / BR-023); proibido client HTTP inventado.
 - **Entrada:** um chunk Tree-sitter (unidade de T11) — geração **por chunk**, não por arquivo agregado como substituto do per-chunk.
 - **Saída:** metadados contextuais serializáveis associados àquele chunk.
 - Implementação default apontando para runtime SLM local configurável — detalhe no design.
@@ -43,7 +44,7 @@ Gerar metadados contextuais com a **SLM local** (abstrata; default Qwen Coder 3B
 
 ## Rastreabilidade
 
-- BR-009, BR-010; DEC-006; REQ-022; BDD-007, BDD-010.
+- BR-009, BR-010, BR-023; DEC-006, DEC-015; REQ-022; BDD-007, BDD-010; BDD-024.
 
 ## Handoff
 

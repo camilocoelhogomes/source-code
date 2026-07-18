@@ -3,12 +3,12 @@
 | Campo | Valor |
 |---|---|
 | Feature ID | `github-etl-mcp-rag` |
-| Versão do plano | `0.1.5` |
-| Estado | `READY_FOR_IMPLEMENTATION` |
-| Requisitos base | `requirements.md` v0.3.0 (aprovado 2026-07-18, commit `71ed647`) |
-| Natureza | greenfield; sem código de aplicação pré-existente |
-| Revisão humana | plano v0.1.5 aprovado em 2026-07-18 por `camilocoelhogomes` (commit candidato `bfc9189`) |
-| Revisão PO | `PO_PLAN_APPROVED` em 2026-07-18 (v0.1.5) |
+| Versão do plano | `0.1.6` |
+| Estado | `PO_PLAN_APPROVED` |
+| Requisitos base | `requirements.md` v0.4.0 (aprovado 2026-07-18, commit `7747a27`) |
+| Natureza | delta sobre v0.1.5 — conformidade SDK OSS / ORM (BR-023–024, DEC-015–016, BDD-024, DT-001) |
+| Revisão humana (plano anterior) | plano v0.1.5 aprovado em 2026-07-18 por `camilocoelhogomes` (commit candidato `bfc9189`) |
+| Revisão PO | `PO_PLAN_APPROVED` em 2026-07-18 — rastreabilidade BR-023–024, DEC-015–016, BDD-024, DT-001 ok; T20 cobre dívida sem mudar BDD-016/018; T03 só confirma ORM; sem explosão de escopo. Aguardando `HUMAN_PLAN_APPROVAL`. |
 
 ## 1. Arquitetura
 
@@ -21,7 +21,7 @@ Sistema local em containers com quatro superfícies:
 3. **Consulta** — busca exata (Zoekt), semântica (embeddings/Qdrant com payload dos chunks Tree-sitter + metadados SLM), leitura de arquivo e árvore; compartilhada por UI e MCP.
 4. **Superfícies** — UI de gestão/busca (sem editar config) e servidor MCP (somente evidências).
 
-PostgreSQL é a fonte de verdade de catálogo, origem, estados e último commit processado.
+PostgreSQL é a fonte de verdade de catálogo, origem, estados e último commit processado (acesso **somente** via SQLAlchemy 2.x + Alembic + psycopg3 — BR-024 / T03).
 
 ```text
 ┌─────────────┐   CONFIG_PATH + volumes + env
@@ -31,13 +31,13 @@ PostgreSQL é a fonte de verdade de catálogo, origem, estados e último commit 
        ▼                                             ▼
 ┌─────────────┐   jobs / progresso            ┌─────────────┐
 │ PostgreSQL  │◄──────────────────────────────│ Index Worker│
-└──────┬──────┘                               │  pool (env) │
-       │                                      └──────┬──────┘
-       │                                             │
+│ (SQLAlchemy)│                               │  pool (env) │
+└──────┬──────┘                               └──────┬──────┘
+       │                                      │
        │                    ┌────────────────────────┤
        │                    ▼                        ▼
        │                 Zoekt                 snapshot main
-       │              (busca exata)                  │
+       │           (adaptador fino API/CLI)          │
        │                                             ▼
        │                              ┌──────────────────────────┐
        │                              │ RAG semântico (obrigatório)│
@@ -71,6 +71,7 @@ Zoekt permanece o caminho de busca exata e **não** substitui Tree-sitter/SLM/Qd
 **Startup (ENG-011):** após config válida + sync do catálogo, para cada repo ativo: obter tip `main` e comparar com `last_processed_commit` / estado no PostgreSQL. Se não estiver `atualizado` (tip ≠ processado ou estado `não indexado`/`erro`), transicionar para `não indexado` quando aplicável e **enfileirar** indexação. Estados somente REQ-020.
 
 **Arquivo modificado (ENG-012):** diff entre último commit processado e tip `main`. Paths adicionados/modificados elegíveis → reindexar o **arquivo inteiro** no tip (não delta/hunk como unidade). Paths removidos → limpar índices daquele path. Primeiro index → todos os elegíveis. Falha parcial → restart do **repositório inteiro** (BR-005).
+
 ### 1.2 Decisões de engenharia (não alteram escopo de produto)
 
 | ID | Decisão | Motivo |
@@ -87,27 +88,31 @@ Zoekt permanece o caminho de busca exata e **não** substitui Tree-sitter/SLM/Qd
 | ENG-008 | Chunks semânticos **somente** via Tree-sitter; SLM **obrigatória por chunk** antes do upsert Qdrant. | DEC-003, BR-010, DEC-006; qualidade do RAG; feedback humano no candidato `0166f97`. |
 | ENG-011 | **Startup do container:** após config + sync do catálogo, comparar tip `main` × estado/último commit no PostgreSQL e enfileirar indexação dos repos que não estejam `atualizado` (tip ≠ processado → `não indexado` + fila). Sem estados extras. | Feedback humano `f6272ef`; alinha BR-002–004 ao boot. |
 | ENG-012 | **Reindexação por arquivo modificado:** arquivos alterados entre último commit processado e tip `main` são reindexados **por arquivo inteiro** (não só delta/hunk). Removidos saem dos índices. | Feedback humano `f6272ef`; qualidade e consistência Zoekt/RAG. |
+| ENG-013 | **SDKs / clientes oficiais (DEC-015)** confinados aos **adaptadores**. Defaults: PyGithub (GitHub), GitPython (Git), pathspec (`.gitignore`), `tree-sitter` + grammars, `qdrant-client`, cliente OpenAI-compatible (`openai`) para SLM/embeddings, APScheduler (ou cron maduro equivalente), SDK oficial `mcp`, FastAPI (UI API). Substituição só por outro SDK OSS de mercado equivalente documentado — nunca cliente caseiro (BR-023). | BR-023, DEC-015, BDD-024. |
+| ENG-014 | **Zoekt (DEC-016):** adaptador fino sobre API HTTP e/ou CLI **oficial** do Zoekt; sem reinventar formato de índice nem protocolo. | DEC-016; ausência de SDK Python maduro. |
+| ENG-015 | **PostgreSQL (BR-024):** catálogo exclusivamente via **SQLAlchemy 2.x** + **Alembic** + **psycopg3** (T03 já alinhado). Proibido SQL ad hoc paralelo fora do ORM/migrations para o catálogo. | BR-024, BDD-024. |
+| ENG-016 | **DT-001:** inspeção Git ad-hoc de T06 migra para GitPython na task `T20-refactor-local-discovery-git-sdk`, preservando contrato e BDD-016/018. | BR-023, DEC-015, BDD-024. |
 
 ### 1.3 Fronteiras de módulo
 
 | Módulo | Responsabilidade | Não faz |
 |---|---|---|
 | `config` | Carregar/validar JSON; resolver refs de env; falha total se inválido | Descobrir repos remotos/locais |
-| `sources.github` | Listar repos da org filtrando wildcards de inclusão | Indexar conteúdo |
-| `sources.local` | Expandir `file://` + glob; validar Git + `main` | Mutar working tree |
-| `catalog` | Sincronizar e persistir catálogo/estados no PostgreSQL | Pipeline de arquivos |
-| `snapshot` | Obter tip `main`, árvore e **diff de arquivos** entre commits | Filtrar elegibilidade; orquestrar fila |
-| `eligibility` | Incluir textuais de dev; excluir CSV, imagens, `.gitignore` | Persistir índices |
-| `index.zoekt` | Indexar/buscar exato (arquivo completo na reindexação) | Chunks semânticos / RAG |
-| `index.chunk` | Tree-sitter → **única** fonte de chunks semânticos/RAG (sobre arquivo inteiro) | Chunking por tamanho/linhas; prosa; SLM; Qdrant |
-| `index.metadata` | SLM local → metadados **por cada** chunk Tree-sitter | Respostas MCP; inventar chunks |
-| `index.vector` | Qdrant: vetor + payload (chunk Tree-sitter + metadados SLM) | Busca exata; gerar chunks |
-| `indexing` | Orquestrar estados, fila, falha total, skip commit, **startup reconcile**, reindex por arquivo inteiro | UI/MCP |
-| `schedule` | Agendamento por expressão cron | Editar config / CRUD conexões |
-| `query` | Exact, semantic, read_file, list_tree | Narrativa |
-| `mcp` | Tools aprovadas; evidências; paralelismo query | SLM narrativo |
-| `ui` | Status, progresso, mensagem/horário/histórico de erro, checkbox, **cron** do scheduler, buscas | CRUD de conexões/token |
-| `delivery` | Dockerfile/compose/volumes/env | Lógica de domínio |
+| `sources.github` | Listar repos da org filtrando wildcards (adaptador **PyGithub**) | Indexar conteúdo |
+| `sources.local` | Expandir `file://` + glob; validar Git + `main` (**GitPython** após T20) | Mutar working tree |
+| `catalog` | Sincronizar e persistir catálogo/estados no PostgreSQL (**SQLAlchemy**) | Pipeline de arquivos |
+| `snapshot` | Obter tip `main`, árvore e **diff de arquivos** entre commits (**GitPython**) | Filtrar elegibilidade; orquestrar fila |
+| `eligibility` | Incluir textuais de dev; excluir CSV, imagens, `.gitignore` (**pathspec**) | Persistir índices |
+| `index.zoekt` | Adaptador fino API/CLI oficial Zoekt | Chunks semânticos / RAG; cliente inventado |
+| `index.chunk` | Tree-sitter oficial → **única** fonte de chunks semânticos/RAG | Chunking por tamanho/linhas; prosa; SLM; Qdrant |
+| `index.metadata` | SLM local via cliente OpenAI-compatible → metadados **por cada** chunk | Respostas MCP; inventar chunks |
+| `index.vector` | Qdrant via `qdrant-client`: vetor + payload | Busca exata; gerar chunks |
+| `indexing` | Orquestrar via **portas**; sem importar SDKs de integração | UI/MCP |
+| `schedule` | Agendamento cron via **APScheduler** (ou equivalente maduro) | Editar config / CRUD conexões |
+| `query` | Exact, semantic, read_file, list_tree via portas existentes | Narrativa; client paralelo ad-hoc |
+| `mcp` | Tools aprovadas via SDK oficial **`mcp`** | SLM narrativo |
+| `ui` | API **FastAPI** + frontend; status, progresso, cron, buscas | CRUD de conexões/token |
+| `delivery` | Dockerfile/compose; deps/SDKs das tasks nas imagens | Lógica de domínio |
 
 ## 2. Interfaces de alto nível
 
@@ -117,21 +122,21 @@ Contratos lógicos (detalhamento de métodos fica no pipeline por task). Cada po
 |---|---|---|
 | `ConfigLoader` | Ler `CONFIG_PATH`, validar schema `connections`, resolver `{env}` | Isola contrato Sourcebot-like do restante |
 | `SecretResolver` | Resolver nome de variável → valor; nunca logar valor | BR-008 / BR-019 |
-| `GitHubRepoDiscovery` | Descobrir repos por org + wildcards de inclusão | Origem remota ≠ local |
-| `LocalRepoDiscovery` | Descobrir repos em `file://` montados | Volumes e Git local |
-| `CatalogRepository` | CRUD de catálogo, estados, commits, histórico, progresso | PostgreSQL como SoT (BR-001) |
+| `GitHubRepoDiscovery` | Descobrir repos por org + wildcards (impl: PyGithub) | Origem remota ≠ local |
+| `LocalRepoDiscovery` | Descobrir repos em `file://` montados (impl: GitPython após T20) | Volumes e Git local |
+| `CatalogRepository` | CRUD de catálogo via SQLAlchemy/Alembic/psycopg3 | PostgreSQL como SoT (BR-001, BR-024) |
 | `WorkerLimiter` | Semáforos de indexação e consulta por env | BR-006 |
-| `MainSnapshotProvider` | Tip `main`, árvore e diff de arquivos entre commits | BR-015; ENG-012 |
-| `FileEligibilityFilter` | Elegibilidade textual / exclusões | REQ-014–015 |
-| `ExactCodeIndex` | Indexar e buscar no Zoekt | DEC-002 |
-| `ContextualChunker` | Produzir a **única** unidade de chunk semântico/RAG via Tree-sitter (DEC-003). Não chunka por tamanho/linhas. | Isola qualidade estrutural do código |
-| `MetadataGenerator` | Gerar metadados contextuais via SLM local **para cada** chunk Tree-sitter (BR-009–010, DEC-006; default Qwen 3B) | Metadados ≠ embeddings ≠ prosa MCP |
-| `VectorStore` | Persistir/consultar no Qdrant: vetor + payload com chunk Tree-sitter e metadados SLM (DEC-004) | Não redefine a unidade de chunk |
-| `IndexingOrchestrator` | Zoekt + Tree-sitter → SLM(por chunk) → Qdrant; estados REQ-020; skip; restart total; **startup reconcile**; reindex **arquivo inteiro** se modificado | BR-002–005; REQ-022; ENG-011–012 |
-| `DailyScheduler` | Disparo conforme expressão cron (UI/env; diário = caso especial) | REQ-017; ENG-010 |
-| `QueryService` | Exact + semantic + read + tree | Compartilhado UI/MCP |
-| `McpEvidenceServer` | Tools MCP sem narrativa/SLM | DEC-008, BR-011 |
-| `ManagementUiApi` | Listagem, checkbox index, progresso, erro (mensagem/horário/histórico), **edição de cron**, buscas | BR-017 |
+| `MainSnapshotProvider` | Tip `main`, árvore e diff (impl: GitPython) | BR-015; ENG-012 |
+| `FileEligibilityFilter` | Elegibilidade; `.gitignore` via pathspec | REQ-014–015 |
+| `ExactCodeIndex` | Adaptador fino Zoekt API/CLI oficial | DEC-002, DEC-016 |
+| `ContextualChunker` | Chunks semânticos via `tree-sitter` + grammars | Isola qualidade estrutural |
+| `MetadataGenerator` | Metadados SLM via cliente `openai` (OpenAI-compatible) | Metadados ≠ embeddings ≠ prosa MCP |
+| `VectorStore` | Qdrant via `qdrant-client` | Não redefine a unidade de chunk |
+| `IndexingOrchestrator` | Só portas; Zoekt + Tree-sitter → SLM → Qdrant; startup reconcile; reindex arquivo inteiro | BR-002–005; ENG-011–013 |
+| `DailyScheduler` | Cron via APScheduler (ou equivalente maduro) | REQ-017; ENG-010; DEC-015 |
+| `QueryService` | Exact + semantic + read + tree (reutiliza portas; sem client paralelo) | Compartilhado UI/MCP |
+| `McpEvidenceServer` | Tools MCP via SDK `mcp`; sem narrativa/SLM | DEC-008, BR-011 |
+| `ManagementUiApi` | Listagem, checkbox, progresso, cron, buscas (FastAPI) | BR-017; ENG-001 |
 
 Estados de repositório (enum fechado, REQ-020 — sem estados extras): `não indexado` | `na fila` | `indexando` | `atualizado` | `erro`.
 
@@ -148,7 +153,7 @@ Ordem recomendada (crítico → superfícies):
 1. Fundação e contratos compartilhados  
 2. Config + catálogo + workers  
 3. Descoberta de origens + sync  
-4. Snapshot + elegibilidade  
+4. Snapshot + elegibilidade (+ refactor GitPython da descoberta local)  
 5. Adaptadores de pipeline (paralelos)  
 6. Orquestrador de indexação + scheduler  
 7. Serviços de consulta  
@@ -167,6 +172,7 @@ T06-local-discovery               → T02
 T07-catalog-sync                  → T03, T05, T06
 T08-main-snapshot                 → T01
 T09-file-eligibility              → T01
+T20-refactor-local-discovery-git-sdk → T06
 T10-zoekt-adapter                 → T01
 T11-treesitter-chunker            → T01
 T12-slm-metadata                  → T11
@@ -176,40 +182,45 @@ T15-daily-scheduler               → T14
 T16-query-services                → T07, T10, T13, T08
 T17-mcp-evidence-server           → T04, T16, T07
 T18-management-ui                 → T14, T15, T16, T07
-T19-container-delivery            → T17, T18
+T19-container-delivery            → T17, T18, T20
 ```
 
 **Sequência RAG no orquestrador (T14):** para cada arquivo da leva (inteiro se modificado) → `ContextualChunker` → para cada chunk `MetadataGenerator` → `VectorStore.upsert` (vetor + payload). Boot: sync catálogo → startup reconcile → fila.
+
+**Nota T03:** já conforme BR-024 / ENG-015 (SQLAlchemy 2.x + Alembic + psycopg3); sem mudança de escopo nesta revisão — apenas confirmação de conformidade ORM.
+
+**Nota T20:** refactor de conformidade (DT-001); não altera contrato de `LocalRepoDiscovery` nem BDD-016/018; pode rodar cedo em paralelo após T06; T19 depende de T20 para fechar BDD-024 na entrega.
 
 ## 4. Grupos paralelos (ondas)
 
 | Onda | Tasks paralelas | Gate |
 |---|---|---|
 | W0 | `T01` | Fundação + venv de desenvolvimento |
-| W1 | `T02`, `T03`, `T04` | Contratos + SoT + limites |
+| W1 | `T02`, `T03`, `T04` | Contratos + SoT (ORM) + limites |
 | W2 | `T05`, `T06` | Descoberta de origens |
-| W3 | `T07`, `T08`, `T09` | Catálogo operacional + preparação de snapshot |
-| W4 | `T10`; após `T11`: `T12` ∥ `T13` | Zoekt paralelo; contratos RAG após Tree-sitter |
-| W5 | `T14` | Orquestração (sequência Tree-sitter→SLM→Qdrant) |
-| W6 | `T15`, `T16` | Agenda (cron) + consulta |
-| W7 | `T17`, `T18` | Superfícies |
-| W8 | `T19` | Delivery |
+| W3 | `T07`, `T08`, `T09`, `T20` | Catálogo + snapshot/elegibilidade + **refactor GitPython (DT-001)** |
+| W4 | `T10`; após `T11`: `T12` ∥ `T13` | Zoekt (adaptador fino); contratos RAG após Tree-sitter |
+| W5 | `T14` | Orquestração (só portas; Tree-sitter→SLM→Qdrant) |
+| W6 | `T15`, `T16` | Agenda (APScheduler) + consulta (sem client paralelo) |
+| W7 | `T17`, `T18` | Superfícies (SDK `mcp` + FastAPI) |
+| W8 | `T19` | Delivery (deps/SDKs das tasks + T20 fechada) |
 
 **Critical path:**  
 `T01 → T02 → T05/T06 → T07 → T14 → T16 → T17/T18 → T19`  
-(com `T03`, `T04`, `T08`–`T13` alimentando `T14`).
+(com `T03`, `T04`, `T08`–`T13` alimentando `T14`; `T20` após `T06` em W3, paralelo ao path crítico, e gate de conformidade em `T19`).
 
 ## 5. Estratégia para reduzir retrabalho
 
 1. **Contratos antes de consumidores** — schema JSON, enums de estado, portas de origem/índice/consulta travados cedo.  
-2. **Um `QueryService` para UI e MCP** — evita duplicar Zoekt/Qdrant/read/tree.  
-3. **Pipeline por portas** — orquestrador não importa SDKs; só interfaces (fácil mock e troca de SLM).  
+2. **Um `QueryService` para UI e MCP** — evita duplicar Zoekt/Qdrant/read/tree; sem client paralelo ad-hoc.  
+3. **Pipeline por portas** — orquestrador (**T14**) **não importa SDKs** de integração; só interfaces (fácil mock e troca de SLM). SDKs ficam **somente nos adaptadores** (ENG-013).  
 4. **RAG fixo Tree-sitter→SLM→Qdrant** — evita retrabalho de chunking genérico e garante metadados por chunk no payload.  
 5. **Falha total por repositório** — modelo de dados sem “commit parcial”; remove migrações de estado híbrido.  
 6. **Config imutável em runtime** — alterações exigem restart (BR-020); UI nunca escreve conexões.  
-7. **Containers por último** — após APIs estáveis; compose apenas empacota.  
+7. **Containers por último** — após APIs estáveis; compose apenas empacota deps/SDKs já escolhidos.  
 8. **Segredo fora do domínio** — `SecretResolver` único; testes BDD-014 em fundação/config.  
-9. **Tasks verticais testáveis** — cada task fecha um incremento com BDD + interfaces + unit + impl no implementation-pipeline.
+9. **Tasks verticais testáveis** — cada task fecha um incremento com BDD + interfaces + unit + impl no implementation-pipeline.  
+10. **Conformidade SDK cedo** — defaults DEC-015 nas tasks de adaptador; T20 elimina DT-001 sem mudar contrato de descoberta local.
 
 ## 6. Rastreabilidade requisito → task
 
@@ -217,23 +228,24 @@ T19-container-delivery            → T17, T18
 |---|---|---|
 | T01 | cobertura 95%; stack local; **venv** obrigatório para deps de dev (ENG-009) | — (habilita demais) |
 | T02 | REQ-009,039–042; BR-016–021; DEC-012 | BDD-021,022 |
-| T03 | BR-001,004; dados operacionais; leitura para startup reconcile | BDD-004,007,008 (persistência) |
+| T03 | BR-001,004,**024**; SQLAlchemy 2.x + Alembic + psycopg3; ENG-015 | BDD-004,007,008 (persistência); BDD-024 (ORM) |
 | T04 | REQ-004,037; BR-006 | BDD-002,013 |
-| T05 | REQ-010–011,041; BR-007,019,022; DEC-001,009,014 | BDD-001,014,019 |
-| T06 | REQ-034,040; BR-013–015; DEC-010 | BDD-016–018 |
+| T05 | REQ-010–011,041; BR-007,019,022,**023**; DEC-001,009,014,**015**; **PyGithub** | BDD-001,014,019; BDD-024 |
+| T06 | REQ-034,040; BR-013–015; DEC-010; **DT-001** → T20 | BDD-016–018 |
 | T07 | REQ-035; BR-001,016; handoff para startup reconcile | BDD-001,016,021,023 |
-| T08 | REQ-013; BR-002–004,015; diff de arquivos entre commits (ENG-012) | BDD-004,005,017 |
-| T09 | REQ-014–015 | BDD-006 |
-| T10 | DEC-002; REQ-002 | BDD-009 |
-| T11 | DEC-003; única fonte de chunk semântico/RAG | BDD-007 |
-| T12 | BR-009–010; DEC-006; metadados **por cada** chunk Tree-sitter | BDD-007,010 |
-| T13 | DEC-004; REQ-002; payload = chunk Tree-sitter + metadados SLM | BDD-010 |
-| T14 | REQ-005,012,016,018–022,024; BR-002–005,014; Tree-sitter→SLM→Qdrant; ENG-011 startup; ENG-012 arquivo inteiro | BDD-002,004,005,007,008 |
-| T15 | REQ-017 via cron (ENG-010); ENG-004; preferência cron persistida (sem CRUD conexões) | BDD-003 (cron UI/env) |
-| T16 | REQ-002,026–027,030 | BDD-009–012 |
-| T17 | REQ-003,028–033; DEC-008; BR-011 | BDD-011–015 |
-| T18 | REQ-006,012,017,020–027,035; BR-012,017; falhas só REQ-023; UI configura **cron** | BDD-002,003,007,009–010,016,023 |
-| T19 | REQ-036–038; DEC-011; boot dispara ENG-011 | BDD-020 |
+| T08 | REQ-013; BR-002–004,015,**023**; DEC-015; **GitPython**; ENG-012 | BDD-004,005,017; BDD-024 |
+| T09 | REQ-014–015; BR-023; DEC-015; **pathspec** (GitWildMatch) | BDD-006; BDD-024 |
+| T10 | DEC-002,**016**; REQ-002; adaptador fino API/CLI oficial Zoekt | BDD-009; BDD-024 |
+| T11 | DEC-003,**015**; **`tree-sitter` + grammars oficiais** | BDD-007; BDD-024 |
+| T12 | BR-009–010,**023**; DEC-006,**015**; cliente **`openai`** (OpenAI-compatible) | BDD-007,010; BDD-024 |
+| T13 | DEC-004,**015**; **`qdrant-client`** (+ embedder via SDK) | BDD-010; BDD-024 |
+| T14 | REQ-005,012,016,018–022,024; BR-002–005,014,**023**; **só portas**; ENG-011–013 | BDD-002,004,005,007,008 |
+| T15 | REQ-017; ENG-004,010; DEC-015; **APScheduler** (ou equivalente maduro) | BDD-003; BDD-024 |
+| T16 | REQ-002,026–027,030; reutiliza portas T10/T13/T08; **sem client paralelo ad-hoc** | BDD-009–012; BDD-024 |
+| T17 | REQ-003,028–033; DEC-008,**015**; SDK oficial **`mcp`** | BDD-011–015; BDD-024 |
+| T18 | REQ-006,012,017,020–027,035; BR-012,017; **FastAPI** (ENG-001) | BDD-002,003,007,009–010,016,023; BDD-024 |
+| T19 | REQ-036–038; DEC-011; ENG-011; deps/SDKs das tasks (incl. T20) nas imagens | BDD-020; BDD-024 |
+| T20 | BR-023; DEC-015; **DT-001**; migrar inspeção Git T06 → **GitPython** | BDD-016,018 (preservar); BDD-024 |
 
 ## 7. Riscos e mitigações
 
@@ -246,17 +258,21 @@ T19-container-delivery            → T17, T18
 | Config/volume errados | Validação total em T02; erros de volume em T06 sem cadastro parcial |
 | Exposição de token | SecretResolver + testes BDD-014 em T02/T05/T17/T18 |
 | Heterogeneidade de máquinas | T19 documenta recursos; amd64 primário |
+| Integração sem SDK (DT-001) | T20 migra T06 para GitPython; ENG-013/014 nas tasks de adaptador; gate T19 |
 
 ## 8. Migração / rollback
 
 Greenfield: sem migração de dados legados. Rollback = não promover imagem/tag; volumes PostgreSQL/Qdrant/Zoekt são descartáveis no MVP local. Schema versionado desde T03 para evoluções futuras.
 
+**T20:** refactor interno de adaptação Git; rollback = reverter a task/PR; contrato de descoberta e catálogo permanecem estáveis.
+
 ## 9. Handoff
 
-`PO_PLAN_APPROVED` (v0.1.5). Validado:
+Candidato **v0.1.6** — `PO_PLAN_APPROVED` (2026-07-18). Delta sobre v0.1.5:
 
-- ENG-011: startup compara tip `main` × PostgreSQL e enfileira o que não estiver `atualizado` (T03/T07/T14/T19).
-- ENG-012: arquivos modificados reindexados por arquivo inteiro (T08/T14).
-- Sem regressão: cron; venv; Tree-sitter→SLM→Qdrant; REQ-020.
+- ENG-013–016 alinhados a BR-023–024, DEC-015–016, BDD-024.
+- Tasks T05–T19 com SDK/ORM explícitos; T03 confirmado ORM (sem refactor).
+- Nova task `T20-refactor-local-discovery-git-sdk` (DT-001) em W3 (paralela após T06); T19 depende de T20; BDD-016/018 preservados.
+- Estratégia anti-retrabalho: SDKs só nos adaptadores; T14 não importa SDKs.
 
-Estado atual: `READY_FOR_IMPLEMENTATION` — plano aprovado; tasks `T01`–`T19` prontas para o pipeline de implementação.
+Próximo gate: aprovação humana do plano (`HUMAN_PLAN_APPROVAL`). Não há aprovação humana inventada neste candidato.

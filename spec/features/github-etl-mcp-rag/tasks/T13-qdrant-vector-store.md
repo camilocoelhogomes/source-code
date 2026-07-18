@@ -14,9 +14,10 @@ Persistir e recuperar no Qdrant **cada** unidade RAG como vetor + payload conten
 ## Escopo
 
 - Porta `VectorStore`: upsert por repo/commit, delete/replace em reindexação completa, search semântico.
+- Integração Qdrant via **`qdrant-client`** (DEC-015 / BR-023); proibido client HTTP inventado.
 - **Upsert por chunk enriquecido:** texto/localização do chunk Tree-sitter + metadados SLM no payload + vetor (embedding).
 - Não redefine a unidade de chunk (não chunka por tamanho/linhas); consome apenas chunks Tree-sitter já enriquecidos.
-- Porta `Embedder` (ou equivalente) para vetores — distinta da SLM de metadados; detalhe no design.
+- Porta `Embedder` (ou equivalente) para vetores — distinta da SLM de metadados; embeddings via SDK OpenAI-compatible (`openai`) apontando a runtime local (DEC-015).
 - Busca semântica devolve evidências a partir desses pontos (BDD-010).
 
 ## Fora de escopo
@@ -42,7 +43,7 @@ Persistir e recuperar no Qdrant **cada** unidade RAG como vetor + payload conten
 
 ## Rastreabilidade
 
-- DEC-004; DEC-003 (unidade de chunk); BR-010 (metadados no payload); REQ-002; BR-011; BDD-010.
+- DEC-004, DEC-015; DEC-003 (unidade de chunk); BR-010, BR-023 (metadados no payload / SDK); REQ-002; BR-011; BDD-010; BDD-024.
 
 ## Handoff
 

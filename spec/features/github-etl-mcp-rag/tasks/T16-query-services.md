@@ -13,7 +13,7 @@ Expor serviços de consulta compartilhados: busca exata, busca semântica, `read
 
 ## Escopo
 
-- `QueryService` (ou portas compostas) sobre Zoekt, Qdrant e snapshot/catálogo.
+- `QueryService` (ou portas compostas) sobre Zoekt, Qdrant e snapshot/catálogo — **reutiliza** portas T10/T13/T08; **sem client paralelo ad-hoc** (BR-023 / BDD-024).
 - Campos opcionais: repositório, caminho, commit, trecho — só quando solicitados.
 - Busca semântica via embeddings/Qdrant; SLM pode apoiar reformulação na UI (porta opcional), nunca gerar evidência falsa.
 - Sem narrativa MCP.
@@ -43,7 +43,7 @@ Expor serviços de consulta compartilhados: busca exata, busca semântica, `read
 
 ## Rastreabilidade
 
-- REQ-002,026–027,030; BR-011; BDD-009–012.
+- REQ-002,026–027,030; BR-011, BR-023; BDD-009–012; BDD-024.
 
 ## Handoff
 

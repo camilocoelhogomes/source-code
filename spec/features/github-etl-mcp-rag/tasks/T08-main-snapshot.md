@@ -14,9 +14,10 @@ Obter o snapshot atual do commit da branch `main` para repositórios GitHub e lo
 ## Escopo
 
 - `MainSnapshotProvider` unificado por origem.
+- Operações Git locais (tip, árvore, diff) via **GitPython** (DEC-015 / BR-023); proibido parse ad-hoc de `.git`.
 - Retornar commit SHA e acesso à árvore/arquivos daquele commit.
 - Locais: usar commit de `main`, nunca working tree suja.
-- GitHub: snapshot do tip de `main` via API ou clone shallow conforme design (porta mockável).
+- GitHub: tip de `main` via PyGithub / clone shallow conforme design (porta mockável; sem client HTTP inventado).
 - Porta/capacidade de **diff de arquivos** entre `last_processed_commit` e `current_main_commit`: lista de paths adicionados/modificados/removidos (sem inventar estados de repo).
 - Conteúdo lido para reindexação é sempre o arquivo **completo** no tip da `main` (não patch/hunk isolado como unidade de indexação).
 
@@ -46,7 +47,7 @@ Obter o snapshot atual do commit da branch `main` para repositórios GitHub e lo
 
 ## Rastreabilidade
 
-- REQ-013; BR-002–004, BR-015; BDD-004,005,017; ENG-012 (diff para reindexação por arquivo).
+- REQ-013; BR-002–004, BR-015, BR-023; DEC-015; BDD-004,005,017; BDD-024; ENG-012 (diff para reindexação por arquivo).
 
 ## Handoff
 

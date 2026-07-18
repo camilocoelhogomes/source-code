@@ -14,6 +14,7 @@ Empacotar o produto em imagens/compose para uso local padronizado: `CONFIG_PATH`
 ## Escopo
 
 - Dockerfile(s) e `docker-compose` (app, postgres, qdrant, zoekt, runtime SLM se aplicável).
+- Instalar na imagem as **deps/SDKs** das tasks (PyGithub, GitPython, pathspec, tree-sitter + grammars, qdrant-client, openai, APScheduler, mcp, FastAPI, SQLAlchemy/Alembic/psycopg3, etc.) — sem omitir T20/GitPython.
 - Documentar env: `CONFIG_PATH`, token GitHub, `INDEX_WORKERS`, `QUERY_WORKERS`, **`INDEX_CRON`**, recursos sugeridos.
 - Montagem de volumes para JSON e `file:///repos/...` (ENG-005).
 - Imagem primária `linux/amd64` (ENG-006).
@@ -26,7 +27,7 @@ Empacotar o produto em imagens/compose para uso local padronizado: `CONFIG_PATH`
 
 ## Dependências
 
-- `T17-mcp-evidence-server`, `T18-management-ui` (e, na prática, T14 já integrado na app empacotada)
+- `T17-mcp-evidence-server`, `T18-management-ui`, `T20-refactor-local-discovery-git-sdk` (BDD-024 / DT-001 fechada na entrega; e, na prática, T14 já integrado na app empacotada)
 
 ## Critérios de aceite
 
@@ -44,7 +45,7 @@ Empacotar o produto em imagens/compose para uso local padronizado: `CONFIG_PATH`
 
 ## Rastreabilidade
 
-- REQ-036–038; DEC-011–012; BDD-020–022; ENG-011.
+- REQ-036–038; DEC-011–012, DEC-015; BR-023–024; BDD-020–022; BDD-024; ENG-011.
 
 ## Handoff
 
