@@ -21,8 +21,14 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
   contrato de bootstrap da T01.
 - Testes de integração contra PostgreSQL real sob marcador `integration`
   (`pytest -m integration`), separados do run padrão.
-- Testes unitários e BDD da T03: 137 testes aprovados (1 pulado sem Docker),
-  92 subtests, cobertura de 98.71%.
+- `WorkerLimiter` (T04) com semáforos isolados de indexação e consulta
+  (`INDEX_WORKERS` / `QUERY_WORKERS`), fila quando o limite é atingido e
+  rejeição explícita de capacidade `< 1`.
+- T02 config-loader: `ConfigLoader`, `SecretResolver`, schema tipado
+  (`AppConfig`, conexões `github`/`git`) — carga integral do JSON
+  Sourcebot-like em `CONFIG_PATH`, resolução `{ "env": "..." }` sem
+  vazamento de segredo, rejeição total sem cadastro parcial.
+- Exemplo de configuração em `examples/config.json`.
 - Fundação Python 3.12+ da T01 com layout `src/github_rag` e fronteiras de
   pacotes para as próximas tasks.
 - Contrato de bootstrap `AppSettings`, `load_settings` e
@@ -30,7 +36,7 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 - Desenvolvimento local com `.venv` documentado para Windows PowerShell,
   Windows cmd, macOS e Linux.
 - Harness pytest/pytest-cov com falha automática abaixo de 95% de cobertura.
-- Testes unitários e BDD: 37 testes aprovados, cobertura de 100%.
+- Testes unitários e BDD: suíte completa com cobertura ≥ 95% (T01+T02+T03+T04).
 - Normalização cross-platform de EOL e ignores para `.venv`, cobertura,
   caches e `*.egg-info`.
 
@@ -39,4 +45,3 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 - Docker/T19 como entrega padronizada, sem montar ou usar o `.venv` do host.
 - Compatibilidade de desenvolvimento local Windows, macOS e Linux como
   plataformas de primeira classe.
-

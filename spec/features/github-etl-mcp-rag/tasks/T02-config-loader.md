@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T02-config-loader` |
 | Feature | `github-etl-mcp-rag` |
-| Estado | `READY_FOR_IMPLEMENTATION` |
+| Estado | `PR_OPENED` |
 | Onda | W1 |
 
 ## Objetivo

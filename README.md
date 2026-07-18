@@ -59,8 +59,37 @@ python -m pytest
 
 O comando executa testes unitários e BDD com relatório de cobertura no
 terminal. O projeto exige cobertura mínima de 95%; a execução falha
-automaticamente abaixo desse limite. A entrega T01 foi validada com 37 testes.
-aprovados e cobertura de 100%.
+automaticamente abaixo desse limite. A suíte completa atual está em 144
+testes com cobertura de 100% (T01+T02+T04).
+
+## Configuração de conexões (T02)
+
+O arquivo JSON apontado por `CONFIG_PATH` (via `AppSettings.config_path`)
+é carregado por `ConfigLoader` no pacote `github_rag.config`. Exemplo em
+`examples/config.json`. Tokens GitHub usam somente `{ "env": "NOME" }` —
+o valor fica na variável de ambiente, nunca no JSON. Config inválida é
+rejeitada por completo (sem conexões parciais).
+
+```python
+from pathlib import Path
+from github_rag.config import ConfigLoader, ConfigLoadError
+
+loader = ConfigLoader()
+try:
+    config = loader.load(Path("/path/to/config.json"))
+except ConfigLoadError as exc:
+    raise SystemExit(exc) from exc
+```
+
+## Workers (T04)
+
+Defaults de engenharia (via env / `load_settings`):
+
+- `INDEX_WORKERS=2`
+- `QUERY_WORKERS=4`
+
+Capacidade `< 1` é rejeitada por `WorkerLimiterError`. Pools de indexação e
+consulta são isolados (`create_index_limiter` / `create_query_limiter`).
 
 ## Catálogo (PostgreSQL)
 
