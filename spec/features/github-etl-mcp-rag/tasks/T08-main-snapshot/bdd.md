@@ -6,11 +6,18 @@
 | Task | `T08-main-snapshot` |
 | Autor | Implementation Task Runner (QA step) |
 | Data | 2026-07-18 |
-| Estado | `PENDING_ARCHITECT_REVIEW` |
+| Estado | `APPROVED_BY_ARCHITECT` |
 | Versão BDD | `0.1.0` |
 | Design base | `0.1.1` (`APPROVED_BY_ARCHITECT`) |
+| Aprovação Architect | `APPROVED_BY_ARCHITECT` em 2026-07-18 (re-review BDD v0.1.0; pipeline autônomo) |
 | Branch | `feature/github-etl-mcp-rag-T08-main-snapshot` |
 | Rastreabilidade | REQ-013; BR-002–004, BR-015, BR-023; DEC-015; BDD-005, BDD-017, BDD-024; ENG-012 |
+
+## 0. Histórico de revisão Architect
+
+| Data | Autor | Decisão | Versão | Observações |
+|---|---|---|---|---|
+| 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.0` | MS-01..12 cobrem BDD-005/017, corners tipados, FirstIndexSignal, GitPython/PyGithub, arquivo completo; sem T09/T14. SUGGESTION: materializar `tests/bdd/test_main_snapshot.py` (red) antes das interfaces. |
 
 ## Rastreabilidade
 
