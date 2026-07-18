@@ -6,7 +6,7 @@
 | Task | `T01-project-foundation` |
 | Autor | QA Engineer |
 | Data | 2026-07-18 |
-| Estado | `TESTS_READY_FOR_REVIEW` |
+| Estado | `HUMAN_BDD_APPROVED` |
 | Versão BDD | `0.2.0` (pós `CHANGES_REQUIRED` Architect) |
 | Design base | `0.2.0` (aprovado; commit `3505880` / candidato design `30272cb`) |
 | Branch | `feature/github-etl-mcp-rag-T01-project-foundation` |
@@ -19,6 +19,7 @@
 | 2026-07-18 | QA Engineer | candidato `0.1.0` | BDD inicial — 10 cenários FND-01..10 |
 | 2026-07-18 | Tech Lead Architect | `CHANGES_REQUIRED` | Achados B-01, M-01, M-02 (bloqueantes/major); S-01..S-03 sugestões |
 | 2026-07-18 | QA Engineer | candidato `0.2.0` | Correções B-01/M-01/M-02; S-01/S-02/S-03 aplicadas sem ampliar escopo de produto |
+| 2026-07-18 | camilocoelhogomes | `HUMAN_BDD_APPROVED` | BDD v0.2.0 aprovado explicitamente; candidato commit `02f7188` |
 
 ## Rastreabilidade
 
