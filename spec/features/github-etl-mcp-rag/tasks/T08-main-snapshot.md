@@ -9,7 +9,7 @@
 
 ## Objetivo
 
-Obter o snapshot atual do commit da branch `main` para repositórios GitHub e locais, excluindo outras branches e alterações não confirmadas.
+Obter o snapshot atual do commit da branch `main` para repositórios GitHub e locais, e expor quais **arquivos foram modificados** entre o último commit processado e o tip atual — base para reindexar o **arquivo inteiro** quando há mudança.
 
 ## Escopo
 
@@ -17,10 +17,12 @@ Obter o snapshot atual do commit da branch `main` para repositórios GitHub e lo
 - Retornar commit SHA e acesso à árvore/arquivos daquele commit.
 - Locais: usar commit de `main`, nunca working tree suja.
 - GitHub: snapshot do tip de `main` via API ou clone shallow conforme design (porta mockável).
+- Porta/capacidade de **diff de arquivos** entre `last_processed_commit` e `current_main_commit`: lista de paths adicionados/modificados/removidos (sem inventar estados de repo).
+- Conteúdo lido para reindexação é sempre o arquivo **completo** no tip da `main` (não patch/hunk isolado como unidade de indexação).
 
 ## Fora de escopo
 
-- Filtro de elegibilidade (T09); indexação; comparação com DB (orquestrador T14).
+- Filtro de elegibilidade (T09); orquestração de fila (T14); UI.
 
 ## Dependências
 
@@ -30,21 +32,23 @@ Obter o snapshot atual do commit da branch `main` para repositórios GitHub e lo
 
 - BDD-005 (obter novo snapshot), BDD-017.
 - Snapshot local ignora uncommitted e branches ≠ `main`.
-- Corner cases: `main` ausente, repo corrompido, rede GitHub falha — erros tipados.
+- Dado dois SHAs, retorna o conjunto de arquivos alterados entre eles.
+- Corner cases: `main` ausente, repo corrompido, rede GitHub falha, primeiro index (sem commit anterior) — erros tipados / conjunto = todos os elegíveis tratado em T14.
 
 ## Arquivos prováveis
 
 - `src/.../snapshot/provider.py`
 - `src/.../snapshot/github.py`
 - `src/.../snapshot/local.py`
+- `src/.../snapshot/diff.py`
 - `tests/unit/snapshot/...`
 - `tests/bdd/...`
 
 ## Rastreabilidade
 
-- REQ-013; BR-002–004, BR-015; BDD-004,005,017.
+- REQ-013; BR-002–004, BR-015; BDD-004,005,017; ENG-012 (diff para reindexação por arquivo).
 
 ## Handoff
 
-- Interface: `MainSnapshotProvider`.
+- Interface: `MainSnapshotProvider` (+ diff de arquivos entre commits).
 - Consumidores: `T14`, `T16` (read/tree sobre commit indexado).

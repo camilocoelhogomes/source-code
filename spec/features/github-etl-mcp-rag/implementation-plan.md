@@ -3,12 +3,12 @@
 | Campo | Valor |
 |---|---|
 | Feature ID | `github-etl-mcp-rag` |
-| Versão do plano | `0.1.4` |
+| Versão do plano | `0.1.5` |
 | Estado | `HUMAN_PLAN_APPROVAL` |
 | Requisitos base | `requirements.md` v0.3.0 (aprovado 2026-07-18, commit `71ed647`) |
 | Natureza | greenfield; sem código de aplicação pré-existente |
-| Revisão humana | rejeição parcial do candidato `e22a2a7` (cron em T15/T18) incorporada em v0.1.4 |
-| Revisão PO | `PO_PLAN_APPROVED` em 2026-07-18 (v0.1.4); candidato aguardando aprovação humana do plano |
+| Revisão humana | rejeição parcial do candidato `f6272ef` (startup reconcile + reindex arquivo inteiro) em v0.1.5 |
+| Revisão PO | `PO_PLAN_APPROVED` em 2026-07-18 (v0.1.5); candidato aguardando aprovação humana do plano |
 
 ## 1. Arquitetura
 
@@ -16,8 +16,8 @@
 
 Sistema local em containers com quatro superfícies:
 
-1. **Bootstrap/config** — lê `CONFIG_PATH`, valida JSON Sourcebot-like, resolve segredos por `{ "env": "..." }`, descobre repositórios GitHub e locais.
-2. **ETL de indexação** — fila limitada por workers; por repositório: snapshot `main` → elegibilidade → Zoekt (busca exata) **e**, em paralelo na preparação do RAG: **Tree-sitter produz cada chunk semântico** → **SLM local gera metadados contextuais para cada chunk** → **Qdrant persiste vetor + payload (chunk + metadados)**; falha parcial invalida e reinicia o repo inteiro.
+1. **Bootstrap/config** — lê `CONFIG_PATH`, valida JSON Sourcebot-like, resolve segredos por `{ "env": "..." }`, descobre repositórios GitHub e locais, sincroniza o catálogo PostgreSQL e, **no startup do container**, reconcilia indexação (tip `main` × último commit processado) enfileirando o que não estiver `atualizado` (ENG-011).
+2. **ETL de indexação** — fila limitada por workers; por repositório: snapshot `main` → (se reindex) arquivos **modificados no commit** reindexados **por arquivo inteiro** → elegibilidade → Zoekt (busca exata) **e** RAG: **Tree-sitter produz cada chunk semântico** → **SLM local gera metadados contextuais para cada chunk** → **Qdrant persiste vetor + payload (chunk + metadados)**; falha parcial invalida e reinicia o repo inteiro.
 3. **Consulta** — busca exata (Zoekt), semântica (embeddings/Qdrant com payload dos chunks Tree-sitter + metadados SLM), leitura de arquivo e árvore; compartilhada por UI e MCP.
 4. **Superfícies** — UI de gestão/busca (sem editar config) e servidor MCP (somente evidências).
 
@@ -65,6 +65,12 @@ Fluxo por arquivo elegível no pipeline de indexação:
 3. Para **cada** chunk enriquecido: embedding + persistência no **Qdrant** (vetor + payload com texto/localização do chunk Tree-sitter **e** metadados gerados pela SLM) (DEC-004)
 
 Zoekt permanece o caminho de busca exata e **não** substitui Tree-sitter/SLM/Qdrant no RAG.
+
+### 1.1.2 Startup reconcile e reindexação por arquivo (obrigatório)
+
+**Startup (ENG-011):** após config válida + sync do catálogo, para cada repo ativo: obter tip `main` e comparar com `last_processed_commit` / estado no PostgreSQL. Se não estiver `atualizado` (tip ≠ processado ou estado `não indexado`/`erro`), transicionar para `não indexado` quando aplicável e **enfileirar** indexação. Estados somente REQ-020.
+
+**Arquivo modificado (ENG-012):** diff entre último commit processado e tip `main`. Paths adicionados/modificados elegíveis → reindexar o **arquivo inteiro** no tip (não delta/hunk como unidade). Paths removidos → limpar índices daquele path. Primeiro index → todos os elegíveis. Falha parcial → restart do **repositório inteiro** (BR-005).
 ### 1.2 Decisões de engenharia (não alteram escopo de produto)
 
 | ID | Decisão | Motivo |
@@ -79,6 +85,8 @@ Zoekt permanece o caminho de busca exata e **não** substitui Tree-sitter/SLM/Qd
 | ENG-006 | Imagem primária `linux/amd64`; `arm64` best-effort. | Dúvida de plataforma não bloqueia MVP. |
 | ENG-007 | Portas (interfaces) estáveis antes dos adaptadores; MCP e UI só consomem serviços de domínio. | Reduz retrabalho quando superfícies evoluírem. |
 | ENG-008 | Chunks semânticos **somente** via Tree-sitter; SLM **obrigatória por chunk** antes do upsert Qdrant. | DEC-003, BR-010, DEC-006; qualidade do RAG; feedback humano no candidato `0166f97`. |
+| ENG-011 | **Startup do container:** após config + sync do catálogo, comparar tip `main` × estado/último commit no PostgreSQL e enfileirar indexação dos repos que não estejam `atualizado` (tip ≠ processado → `não indexado` + fila). Sem estados extras. | Feedback humano `f6272ef`; alinha BR-002–004 ao boot. |
+| ENG-012 | **Reindexação por arquivo modificado:** arquivos alterados entre último commit processado e tip `main` são reindexados **por arquivo inteiro** (não só delta/hunk). Removidos saem dos índices. | Feedback humano `f6272ef`; qualidade e consistência Zoekt/RAG. |
 
 ### 1.3 Fronteiras de módulo
 
@@ -88,13 +96,13 @@ Zoekt permanece o caminho de busca exata e **não** substitui Tree-sitter/SLM/Qd
 | `sources.github` | Listar repos da org filtrando wildcards de inclusão | Indexar conteúdo |
 | `sources.local` | Expandir `file://` + glob; validar Git + `main` | Mutar working tree |
 | `catalog` | Sincronizar e persistir catálogo/estados no PostgreSQL | Pipeline de arquivos |
-| `snapshot` | Obter commit e árvore da `main` (sem uncommitted/outras branches) | Filtrar elegibilidade |
+| `snapshot` | Obter tip `main`, árvore e **diff de arquivos** entre commits | Filtrar elegibilidade; orquestrar fila |
 | `eligibility` | Incluir textuais de dev; excluir CSV, imagens, `.gitignore` | Persistir índices |
-| `index.zoekt` | Indexar/buscar exato | Chunks semânticos / RAG |
-| `index.chunk` | Tree-sitter → **única** fonte de chunks semânticos/RAG | Chunking por tamanho/linhas; prosa; SLM; Qdrant |
+| `index.zoekt` | Indexar/buscar exato (arquivo completo na reindexação) | Chunks semânticos / RAG |
+| `index.chunk` | Tree-sitter → **única** fonte de chunks semânticos/RAG (sobre arquivo inteiro) | Chunking por tamanho/linhas; prosa; SLM; Qdrant |
 | `index.metadata` | SLM local → metadados **por cada** chunk Tree-sitter | Respostas MCP; inventar chunks |
 | `index.vector` | Qdrant: vetor + payload (chunk Tree-sitter + metadados SLM) | Busca exata; gerar chunks |
-| `indexing` | Orquestrar estados, fila, falha total, skip commit | UI/MCP |
+| `indexing` | Orquestrar estados, fila, falha total, skip commit, **startup reconcile**, reindex por arquivo inteiro | UI/MCP |
 | `schedule` | Agendamento por expressão cron | Editar config / CRUD conexões |
 | `query` | Exact, semantic, read_file, list_tree | Narrativa |
 | `mcp` | Tools aprovadas; evidências; paralelismo query | SLM narrativo |
@@ -113,13 +121,13 @@ Contratos lógicos (detalhamento de métodos fica no pipeline por task). Cada po
 | `LocalRepoDiscovery` | Descobrir repos em `file://` montados | Volumes e Git local |
 | `CatalogRepository` | CRUD de catálogo, estados, commits, histórico, progresso | PostgreSQL como SoT (BR-001) |
 | `WorkerLimiter` | Semáforos de indexação e consulta por env | BR-006 |
-| `MainSnapshotProvider` | Commit e arquivos da `main` | BR-015 |
+| `MainSnapshotProvider` | Tip `main`, árvore e diff de arquivos entre commits | BR-015; ENG-012 |
 | `FileEligibilityFilter` | Elegibilidade textual / exclusões | REQ-014–015 |
 | `ExactCodeIndex` | Indexar e buscar no Zoekt | DEC-002 |
 | `ContextualChunker` | Produzir a **única** unidade de chunk semântico/RAG via Tree-sitter (DEC-003). Não chunka por tamanho/linhas. | Isola qualidade estrutural do código |
 | `MetadataGenerator` | Gerar metadados contextuais via SLM local **para cada** chunk Tree-sitter (BR-009–010, DEC-006; default Qwen 3B) | Metadados ≠ embeddings ≠ prosa MCP |
 | `VectorStore` | Persistir/consultar no Qdrant: vetor + payload com chunk Tree-sitter e metadados SLM (DEC-004) | Não redefine a unidade de chunk |
-| `IndexingOrchestrator` | Orquestra Zoekt e a sequência Tree-sitter → SLM(por chunk) → Qdrant; estados REQ-020; skip; restart total | BR-002–005; REQ-022 |
+| `IndexingOrchestrator` | Zoekt + Tree-sitter → SLM(por chunk) → Qdrant; estados REQ-020; skip; restart total; **startup reconcile**; reindex **arquivo inteiro** se modificado | BR-002–005; REQ-022; ENG-011–012 |
 | `DailyScheduler` | Disparo conforme expressão cron (UI/env; diário = caso especial) | REQ-017; ENG-010 |
 | `QueryService` | Exact + semantic + read + tree | Compartilhado UI/MCP |
 | `McpEvidenceServer` | Tools MCP sem narrativa/SLM | DEC-008, BR-011 |
@@ -171,7 +179,7 @@ T18-management-ui                 → T14, T15, T16, T07
 T19-container-delivery            → T17, T18
 ```
 
-**Sequência RAG no orquestrador (T14):** `ContextualChunker` → para cada chunk `MetadataGenerator` → `VectorStore.upsert` (vetor + payload).
+**Sequência RAG no orquestrador (T14):** para cada arquivo da leva (inteiro se modificado) → `ContextualChunker` → para cada chunk `MetadataGenerator` → `VectorStore.upsert` (vetor + payload). Boot: sync catálogo → startup reconcile → fila.
 
 ## 4. Grupos paralelos (ondas)
 
@@ -209,23 +217,23 @@ T19-container-delivery            → T17, T18
 |---|---|---|
 | T01 | cobertura 95%; stack local; **venv** obrigatório para deps de dev (ENG-009) | — (habilita demais) |
 | T02 | REQ-009,039–042; BR-016–021; DEC-012 | BDD-021,022 |
-| T03 | BR-001,004; dados operacionais | BDD-004,007,008 (persistência) |
+| T03 | BR-001,004; dados operacionais; leitura para startup reconcile | BDD-004,007,008 (persistência) |
 | T04 | REQ-004,037; BR-006 | BDD-002,013 |
 | T05 | REQ-010–011,041; BR-007,019,022; DEC-001,009,014 | BDD-001,014,019 |
 | T06 | REQ-034,040; BR-013–015; DEC-010 | BDD-016–018 |
-| T07 | REQ-035; BR-001,016 (remoção do catálogo ativo se ausente da config; sem estado extra) | BDD-001,016,021,023 |
-| T08 | REQ-013; BR-002–004,015 | BDD-004,005,017 |
+| T07 | REQ-035; BR-001,016; handoff para startup reconcile | BDD-001,016,021,023 |
+| T08 | REQ-013; BR-002–004,015; diff de arquivos entre commits (ENG-012) | BDD-004,005,017 |
 | T09 | REQ-014–015 | BDD-006 |
 | T10 | DEC-002; REQ-002 | BDD-009 |
 | T11 | DEC-003; única fonte de chunk semântico/RAG | BDD-007 |
 | T12 | BR-009–010; DEC-006; metadados **por cada** chunk Tree-sitter | BDD-007,010 |
 | T13 | DEC-004; REQ-002; payload = chunk Tree-sitter + metadados SLM | BDD-010 |
-| T14 | REQ-005,012,016,018–022,024; BR-002–005,014; orquestra Tree-sitter→SLM→Qdrant; commit≠processado → `não indexado` | BDD-002,004,005,007,008 |
+| T14 | REQ-005,012,016,018–022,024; BR-002–005,014; Tree-sitter→SLM→Qdrant; ENG-011 startup; ENG-012 arquivo inteiro | BDD-002,004,005,007,008 |
 | T15 | REQ-017 via cron (ENG-010); ENG-004; preferência cron persistida (sem CRUD conexões) | BDD-003 (cron UI/env) |
 | T16 | REQ-002,026–027,030 | BDD-009–012 |
 | T17 | REQ-003,028–033; DEC-008; BR-011 | BDD-011–015 |
 | T18 | REQ-006,012,017,020–027,035; BR-012,017; falhas só REQ-023; UI configura **cron** | BDD-002,003,007,009–010,016,023 |
-| T19 | REQ-036–038; DEC-011 | BDD-020 |
+| T19 | REQ-036–038; DEC-011; boot dispara ENG-011 | BDD-020 |
 
 ## 7. Riscos e mitigações
 
@@ -245,9 +253,10 @@ Greenfield: sem migração de dados legados. Rollback = não promover imagem/tag
 
 ## 9. Handoff
 
-`PO_PLAN_APPROVED` (v0.1.4). Validado:
+`PO_PLAN_APPROVED` (v0.1.5). Validado:
 
-- T15/T18/T19: agenda por expressão cron (UI + env); “uma vez ao dia” = caso especial (REQ-017/BDD-003).
-- Sem regressão: venv; Tree-sitter→SLM→Qdrant; estados REQ-020; UI REQ-023.
+- ENG-011: startup compara tip `main` × PostgreSQL e enfileira o que não estiver `atualizado` (T03/T07/T14/T19).
+- ENG-012: arquivos modificados reindexados por arquivo inteiro (T08/T14).
+- Sem regressão: cron; venv; Tree-sitter→SLM→Qdrant; REQ-020.
 
 Estado atual: `HUMAN_PLAN_APPROVAL` — candidato pronto para aprovação humana do plano. Nenhuma aprovação humana do plano está registrada neste artefato.

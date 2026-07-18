@@ -29,7 +29,8 @@ Estabelecer PostgreSQL como fonte de verdade do catálogo de repositórios, esta
 ## Critérios de aceite
 
 - Estados apenas (REQ-020): `não indexado`, `na fila`, `indexando`, `atualizado`, `erro`.
-- Persistência permite comparar commit atual vs último processado (suporte a BDD-004/005).
+- Persistência permite comparar commit atual vs último processado (suporte a BDD-004/005 e ao **startup reconcile** ENG-011).
+- Consultas/leituras necessárias ao reconcile: listar catálogo ativo com estado + `last_processed_commit`.
 - Histórico de execução com mensagem e horário de erro (suporte a BDD-008).
 - Testes unitários cobrem transições e corner cases (repo inexistente, update concorrente básico).
 

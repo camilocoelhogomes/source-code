@@ -17,6 +17,7 @@ Sincronizar repositórios descobertos (GitHub + local) para o catálogo PostgreS
 - Campos: nome da conexão, origem, org ou path, estado inicial coerente com o enum REQ-020 apenas.
 - Repositório presente na descoberta anterior e ausente da config/descoberta atual: **remover do catálogo ativo** (deixa de aparecer em UI/MCP). Histórico de execuções pode permanecer no PostgreSQL. **Não** inventar estado `indisponível` nem qualquer estado fora de REQ-020.
 - Base para UI/MCP listarem o catálogo derivado da config (não editável).
+- **Handoff de boot:** após o sync, o bootstrap da aplicação (wire em T14/T19) executa o **startup reconcile** de indexação — T07 não indexa; apenas deixa o catálogo pronto para a comparação tip `main` × PostgreSQL.
 
 ## Fora de escopo
 
@@ -47,5 +48,6 @@ Sincronizar repositórios descobertos (GitHub + local) para o catálogo PostgreS
 ## Handoff
 
 - Interface: `CatalogSync` (usa discoveries + repository).
-- Consumidores: `T14`, `T17`, `T18`.
+- Consumidores: `T14` (incl. startup reconcile), `T17`, `T18`.
 - Política de ausência: remoção do catálogo ativo + histórico retenível; zero estados extras.
+- Ordem de boot: sync (T07) → reconcile de indexação (T14 / ENG-011).
