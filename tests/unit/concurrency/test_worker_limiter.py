@@ -167,6 +167,7 @@ class TestInvalidCapacity(unittest.TestCase):
         message = str(ctx.exception)
         self.assertIn("index", message)
         self.assertIn("0", message)
+        self.assertIn(">=", message)
 
 
 class TestFactories(unittest.TestCase):

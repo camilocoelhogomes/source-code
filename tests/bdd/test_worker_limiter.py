@@ -110,6 +110,29 @@ class TestWL04Isolation(unittest.TestCase):
         index_hold.set()
         t.join(timeout=2.0)
 
+    def test_query_full_does_not_block_index(self) -> None:
+        from github_rag.concurrency.limiter import SemaphoreWorkerLimiter
+
+        index = SemaphoreWorkerLimiter(capacity=1, pool="index")
+        query = SemaphoreWorkerLimiter(capacity=1, pool="query")
+        query_hold = threading.Event()
+        query_acquired = threading.Event()
+        index_acquired = threading.Event()
+
+        def hold_query() -> None:
+            with query.acquire():
+                query_acquired.set()
+                query_hold.wait(timeout=2.0)
+
+        t = threading.Thread(target=hold_query)
+        t.start()
+        self.assertTrue(query_acquired.wait(timeout=2.0))
+        with index.acquire():
+            index_acquired.set()
+        self.assertTrue(index_acquired.is_set())
+        query_hold.set()
+        t.join(timeout=2.0)
+
 
 class TestWL05LimitOneSerializes(unittest.TestCase):
     def test_limit_one_no_overlap(self) -> None:
