@@ -136,3 +136,81 @@ Esperado: falha por `ImportError` dos módulos `github_rag.eligibility.filter` /
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — interfaces v0.1.0. Prosseguir para unit-test-plan (QA).
+
+---
+
+## Review — Unit tests (v0.1.0) — QA delivery
+
+| Campo | Valor |
+|---|---|
+| Autor | QA Engineer |
+| Artefato | `unit-test-plan.md` + `tests/unit/eligibility/test_file_eligibility.py` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (Architect revisa depois; sem gate humano intermediário) |
+| Resultado | `TESTS_READY_FOR_REVIEW` |
+
+### Casos entregues
+
+U-01..U-24 — paths inválidos (`EligibilityError`), sem gitignore, aninhado + `!`,
+CSV/imagens case-insensitive, sem extensão, duplicatas, normalização `\`,
+loader (root inexistente / skip `.git/` / nested / vazio / não-UTF-8),
+sem size caps, idempotência/ordem, Protocol e denylists.
+
+### Evidência red (pré-implementação)
+
+```bash
+PYTHONPATH=src .venv/bin/python -m pytest tests/unit/eligibility/test_file_eligibility.py -q --tb=line --no-cov
+```
+
+Resultado observado (2026-07-18): **21 failed, 3 passed**.
+
+| Resultado | Casos | Motivo |
+|---|---|---|
+| FAIL | U-01..U-18, U-20, U-21, U-24 | `NotImplementedError` nos stubs `PathspecFileEligibilityFilter.filter` / `load_gitignore_sources` |
+| PASS | U-19, U-22, U-23 | assinatura sem size params; Protocol runtime; constantes `rules.py` já materializadas |
+
+Exemplo de falha esperada:
+
+```text
+NotImplementedError: PathspecFileEligibilityFilter.filter: implementação após unit-test-plan (T09)
+NotImplementedError: load_gitignore_sources: implementação após unit-test-plan (T09)
+```
+
+Código de produção **não** alterado além dos stubs existentes.
+
+---
+
+## Review — Unit tests (v0.1.0)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `unit-test-plan.md` + `tests/unit/eligibility/test_file_eligibility.py` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Contratos I-T09-001..008 | OK | U-05/12/13/14/19/21/22/23; assinatura sem size; Protocol; denylists |
+| Extremos / corners | OK | U-06 aninhado; U-07 `!`; U-11 extensionless gitignored |
+| Inválidos → `EligibilityError` | OK | U-01..U-04; mensagem cita path (U-01/U-02) |
+| Vazios | OK | U-05 `sources=[]`; U-18 loader sem `.gitignore` |
+| Falhas loader | OK | U-15 root inexistente; U-24 não-UTF-8; U-16 skip `.git/` |
+| Alinhamento D-T09-001..006 | OK | porta pura, pathspec corners, denylist, sem extensão, sem caps |
+| Evidência red (`NotImplementedError`) | OK | 21 failed, 3 passed (U-19/22/23); stubs intactos |
+| SUGGESTIONs BDD anteriores | OK | U-12 duplicatas; U-17 estrutura `GitignoreSource` |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada | Resolução |
+|---|---|---|---|---|
+| `MAJOR` | U-02 assertava só `".."` na mensagem, não o path ofensivo | `test_u02_parent_escape_raises` (antes); I-T09-007 / design §2.5 | `assertIn("../outside.py", …)` | Corrigido pelo Architect na review |
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — | — |
+| `SUGGESTION` | `filter([], []) → []` e path absoluto estilo Windows não cobertos | critérios “vazios” / §2.7 | Opcional na implementação se surgir dúvida de contrato | Aceito no MVP |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — unit-test-plan v0.1.0 e testes unitários suficientes. Prosseguir para implementação (Developer).
