@@ -6,7 +6,7 @@
 | Feature | `github-etl-mcp-rag` |
 | Estado | `READY_FOR_IMPLEMENTATION` |
 | Onda | W3 |
-| Plano | candidato v0.1.6 (`PENDING_PO_REVIEW`) |
+| Plano | v0.1.6 (`READY_FOR_IMPLEMENTATION`, commit `f92e7d3`) |
 
 ## Objetivo
 

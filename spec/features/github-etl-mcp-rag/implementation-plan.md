@@ -4,11 +4,12 @@
 |---|---|
 | Feature ID | `github-etl-mcp-rag` |
 | Versão do plano | `0.1.6` |
-| Estado | `PO_PLAN_APPROVED` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Requisitos base | `requirements.md` v0.4.0 (aprovado 2026-07-18, commit `7747a27`) |
 | Natureza | delta sobre v0.1.5 — conformidade SDK OSS / ORM (BR-023–024, DEC-015–016, BDD-024, DT-001) |
 | Revisão humana (plano anterior) | plano v0.1.5 aprovado em 2026-07-18 por `camilocoelhogomes` (commit candidato `bfc9189`) |
-| Revisão PO | `PO_PLAN_APPROVED` em 2026-07-18 — rastreabilidade BR-023–024, DEC-015–016, BDD-024, DT-001 ok; T20 cobre dívida sem mudar BDD-016/018; T03 só confirma ORM; sem explosão de escopo. Aguardando `HUMAN_PLAN_APPROVAL`. |
+| Revisão PO | `PO_PLAN_APPROVED` em 2026-07-18 — rastreabilidade BR-023–024, DEC-015–016, BDD-024, DT-001 ok; T20 cobre dívida sem mudar BDD-016/018; T03 só confirma ORM; sem explosão de escopo. |
+| Revisão humana (plano 0.1.6) | `aprovo` em 2026-07-18 por `camilocoelhogomes` (commit candidato `f92e7d3`). |
 
 ## 1. Arquitetura
 
@@ -268,11 +269,11 @@ Greenfield: sem migração de dados legados. Rollback = não promover imagem/tag
 
 ## 9. Handoff
 
-Candidato **v0.1.6** — `PO_PLAN_APPROVED` (2026-07-18). Delta sobre v0.1.5:
+Plano **v0.1.6** — `READY_FOR_IMPLEMENTATION` (aprovação humana 2026-07-18, commit candidato `f92e7d3`). Delta sobre v0.1.5:
 
 - ENG-013–016 alinhados a BR-023–024, DEC-015–016, BDD-024.
 - Tasks T05–T19 com SDK/ORM explícitos; T03 confirmado ORM (sem refactor).
 - Nova task `T20-refactor-local-discovery-git-sdk` (DT-001) em W3 (paralela após T06); T19 depende de T20; BDD-016/018 preservados.
 - Estratégia anti-retrabalho: SDKs só nos adaptadores; T14 não importa SDKs.
 
-Próximo gate: aprovação humana do plano (`HUMAN_PLAN_APPROVAL`). Não há aprovação humana inventada neste candidato.
+Tasks `T01`–`T20` prontas para o pipeline de implementação (respeitar ondas e dependências).

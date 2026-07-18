@@ -4,11 +4,11 @@
 
 - **Feature ID:** `github-etl-mcp-rag`
 - **Versão:** 0.4.0
-- **Estado:** `ENGINEERING_REFINEMENT`
-- **Natureza:** delta sobre integrações via SDK OSS de mercado e PostgreSQL via ORM; o conteúdo funcional de `0.3.0` permanece válido; este delta foi aprovado e segue para revisão do plano/tasks pelo Principal Engineer.
+- **Estado:** `READY_FOR_IMPLEMENTATION`
+- **Natureza:** delta sobre integrações via SDK OSS de mercado e PostgreSQL via ORM; o conteúdo funcional de `0.3.0` permanece válido; requisitos e plano aprovados.
 - **Aprovação humana (requisitos 0.3.0):** `aprovo` em 2026-07-18 por `camilocoelhogomes` (commit candidato `71ed647`).
 - **Aprovação humana (requisitos 0.4.0):** `aprovado` em 2026-07-18 por `camilocoelhogomes` (commit candidato `7747a27`).
-- **Artefatos de engenharia:** `implementation-plan.md` v0.1.5 e tasks `T01`–`T19` como base; PE deve revisar plano/tasks para BR-023–024, DEC-015–016, BDD-024 e DT-001.
+- **Artefatos de engenharia:** `implementation-plan.md` v0.1.6 e tasks `T01`–`T20` em `READY_FOR_IMPLEMENTATION` (aprovação humana do plano: `f92e7d3`).
 - **Rastreabilidade:** requisitos `REQ-*`, regras `BR-*`, decisões `DEC-*` e cenários `BDD-*`.
 - **Histórico deste delta:** `0.3.0` → `0.4.0` — BR-023–024, DEC-015–016, BDD-024; dívida T06 (inspeção Git ad-hoc → GitPython) documentada para task de refactor no plano.
 
