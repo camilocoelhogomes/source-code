@@ -14,7 +14,7 @@ Empacotar o produto em imagens/compose para uso local padronizado: `CONFIG_PATH`
 ## Escopo
 
 - Dockerfile(s) e `docker-compose` (app, postgres, qdrant, zoekt, runtime SLM se aplicável).
-- Documentar env: `CONFIG_PATH`, token GitHub, `INDEX_WORKERS`, `QUERY_WORKERS`, horário diário default, recursos sugeridos.
+- Documentar env: `CONFIG_PATH`, token GitHub, `INDEX_WORKERS`, `QUERY_WORKERS`, **`INDEX_CRON`** (expressão cron default), recursos sugeridos.
 - Montagem de volumes para JSON e `file:///repos/...` (ENG-005).
 - Imagem primária `linux/amd64` (ENG-006).
 - Healthchecks básicos para UI e MCP.

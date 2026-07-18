@@ -5,9 +5,9 @@
 - **Feature ID:** `github-etl-mcp-rag`
 - **Versão:** 0.3.0
 - **Estado:** `HUMAN_PLAN_APPROVAL`
-- **Natureza:** requisitos aprovados; plano de engenharia v0.1.3 aprovado pelo PO (`PO_PLAN_APPROVED`); candidato aguardando aprovação humana do plano.
+- **Natureza:** requisitos aprovados; plano de engenharia v0.1.4 aprovado pelo PO (`PO_PLAN_APPROVED`); candidato aguardando aprovação humana do plano.
 - **Aprovação humana (requisitos):** `aprovo` em 2026-07-18 por `camilocoelhogomes` (commit candidato `71ed647`).
-- **Artefatos de engenharia:** `implementation-plan.md` v0.1.3 (`PO_PLAN_APPROVED` → `HUMAN_PLAN_APPROVAL`); tasks `T01`–`T19` em `tasks/`.
+- **Artefatos de engenharia:** `implementation-plan.md` v0.1.4 (`PO_PLAN_APPROVED` → `HUMAN_PLAN_APPROVAL`); tasks `T01`–`T19` em `tasks/`.
 - **Rastreabilidade:** requisitos `REQ-*`, regras `BR-*`, decisões `DEC-*` e cenários `BDD-*`.
 
 ## Problema

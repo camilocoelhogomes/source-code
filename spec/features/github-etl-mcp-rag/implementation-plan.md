@@ -3,12 +3,12 @@
 | Campo | Valor |
 |---|---|
 | Feature ID | `github-etl-mcp-rag` |
-| Versão do plano | `0.1.3` |
+| Versão do plano | `0.1.4` |
 | Estado | `HUMAN_PLAN_APPROVAL` |
 | Requisitos base | `requirements.md` v0.3.0 (aprovado 2026-07-18, commit `71ed647`) |
 | Natureza | greenfield; sem código de aplicação pré-existente |
-| Revisão humana | rejeição parcial do candidato `7d6f14a` (venv em T01) incorporada em v0.1.3 |
-| Revisão PO | `PO_PLAN_APPROVED` em 2026-07-18 (v0.1.3); candidato aguardando aprovação humana do plano |
+| Revisão humana | rejeição parcial do candidato `e22a2a7` (cron em T15/T18) incorporada em v0.1.4 |
+| Revisão PO | `PO_PLAN_APPROVED` em 2026-07-18 (v0.1.4); candidato aguardando aprovação humana do plano |
 
 ## 1. Arquitetura
 
@@ -73,7 +73,8 @@ Zoekt permanece o caminho de busca exata e **não** substitui Tree-sitter/SLM/Qd
 | ENG-009 | Desenvolvimento local usa **`python -m venv`** (padrão `.venv/`) para instalar e isolar dependências; README documenta create/activate/install/test. Delivery por containers (T19) instala deps na imagem e **não** monta/usa o `.venv` do host. | Feedback humano no candidato `7d6f14a`; alinha REQ-007 (local) com REQ-036 (containers) sem conflito. |
 | ENG-002 | Compose com serviços: `app`, `postgres`, `qdrant`, `zoekt` (e runtime SLM atrás de porta abstrata). | Isola estado e índices; delivery padronizado (REQ-036). |
 | ENG-003 | Defaults: `INDEX_WORKERS=2`, `QUERY_WORKERS=4` (ajustáveis por env; máximos documentados na imagem). | Leve em máquina de desenvolvedor; dúvida não bloqueante fechada para MVP. |
-| ENG-004 | Horário diário: env define default no boot; preferência persistida na UI (PostgreSQL) prevalece em runtime. | Ambos exigidos (REQ-017); precedência explícita evita ambiguidade. |
+| ENG-004 | Agenda por **cron**: env (`INDEX_CRON` ou nome fixado no design) define default no boot; preferência de expressão cron persistida na UI (PostgreSQL) prevalece em runtime. | REQ-017 + BDD-003; feedback humano `e22a2a7`. |
+| ENG-010 | Configuração do scheduler = **expressão cron** (UI e env). “Uma vez ao dia” de REQ-017 é caso especial de cron; permite também N vezes/dia, horário a horário, etc., sem segundo modelo de config. | Facilita configuração; não contradiz o valor do requisito. |
 | ENG-005 | Convenção de volume local padrão: `/repos` no container; URLs `file:///repos/...`. | Alinha exemplo do contrato; montagens adicionais permitidas. |
 | ENG-006 | Imagem primária `linux/amd64`; `arm64` best-effort. | Dúvida de plataforma não bloqueia MVP. |
 | ENG-007 | Portas (interfaces) estáveis antes dos adaptadores; MCP e UI só consomem serviços de domínio. | Reduz retrabalho quando superfícies evoluírem. |
@@ -94,10 +95,10 @@ Zoekt permanece o caminho de busca exata e **não** substitui Tree-sitter/SLM/Qd
 | `index.metadata` | SLM local → metadados **por cada** chunk Tree-sitter | Respostas MCP; inventar chunks |
 | `index.vector` | Qdrant: vetor + payload (chunk Tree-sitter + metadados SLM) | Busca exata; gerar chunks |
 | `indexing` | Orquestrar estados, fila, falha total, skip commit | UI/MCP |
-| `schedule` | Agendamento diário | Editar config |
+| `schedule` | Agendamento por expressão cron | Editar config / CRUD conexões |
 | `query` | Exact, semantic, read_file, list_tree | Narrativa |
 | `mcp` | Tools aprovadas; evidências; paralelismo query | SLM narrativo |
-| `ui` | Status, progresso, mensagem/horário/histórico de erro, checkbox, horário diário, buscas | CRUD de conexões/token |
+| `ui` | Status, progresso, mensagem/horário/histórico de erro, checkbox, **cron** do scheduler, buscas | CRUD de conexões/token |
 | `delivery` | Dockerfile/compose/volumes/env | Lógica de domínio |
 
 ## 2. Interfaces de alto nível
@@ -119,10 +120,10 @@ Contratos lógicos (detalhamento de métodos fica no pipeline por task). Cada po
 | `MetadataGenerator` | Gerar metadados contextuais via SLM local **para cada** chunk Tree-sitter (BR-009–010, DEC-006; default Qwen 3B) | Metadados ≠ embeddings ≠ prosa MCP |
 | `VectorStore` | Persistir/consultar no Qdrant: vetor + payload com chunk Tree-sitter e metadados SLM (DEC-004) | Não redefine a unidade de chunk |
 | `IndexingOrchestrator` | Orquestra Zoekt e a sequência Tree-sitter → SLM(por chunk) → Qdrant; estados REQ-020; skip; restart total | BR-002–005; REQ-022 |
-| `DailyScheduler` | Disparo diário | REQ-017 |
+| `DailyScheduler` | Disparo conforme expressão cron (UI/env; diário = caso especial) | REQ-017; ENG-010 |
 | `QueryService` | Exact + semantic + read + tree | Compartilhado UI/MCP |
 | `McpEvidenceServer` | Tools MCP sem narrativa/SLM | DEC-008, BR-011 |
-| `ManagementUiApi` | Listagem, checkbox index, progresso, erro (mensagem/horário/histórico), horário diário, buscas | BR-017 |
+| `ManagementUiApi` | Listagem, checkbox index, progresso, erro (mensagem/horário/histórico), **edição de cron**, buscas | BR-017 |
 
 Estados de repositório (enum fechado, REQ-020 — sem estados extras): `não indexado` | `na fila` | `indexando` | `atualizado` | `erro`.
 
@@ -182,7 +183,7 @@ T19-container-delivery            → T17, T18
 | W3 | `T07`, `T08`, `T09` | Catálogo operacional + preparação de snapshot |
 | W4 | `T10`; após `T11`: `T12` ∥ `T13` | Zoekt paralelo; contratos RAG após Tree-sitter |
 | W5 | `T14` | Orquestração (sequência Tree-sitter→SLM→Qdrant) |
-| W6 | `T15`, `T16` | Agenda + consulta |
+| W6 | `T15`, `T16` | Agenda (cron) + consulta |
 | W7 | `T17`, `T18` | Superfícies |
 | W8 | `T19` | Delivery |
 
@@ -220,10 +221,10 @@ T19-container-delivery            → T17, T18
 | T12 | BR-009–010; DEC-006; metadados **por cada** chunk Tree-sitter | BDD-007,010 |
 | T13 | DEC-004; REQ-002; payload = chunk Tree-sitter + metadados SLM | BDD-010 |
 | T14 | REQ-005,012,016,018–022,024; BR-002–005,014; orquestra Tree-sitter→SLM→Qdrant; commit≠processado → `não indexado` | BDD-002,004,005,007,008 |
-| T15 | REQ-017; ENG-004; preferência de horário persistida (sem CRUD de conexões) | BDD-003 |
+| T15 | REQ-017 via cron (ENG-010); ENG-004; preferência cron persistida (sem CRUD conexões) | BDD-003 (cron UI/env) |
 | T16 | REQ-002,026–027,030 | BDD-009–012 |
 | T17 | REQ-003,028–033; DEC-008; BR-011 | BDD-011–015 |
-| T18 | REQ-006,012,017,020–027,035; BR-012,017; falhas só REQ-023 | BDD-002,003,007,009–010,016,023 |
+| T18 | REQ-006,012,017,020–027,035; BR-012,017; falhas só REQ-023; UI configura **cron** | BDD-002,003,007,009–010,016,023 |
 | T19 | REQ-036–038; DEC-011 | BDD-020 |
 
 ## 7. Riscos e mitigações
@@ -244,9 +245,9 @@ Greenfield: sem migração de dados legados. Rollback = não promover imagem/tag
 
 ## 9. Handoff
 
-`PO_PLAN_APPROVED` (v0.1.3). Validado:
+`PO_PLAN_APPROVED` (v0.1.4). Validado:
 
-- T01 / ENG-009: `python -m venv` / `.venv` obrigatório para deps locais; T19 não usa `.venv` do host.
-- Sem regressão: Tree-sitter→SLM→Qdrant; estados REQ-020; UI REQ-023; agenda BDD-003.
+- T15/T18/T19: agenda por expressão cron (UI + env); “uma vez ao dia” = caso especial (REQ-017/BDD-003).
+- Sem regressão: venv; Tree-sitter→SLM→Qdrant; estados REQ-020; UI REQ-023.
 
 Estado atual: `HUMAN_PLAN_APPROVAL` — candidato pronto para aprovação humana do plano. Nenhuma aprovação humana do plano está registrada neste artefato.
