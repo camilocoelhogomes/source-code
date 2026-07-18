@@ -40,6 +40,16 @@ def _path_extension(path: str) -> str:
     return Path(path).suffix.lower()
 
 
+def _byte_point(content: bytes, offset: int) -> tuple[int, int]:
+    """Converte offset de byte em ``(row, column)`` 0-based (contrato Tree-sitter)."""
+    clamped = max(0, min(offset, len(content)))
+    prefix = content[:clamped]
+    row = prefix.count(b"\n")
+    last_nl = prefix.rfind(b"\n")
+    col = clamped if last_nl < 0 else clamped - (last_nl + 1)
+    return (row, col)
+
+
 class TreeSitterContextualChunker:
     """Chunker contextual baseado em Tree-sitter + grammars oficiais.
 
@@ -85,11 +95,20 @@ class TreeSitterContextualChunker:
 
         path_extension = _path_extension(source.path)
 
-        # 4. registry
-        ts_language = self._registry.resolve(
-            language,
-            path_extension=path_extension,
-        )
+        # 4. registry (anexa path quando o registry não sabe — design §6)
+        try:
+            ts_language = self._registry.resolve(
+                language,
+                path_extension=path_extension,
+            )
+        except GrammarUnavailableError as exc:
+            if exc.path is not None:
+                raise
+            raise GrammarUnavailableError(
+                getattr(exc, "message", "") or "grammar indisponível",
+                path=source.path,
+                language=exc.language or language,
+            ) from exc
 
         # 5. parse
         root_node = self._parse(ts_language, source.content, source.path, language)
@@ -126,12 +145,11 @@ class TreeSitterContextualChunker:
             # whitespace; UT-X02 exige sucesso com texto não vazio.
             if end <= start and len(content) > 0:
                 start, end = 0, len(content)
-                start_point, end_point = (0, 0), (0, 0)
+                start_point = _byte_point(content, start)
+                end_point = _byte_point(content, end)
             if end <= start or end > len(content):
                 continue
             slice_text = content[start:end].decode("utf-8")
-            if not slice_text:
-                continue
             kind = node.kind
             chunks.append(
                 SemanticChunk(

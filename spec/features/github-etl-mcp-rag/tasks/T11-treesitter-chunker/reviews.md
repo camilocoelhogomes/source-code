@@ -186,3 +186,53 @@ Resultado: `6 errors during collection` — todos `ModuleNotFoundError` em:
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — unit-test-plan v0.1.2 e testes RED. Prosseguir para implementação (Developer) sem alteração de escopo.
+
+---
+
+## Review — Implementação (Developer)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `src/github_rag/index/chunk/*` + `pyproject.toml` (deps tree-sitter*) |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| DEC-003 / ENG-008 — sem chunk por tamanho/linhas | OK | Porta/`chunk` sem params proibidos; seletores só por tipo de nó; sem fallback genérico |
+| DEC-015 / BDD-024 — SDK oficial + grammars | OK | `tree_sitter.Parser` + `OfficialGrammarRegistry` com pacotes `tree-sitter-*` pinados |
+| Erros tipados (vazio/binário/grammar/parse) | OK | Fluxo §3 em `treesitter.py`; hierarquia `errors.py`; ERROR nodes não falham sozinhos |
+| `chunk_id` canônico §4.3.1 | OK | `compute_chunk_id` + materialização; BDD TS-09 / UT-T01 |
+| TS vs TSX (D-T11-010) | OK | `language_typescript` / `language_tsx` por `path_extension` |
+| Corners (ninhos, dedupe, root, whitespace, override, precedência binário) | OK | seletores + materialize; testes UT-C*/UT-X*/TS-* verdes (56) |
+| Contrato estável T12/T13/T14 | OK | `SemanticChunk` frozen; `len>=1`; ranges/texto/`chunk_id` alinhados |
+
+### Achados corrigidos nesta review
+
+| Severidade | Achado | Evidência | Correção | Status |
+|---|---|---|---|---|
+| `MAJOR` | Fallback whitespace expandia range vazio do root mas zerava `start_point`/`end_point` → `(0,0),(0,0)` inconsistente com bytes/texto (contrato §4.3) | `treesitter.py` materialize; root Python whitespace `start==end` | `_byte_point` recalcula pontos ao expandir | Corrigido |
+| `MAJOR` | `GrammarUnavailableError` do registry chegava sem `path` embora o chunker soubesse (design §6) | `chunk()` após `registry.resolve` | Re-raise com `path=source.path` + `message` cru | Corrigido |
+| `MAJOR` | Deps `tree-sitter*` sem pin — risco de quebra de API (design §8 / risco §10) | `pyproject.toml` | Pins nas versões validadas (0.26.0 / grammars) | Corrigido |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+| `SUGGESTION` | `OfficialGrammarRegistry.__init__` resolve todas as grammars eagerly (incl. JS) — custo de startup; não altera contrato | `grammar_registry.py` | Avaliar lazy cache só se baseline Blue mostrar gargalo |
+
+### Checks
+
+```bash
+PYTHONPATH=src .venv/bin/python -m pytest tests/unit/index/chunk tests/bdd/test_treesitter_chunker.py -q --no-cov
+# 56 passed, 14 subtests passed
+```
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — implementação alinhada a design/interfaces/BDD após correções MAJOR acima. Prosseguir para etapa Blue (`refactoring.md`).

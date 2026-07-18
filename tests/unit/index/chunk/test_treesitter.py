@@ -192,6 +192,42 @@ class TestTreeSitterContextualChunker(unittest.TestCase):
         self.assertTrue(all(c.path == "a.py" for c in a))
         self.assertTrue(all(c.path == "b.py" for c in b))
 
+    def test_ut_c16_registry_error_with_path_propagates(self) -> None:
+        class RegistryWithPath:
+            def resolve(self, language: SourceLanguage, *, path_extension: str):
+                raise GrammarUnavailableError(
+                    "já com path",
+                    path="a.py",
+                    language=language,
+                )
+
+        chunker = TreeSitterContextualChunker(grammar_registry=RegistryWithPath())
+        with self.assertRaises(GrammarUnavailableError) as ctx:
+            chunker.chunk(ChunkSourceFile(path="a.py", content=b"x = 1\n"))
+        self.assertEqual(ctx.exception.path, "a.py")
+
+    def test_ut_c17_materialize_empty_raises_parse_failure(self) -> None:
+        from unittest.mock import patch
+
+        from github_rag.index.chunk.node_selectors import SelectedNode
+
+        chunker = TreeSitterContextualChunker()
+        # Nó com range além do conteúdo → materialize vazio → ParseFailureError.
+        with patch(
+            "github_rag.index.chunk.treesitter.select_semantic_nodes",
+            return_value=(
+                SelectedNode(
+                    kind="module",
+                    start_byte=0,
+                    end_byte=9999,
+                    start_point=(0, 0),
+                    end_point=(0, 0),
+                ),
+            ),
+        ):
+            with self.assertRaises(ParseFailureError):
+                chunker.chunk(ChunkSourceFile(path="a.py", content=b"x = 1\n"))
+
 
 if __name__ == "__main__":
     unittest.main()

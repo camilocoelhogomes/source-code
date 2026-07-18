@@ -61,7 +61,8 @@ def _language_ptr(language: SourceLanguage, *, path_extension: str) -> Any:
         import tree_sitter_markdown as pkg
 
         return pkg.language()
-    raise GrammarUnavailableError(
+    # Enum fechado MVP: ramo só para defesa se SourceLanguage crescer sem update.
+    raise GrammarUnavailableError(  # pragma: no cover
         f"linguagem sem grammar MVP: {language.value}",
         language=language,
     )

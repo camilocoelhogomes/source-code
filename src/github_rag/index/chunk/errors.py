@@ -34,6 +34,7 @@ class ChunkingError(Exception):
         path: str | None = None,
         language: SourceLanguage | None = None,
     ) -> None:
+        self.message = message
         self.path = path
         self.language = language
         parts: list[str] = []

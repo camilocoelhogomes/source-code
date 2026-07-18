@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 from github_rag.index.chunk.errors import GrammarUnavailableError
+from github_rag.index.chunk import grammar_registry as grammar_registry_mod
 from github_rag.index.chunk.grammar_registry import OfficialGrammarRegistry
 from github_rag.index.chunk.types import SourceLanguage
 
@@ -36,6 +38,31 @@ class TestOfficialGrammarRegistry(unittest.TestCase):
         self.assertIsNotNone(tsx)
         # Variantes distintas quando a API do pacote as expõe.
         self.assertIsNot(ts, tsx)
+
+    def test_ut_g04_load_failure_wraps_as_grammar_unavailable(self) -> None:
+        registry = OfficialGrammarRegistry.__new__(OfficialGrammarRegistry)
+        with patch.object(
+            grammar_registry_mod,
+            "_language_ptr",
+            side_effect=RuntimeError("binding down"),
+        ):
+            with self.assertRaises(GrammarUnavailableError) as ctx:
+                registry.resolve(SourceLanguage.PYTHON, path_extension=".py")
+        self.assertIn("falha ao carregar grammar", str(ctx.exception))
+
+    def test_ut_g05_grammar_unavailable_from_ptr_reraise(self) -> None:
+        registry = OfficialGrammarRegistry.__new__(OfficialGrammarRegistry)
+        with patch.object(
+            grammar_registry_mod,
+            "_language_ptr",
+            side_effect=GrammarUnavailableError(
+                "linguagem sem grammar MVP: cobol",
+                language=None,
+            ),
+        ):
+            with self.assertRaises(GrammarUnavailableError) as ctx:
+                registry.resolve(SourceLanguage.PYTHON, path_extension=".py")
+        self.assertIn("cobol", str(ctx.exception))
 
 
 class TestGrammarRegistryFailures(unittest.TestCase):

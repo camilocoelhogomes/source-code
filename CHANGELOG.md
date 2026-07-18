@@ -15,6 +15,14 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 ### Adicionado
 
 - Dependência de projeto `GitPython>=3.1`.
+- Chunking semântico Tree-sitter (T11): porta `ContextualChunker` e
+  implementação `TreeSitterContextualChunker` com grammars oficiais
+  (`tree-sitter` + python/java/javascript/typescript/markdown) — única fonte
+  de chunks RAG (DEC-003/015; BDD-007/024).
+- Contrato estável `SemanticChunk` (`chunk_id` SHA-256 canônico, path, ranges,
+  kind, texto) para T12/T13/T14; erros tipados sem fallback por tamanho/linhas
+  (`EmptySourceError`, `BinarySourceError`, `GrammarUnavailableError`,
+  `ParseFailureError`).
 - Descoberta GitHub (T05): `GitHubRepoDiscovery` lista repositórios por org
   via token resolvido em T02, filtra por wildcards de inclusão (BR-022) e
   expõe `DiscoveredGitHubRepo` sem serializar o segredo (BDD-001/014/019).
@@ -54,8 +62,8 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 - Desenvolvimento local com `.venv` documentado para Windows PowerShell,
   Windows cmd, macOS e Linux.
 - Harness pytest/pytest-cov com falha automática abaixo de 95% de cobertura.
-- Testes unitários e BDD: 305 testes aprovados (1 pulado sem Docker),
-  161 subtests, cobertura de 97.82% (T01+T02+T03+T04+T05+T06).
+- Testes unitários e BDD: 367 testes aprovados (1 pulado sem Docker),
+  cobertura ≥95% (inclui T11 Tree-sitter chunker).
 - Normalização cross-platform de EOL e ignores para `.venv`, cobertura,
   caches e `*.egg-info`.
 
