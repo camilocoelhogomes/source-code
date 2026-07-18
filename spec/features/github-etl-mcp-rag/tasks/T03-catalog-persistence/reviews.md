@@ -77,3 +77,42 @@ Design íntegro, dentro do escopo aprovado, rastreável a BR-001/BR-004, REQ-020
 ### Conclusão
 
 BDD cobre integralmente os critérios de aceite da persistência (BDD-004/005/007/008, ENG-011, REQ-020/021/022/023) e os corner cases exigidos (repo inexistente, update concorrente), estritamente no escopo de persistência via fake in-memory, sem PG, sem interfaces/implementação. Evidência RED reproduzida (12 falhas pela razão esperada, sem erro de coleta). Nenhum achado `BLOCKING` ou `MAJOR`; 3 `SUGGESTION` para os gates de `interfaces.md`/unitários. Resultado: `APPROVED_BY_ARCHITECT` (gate BDD).
+
+## Review Interfaces — Tech Lead Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | tech-lead-architect (modo REVIEW; não autor das interfaces) |
+| Artefato | `interfaces.md` `0.1.0` + `src/github_rag/catalog/{__init__,models,errors,transitions,repository}.py` (stubs) |
+| Branch | `feature/github-etl-mcp-rag-T03-catalog-persistence` |
+| Data | 2026-07-18 |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios de aceite verificados
+
+| # | Critério | Veredito | Evidência |
+|---|---|---|---|
+| 1 | Estados fechados REQ-020 (exatamente 5; sem `desatualizado`/`indisponível`) | OK | `models.py` L66–70 (`RepoState`); interfaces §2.2; alinhado a design §4.1/D-T03-004 e BDD CP-09 |
+| 2 | `ExecutionStatus` distinto de `RepoState` (resolve S-2) | OK | `models.py` L90–105; interfaces §2.4; não colide com REQ-020 |
+| 3 | `list_active_catalog` (só ativos, estado + `last_processed_commit`) | OK | `repository.py` L103–113; interfaces §6; ENG-011/BDD CP-08 |
+| 4 | `last_processed_commit` no modelo de leitura | OK | `models.py` L172 (`CatalogEntry`); interfaces §3.2; BR-004 |
+| 5 | File stages (`zoekt`/`tree_sitter`/`metadata_persisted`) + registro idempotente | OK | `models.py` L73–87 (`FileStage`), L211–235 (`FileProgress`); `repository.py` L280–306; interfaces §2.3/§3.4/§6; REQ-022/BDD CP-05 |
+| 6 | Histórico de erro (mensagem + horário) | OK | `models.py` L182–208 (`IndexingExecution.error_message/error_at`); `repository.py` L184–198/L267–276; interfaces §3.3/§6; REQ-023/BDD CP-06/07 |
+| 7 | Comentários de responsabilidade + motivo em cada interface | OK | Docstrings em todos os módulos/enums/dataclasses/erros/métodos (`models.py`, `errors.py`, `transitions.py`, `repository.py`) |
+| 8 | Sem implementação (só stubs `...`) | OK | Funções `transitions.py` L94/L110/L134 e métodos do Protocol terminam em `...`; enums/dataclasses são contratos de dados, sem lógica; fake/adaptador não exportados (`__init__.py` L14–17) |
+| 9 | Nomes canônicos dentro dos candidatos do BDD | OK | interfaces §1; cada nome (`get_repository`, `reconcile_repository`, `start_execution`, `list_executions`, `mark_updated`, `deactivate_repository`, `transition_state`, `list_file_progress`...) é o 1º candidato de `_invoke` em `test_catalog_persistence.py` L122/L136/L167/L184/L202/L268/L300/L347/L379 — nenhum cenário quebra |
+| 10 | Máquina de estados + idempotência (resolve S-1) | OK | `transitions.py` L33–75 (`ALLOWED_TRANSITIONS`/`IDEMPOTENT_SELF_STATES`) cobre `up_to_date→not_indexed`, `error→{queued,not_indexed}`; ordem congelada existência→versão→validade em `transition_state` garante CP-12 (`repository.py` L143–144; interfaces §6) |
+| 11 | Erros com responsabilidade e motivo da separação | OK | `errors.py` L24–98; hierarquia raiz `CatalogError`; infra (`CatalogPersistenceError`) separada de domínio; invariante de segurança de credenciais (§8) |
+| 12 | Forma do progresso congelada (resolve B-3) | OK | `CatalogEntry.progress: Progress \| None` (`models.py` L174); interfaces §1/§3.1; BDD `_read_progress` lê `entry.progress.*` primeiro |
+
+### Achados
+
+| ID | Severidade | Evidência | Achado | Correção esperada |
+|---|---|---|---|---|
+| I-1 | SUGGESTION | `test_catalog_persistence.py` L130–137 (`_drive_to_up_to_date`); interfaces §7 (linhas 272–273) | Os fluxos CP-01/02/08 chegam a `up_to_date` via `mark_queued→mark_indexing→mark_updated` **sem** `start_execution`, ou seja, `mark_updated`/`mark_error` podem ser chamados sem execução corrente aberta. O contrato descreve "fecha a execução corrente → SUCCEEDED/FAILED", mas não fixa o comportamento quando **não há** execução corrente. | Fixar no gate de unit tests/impl que o fechamento da execução é no-op quando não há execução corrente (a transição de estado + carimbo de commit ocorrem mesmo assim), garantindo CP-01/02/08. Não bloqueia: o contrato é satisfazível sem quebrar BDD. |
+| I-2 | SUGGESTION | `repository.py` L162–169; interfaces §7 (linha 271: "par de `start_execution`") | A expressão "par de `start_execution`" para `mark_indexing` é ambígua quanto a abrir (ou não) uma execução implicitamente. O BDD abre a execução **explicitamente** após `mark_indexing`. | Explicitar no gate de unit tests que `mark_indexing` **não** abre execução implícita (evita execução duplicada em CP-05/07). Não bloqueia. |
+| I-3 | SUGGESTION | `errors.py` L38–49; `repository.py` L294/L304/L274 | `RepositoryNotFoundError` é reutilizado para `execution_id` inexistente (`record_file_stage`/`list_file_progress`/`list_executions`), decisão já documentada (interfaces §4). Semanticamente é um repo-not-found aplicado a execução. | Opcional em gate futuro: considerar `ExecutionNotFoundError` dedicado. Aceitável agora por estar documentado e não exercido negativamente pelo BDD. Não bloqueia. |
+
+### Conclusão
+
+Interfaces congelam corretamente enums fechados (REQ-020 + `ExecutionStatus` distinto), modelos de leitura imutáveis, hierarquia de erros, a máquina de estados declarativa (S-1) e a porta `CatalogRepository` com nomes canônicos 100% dentro dos candidatos do BDD (nenhum cenário quebra). Todos os stubs são `...` (sem implementação); fake/adaptador ficam fora do gate, mantendo o BDD em RED como esperado. Comentários de responsabilidade e motivo presentes em toda interface. Nenhum achado `BLOCKING` ou `MAJOR`; 3 `SUGGESTION` para o gate de unit tests/impl. Resultado: `APPROVED_BY_ARCHITECT` (gate INTERFACES).

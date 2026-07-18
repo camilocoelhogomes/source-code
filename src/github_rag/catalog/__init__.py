@@ -1,1 +1,66 @@
-"""Fronteira de catálogo, reservada para T03 e T07."""
+"""Fronteira de catálogo (T03) — reexporta os contratos públicos.
+
+Responsabilidade deste pacote
+    Expor a superfície pública estável do catálogo: enums de domínio, modelos de
+    leitura imutáveis, hierarquia de erros, a porta ``CatalogRepository`` e os
+    contratos da máquina de estados. É o ponto único de import para consumidores
+    (T07/T14/T17/T18) e para os testes BDD (``from github_rag import catalog``).
+
+Motivo da separação
+    Centralizar os reexports evita que consumidores dependam de caminhos internos
+    de módulo (`catalog.models`, `catalog.repository`), permitindo reorganização
+    interna sem quebrar o handoff.
+
+Nota de etapa (gate de interfaces — CANDIDATE)
+    ``InMemoryCatalogRepository`` (fake) e ``PostgresCatalogRepository`` (adaptador)
+    são IMPLEMENTAÇÃO e NÃO são exportados aqui nesta etapa (gate unit/impl). Por
+    isso o BDD permanece RED até a implementação — comportamento esperado.
+"""
+
+from .errors import (
+    CatalogError,
+    CatalogPersistenceError,
+    ConcurrencyConflictError,
+    InvalidStateTransitionError,
+    RepositoryNotFoundError,
+)
+from .models import (
+    CatalogEntry,
+    ExecutionStatus,
+    FileProgress,
+    FileStage,
+    IndexingExecution,
+    Progress,
+    RepoOrigin,
+    RepoState,
+)
+from .repository import CatalogRepository
+from .transitions import (
+    ALLOWED_TRANSITIONS,
+    IDEMPOTENT_SELF_STATES,
+    ensure_transition_allowed,
+    is_transition_allowed,
+    is_up_to_date,
+)
+
+__all__ = [
+    "ALLOWED_TRANSITIONS",
+    "IDEMPOTENT_SELF_STATES",
+    "CatalogEntry",
+    "CatalogError",
+    "CatalogPersistenceError",
+    "CatalogRepository",
+    "ConcurrencyConflictError",
+    "ExecutionStatus",
+    "FileProgress",
+    "FileStage",
+    "IndexingExecution",
+    "InvalidStateTransitionError",
+    "Progress",
+    "RepoOrigin",
+    "RepoState",
+    "RepositoryNotFoundError",
+    "ensure_transition_allowed",
+    "is_transition_allowed",
+    "is_up_to_date",
+]
