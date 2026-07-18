@@ -61,8 +61,8 @@ class EnvironSecretResolver:
         Ler ``os.environ`` ou um ``Mapping`` injetado no construtor.
 
     Motivo da separação
-        Stub concreto instanciável pelo ``ConfigLoader`` default; a lógica
-        real fica para o Developer após unitários aprovados.
+        Implementação concreta default do ``ConfigLoader``; mapping injetável
+        isola testes do ``os.environ`` do processo.
     """
 
     def __init__(self, environ: Mapping[str, str] | None = None) -> None:

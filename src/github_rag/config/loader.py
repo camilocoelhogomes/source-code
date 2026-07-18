@@ -62,7 +62,7 @@ class ConfigLoader:
 
     Motivo da separação
         Superfície única alinhada ao BDD (``ConfigLoader().load(path)``);
-        injeta ``SecretResolver`` opcional para testes unitários futuros.
+        injeta ``SecretResolver`` opcional para testes unitários.
     """
 
     def __init__(
