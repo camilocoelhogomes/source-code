@@ -49,6 +49,19 @@ Sem ativar o ambiente:
 .venv/bin/python -m pytest
 ```
 
+## Testes e cobertura
+
+Em qualquer sistema, após ativar o `.venv`:
+
+```text
+python -m pytest
+```
+
+O comando executa testes unitários e BDD com relatório de cobertura no
+terminal. O projeto exige cobertura mínima de 95%; a execução falha
+automaticamente abaixo desse limite. A entrega T01 foi validada com 37 testes
+aprovados e cobertura de 100%.
+
 ## Entrega por container
 
 O venv é exclusivo do desenvolvimento local. Docker/T19 é a entrega
