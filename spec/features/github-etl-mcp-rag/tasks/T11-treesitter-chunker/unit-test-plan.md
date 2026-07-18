@@ -6,9 +6,10 @@
 | Task | `T11-treesitter-chunker` |
 | Autor | QA Engineer |
 | Data | 2026-07-18 |
-| Estado | `APPROVED_BY_ARCHITECT` |
-| Versão | `0.1.2` |
-| Interfaces base | `0.1.1` (`APPROVED_BY_ARCHITECT`) |
+| Estado | `PENDING_ARCHITECT_REVIEW` |
+| Versão | `0.2.0` |
+| Interfaces base | `0.2.0` |
+| Trigger | Review humano PR #9 — yaml/json/xml/toml |
 
 ## Artefatos
 
@@ -28,9 +29,10 @@
 | UT-T01 | `compute_chunk_id` canônico | path/bytes/lang/kind fixos | hex 64 = SHA-256 payload `\0` | design §4.3.1, TS-09 | `test_types.py` |
 | UT-T02 | `compute_chunk_id` estável | mesmas entradas 2x | ids iguais | contrato T12 | `test_types.py` |
 | UT-T03 | `compute_chunk_id` sensível | muda start_byte | id muda | corner | `test_types.py` |
-| UT-T04 | `language_from_path` py/java/md/js/ts/tsx | extensões MVP | enum correto | I-T11-010 | `test_types.py` |
+| UT-T04 | `language_from_path` MVP (incl. yaml/yml/json/xml/toml) | extensões MVP | enum correto | I-T11-010, TS-16..19 | `test_types.py` |
 | UT-T05 | `language_from_path` desconhecida | `.rs` | `None` | GrammarUnavailable | `test_types.py` |
 | UT-T06 | `ChunkSourceFile` / `SemanticChunk` frozen | mutate attr | FrozenInstanceError | I-T11-002 | `test_types.py` |
+| UT-T07 | `SourceLanguage` enum fechado v0.2 | membros | inclui yaml/json/xml/toml | D-T11-011 | `test_types.py` |
 | UT-E01 | hierarquia erros | subclasses | `issubclass(..., ChunkingError)` | DoD corners | `test_errors.py` |
 | UT-E02 | mensagem com path | `EmptySourceError(path=...)` | path em str | observabilidade | `test_errors.py` |
 | UT-N01 | Python class+method | árvore fake | ambos ranges distintos | TS-12 | `test_node_selectors.py` |
@@ -40,6 +42,12 @@
 | UT-G01 | resolve python | OfficialGrammarRegistry | Language não None | BDD-024 | `test_grammar_registry.py` |
 | UT-G02 | TS vs TSX | `.ts` / `.tsx` | variantes distintas quando possível | TS-11 | `test_grammar_registry.py` |
 | UT-G03 | language sem pacote | registry fake | GrammarUnavailableError | TS-07 | `test_grammar_registry.py` |
+| UT-G06 | resolve yaml/json/xml/toml | OfficialGrammarRegistry | Language não None cada | TS-16..19, BDD-024 | `test_grammar_registry.py` |
+| UT-N05 | seletores config | árvores fake yaml/json/xml/toml | alvos design §4.4 | TS-16..19 | `test_node_selectors.py` |
+| UT-C20 | YAML feliz | mapping | len>=1, language yaml | TS-16 | `test_treesitter.py` |
+| UT-C21 | JSON feliz | object+pairs | len>=1, language json | TS-17 | `test_treesitter.py` |
+| UT-C22 | XML feliz | elements aninhados | len>=1, kind element | TS-18 | `test_treesitter.py` |
+| UT-C23 | TOML feliz | tables+pairs | len>=1, language toml | TS-19 | `test_treesitter.py` |
 | UT-C01 | Python feliz | class+def | len>=1, texts não vazios | TS-01 | `test_treesitter.py` |
 | UT-C02 | vazio | `b""` | EmptySourceError | TS-05 | `test_treesitter.py` |
 | UT-C03 | NUL | `b"a\x00b"` | BinarySourceError | TS-06 | `test_treesitter.py` |

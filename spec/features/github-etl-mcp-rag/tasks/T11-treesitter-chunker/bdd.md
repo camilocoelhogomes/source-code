@@ -4,10 +4,11 @@
 |---|---|
 | Feature | `github-etl-mcp-rag` |
 | Task | `T11-treesitter-chunker` |
-| Estado | `APPROVED_BY_ARCHITECT` |
-| Versão | `0.1.1` |
-| Design base | `0.1.1` (`APPROVED_BY_ARCHITECT`) |
+| Estado | `PENDING_ARCHITECT_REVIEW` |
+| Versão | `0.2.0` |
+| Design base | `0.2.0` (`APPROVED_BY_ARCHITECT`) |
 | Rastreabilidade | BDD-007 (etapa Tree-sitter); BDD-024; DEC-003, DEC-015; BR-005, BR-023; ENG-008 |
+| Trigger | Review humano PR #9 — yaml/json/xml/toml |
 
 ## Cenários executáveis
 
@@ -121,6 +122,39 @@
 **Quando** o chunker processa o arquivo  
 **Então** o resultado é sucesso com `len >= 1`  
 **E** não levanta `ParseFailureError` apenas pela presença de nós `ERROR`/`MISSING`
+
+### TS-16 — YAML: chunking estrutural (não por tamanho/linhas)
+
+**Dado** um `ChunkSourceFile` com path `config/app.yaml` (ou `.yml`) e conteúdo UTF-8 com mapeamento (ex.: chaves top-level e aninhadas)  
+**Quando** `TreeSitterContextualChunker().chunk(source)` é executado  
+**Então** o resultado é `tuple` com `len >= 1`  
+**E** cada chunk tem `language == SourceLanguage.yaml` e `text` não vazio  
+**E** ao menos um `kind` estrutural (`document` e/ou `block_mapping_pair`) aparece  
+**E** a produção usa parse Tree-sitter + seleção de nós (DEC-003 — sem split por linhas/tamanho)
+
+### TS-17 — JSON: chunking estrutural (não por tamanho/linhas)
+
+**Dado** um arquivo `.json` com objeto contendo pares (incl. objeto aninhado)  
+**Quando** o chunker processa o arquivo  
+**Então** há chunks com `language == SourceLanguage.json` e `len >= 1`  
+**E** ao menos um `kind` estrutural (`object`, `pair` ou `array`) aparece  
+**E** não há caminho de chunking por tamanho/linhas
+
+### TS-18 — XML: chunking estrutural (não por tamanho/linhas)
+
+**Dado** um arquivo `.xml` com elemento raiz e filho aninhado  
+**Quando** o chunker processa o arquivo  
+**Então** há chunks com `language == SourceLanguage.xml` e `len >= 1`  
+**E** ao menos um `kind` `element` aparece (ninhos com ranges distintos → ambos, design §4.4.1)  
+**E** o registry usa a variante `language_xml` do pacote oficial `tree-sitter-xml`
+
+### TS-19 — TOML: chunking estrutural (não por tamanho/linhas)
+
+**Dado** um arquivo `.toml` com duas tabelas e pares  
+**Quando** o chunker processa o arquivo  
+**Então** há chunks com `language == SourceLanguage.toml` e `len >= 1`  
+**E** ao menos um `kind` estrutural (`table` e/ou `pair`) aparece  
+**E** a produção não depende de split por quantidade de linhas ou tamanho fixo (DEC-003)
 
 ## Fora de escopo destes BDD
 

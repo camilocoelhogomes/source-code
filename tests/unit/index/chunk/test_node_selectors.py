@@ -153,6 +153,32 @@ class TestSelectSemanticNodes(unittest.TestCase):
         with self.assertRaises(dataclasses.FrozenInstanceError):
             node.kind = "class"  # type: ignore[misc]
 
+    def test_ut_n05_config_language_targets(self) -> None:
+        """UT-N05 — alvos estruturais yaml/json/xml/toml (design §4.4)."""
+        yaml_pair = FakeNode("block_mapping_pair", 0, 10)
+        yaml_doc = FakeNode("document", 0, 20, children=[yaml_pair])
+        yaml_root = FakeNode("stream", 0, 20, children=[yaml_doc])
+        yaml_sel = list(select_semantic_nodes(SourceLanguage.YAML, yaml_root))
+        self.assertTrue({n.kind for n in yaml_sel} & {"document", "block_mapping_pair"})
+
+        json_pair = FakeNode("pair", 1, 7)
+        json_obj = FakeNode("object", 0, 10, children=[json_pair])
+        json_root = FakeNode("document", 0, 10, children=[json_obj])
+        json_sel = list(select_semantic_nodes(SourceLanguage.JSON, json_root))
+        self.assertTrue({n.kind for n in json_sel} & {"object", "pair", "array"})
+
+        child = FakeNode("element", 6, 20)
+        parent = FakeNode("element", 0, 30, children=[child])
+        xml_root = FakeNode("document", 0, 30, children=[parent])
+        xml_sel = list(select_semantic_nodes(SourceLanguage.XML, xml_root))
+        self.assertGreaterEqual(len([n for n in xml_sel if n.kind == "element"]), 2)
+
+        toml_pair = FakeNode("pair", 10, 20)
+        toml_table = FakeNode("table", 0, 25, children=[toml_pair])
+        toml_root = FakeNode("document", 0, 25, children=[toml_table])
+        toml_sel = list(select_semantic_nodes(SourceLanguage.TOML, toml_root))
+        self.assertTrue({n.kind for n in toml_sel} & {"table", "pair"})
+
 
 if __name__ == "__main__":
     unittest.main()

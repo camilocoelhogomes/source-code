@@ -228,6 +228,39 @@ class TestTreeSitterContextualChunker(unittest.TestCase):
             with self.assertRaises(ParseFailureError):
                 chunker.chunk(ChunkSourceFile(path="a.py", content=b"x = 1\n"))
 
+    def test_ut_c20_yaml(self) -> None:
+        chunker = TreeSitterContextualChunker()
+        content = b"name: app\nnested:\n  enabled: true\n"
+        chunks = chunker.chunk(ChunkSourceFile(path="config/app.yaml", content=content))
+        self.assertGreaterEqual(len(chunks), 1)
+        self.assertTrue(all(c.language == SourceLanguage.YAML for c in chunks))
+        self.assertTrue(all(c.text for c in chunks))
+        self.assertTrue({c.kind for c in chunks} & {"document", "block_mapping_pair", "stream"})
+
+    def test_ut_c21_json(self) -> None:
+        chunker = TreeSitterContextualChunker()
+        content = b'{"a": 1, "b": {"c": 2}}\n'
+        chunks = chunker.chunk(ChunkSourceFile(path="package.json", content=content))
+        self.assertGreaterEqual(len(chunks), 1)
+        self.assertTrue(all(c.language == SourceLanguage.JSON for c in chunks))
+        self.assertTrue({c.kind for c in chunks} & {"object", "pair", "array", "document"})
+
+    def test_ut_c22_xml(self) -> None:
+        chunker = TreeSitterContextualChunker()
+        content = b"<root><child attr=\"x\">text</child></root>\n"
+        chunks = chunker.chunk(ChunkSourceFile(path="pom.xml", content=content))
+        self.assertGreaterEqual(len(chunks), 1)
+        self.assertTrue(all(c.language == SourceLanguage.XML for c in chunks))
+        self.assertTrue(any(c.kind == "element" for c in chunks))
+
+    def test_ut_c23_toml(self) -> None:
+        chunker = TreeSitterContextualChunker()
+        content = b'[section]\nkey = "value"\n\n[other]\nx = 1\n'
+        chunks = chunker.chunk(ChunkSourceFile(path="pyproject.toml", content=content))
+        self.assertGreaterEqual(len(chunks), 1)
+        self.assertTrue(all(c.language == SourceLanguage.TOML for c in chunks))
+        self.assertTrue({c.kind for c in chunks} & {"table", "pair", "document"})
+
 
 if __name__ == "__main__":
     unittest.main()

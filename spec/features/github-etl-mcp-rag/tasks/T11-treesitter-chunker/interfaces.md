@@ -6,17 +6,19 @@
 | Task | `T11-treesitter-chunker` |
 | Autor | Implementation Task Runner + Tech Lead Architect |
 | Data | 2026-07-18 |
-| Estado | `APPROVED_BY_ARCHITECT` |
-| Versão | `0.1.1` |
-| Design base | `0.1.1` (`APPROVED_BY_ARCHITECT`) |
-| BDD base | `0.1.1` (`APPROVED_BY_ARCHITECT`) |
+| Estado | `PENDING_ARCHITECT_REVIEW` |
+| Versão | `0.2.0` |
+| Design base | `0.2.0` (`APPROVED_BY_ARCHITECT`) |
+| BDD base | `0.2.0` (`PENDING_ARCHITECT_REVIEW`) |
 | Branch | `feature/github-etl-mcp-rag-T11-treesitter-chunker` |
+| Trigger | Review humano PR #9 — yaml/json/xml/toml |
 
 ## 0. Histórico Architect
 
 | Data | Autor | Decisão | Versão | Observações |
 |---|---|---|---|---|
 | 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.1` | Correções: `language_from_path` → `None`; `OfficialGrammarRegistry` + TS/TSX; `SelectedNode`; `path_extension` com ponto; `ChunkingError.__init__`. |
+| 2026-07-18 | Tech Lead Architect | `PENDING` | `0.2.0` | Ampliação enum/extensões/registry/seletores para yaml/json/xml/toml. |
 
 ## 1. Escopo e exclusões
 
@@ -74,10 +76,15 @@ class SourceLanguage(StrEnum):
     JAVASCRIPT = "javascript"
     TYPESCRIPT = "typescript"
     MARKDOWN = "markdown"
+    YAML = "yaml"
+    JSON = "json"
+    XML = "xml"
+    TOML = "toml"
 ```
 
 - **Responsabilidade:** enumerar linguagens com grammar oficial no MVP e valor estável em `chunk_id`/payload.
 - **Motivo da separação:** evita strings mágicas e documenta o conjunto fechado (extensão fora → `GrammarUnavailableError`).
+- **Ampliação v0.2.0:** yaml/json/xml/toml — configs (review humano PR #9 / design D-T11-011).
 
 ### 3.2 `ChunkSourceFile`
 
@@ -139,7 +146,7 @@ def language_from_path(path: str) -> SourceLanguage | None: ...
 
 - **Responsabilidade:** mapear a extensão do `path` para `SourceLanguage` MVP (sem I/O, sem levantar).
 - **Motivo da separação:** regra pura unit-testável; o chunker traduz `None` em `GrammarUnavailableError` (design §4.2 / BDD TS-07).
-- **Extensões:** `.py`/`.pyi`→`python`; `.java`→`java`; `.js`/`.mjs`/`.cjs`→`javascript`; `.ts`/`.tsx`→`typescript`; `.md`/`.markdown`→`markdown`.
+- **Extensões:** `.py`/`.pyi`→`python`; `.java`→`java`; `.js`/`.mjs`/`.cjs`→`javascript`; `.ts`/`.tsx`→`typescript`; `.md`/`.markdown`→`markdown`; `.yaml`/`.yml`→`yaml`; `.json`→`json`; `.xml`→`xml`; `.toml`→`toml`.
 - **Desconhecida / sem extensão:** retorna `None` (nunca inventa linguagem nem chunka por linhas).
 - **Formato da extensão comparada:** sufixo lowercase com ponto (ex.: `.tsx`).
 
@@ -240,7 +247,9 @@ class OfficialGrammarRegistry:
 - **Variantes TypeScript (design §4.2 / §4.7 / BDD TS-11):**
   - `language == typescript` e `path_extension == ".ts"` → `language_typescript`
   - `language == typescript` e `path_extension == ".tsx"` → `language_tsx`
-  - demais linguagens MVP → Language única do pacote correspondente
+- **Variante XML (design §4.2 / §4.7 / D-T11-012 / BDD TS-18):**
+  - `language == xml` → `language_xml` (MVP não usa `language_dtd`)
+- **Demais linguagens MVP** (incl. yaml/json/toml) → Language única do pacote correspondente (`tree-sitter-yaml`, `tree-sitter-json`, `tree-sitter-toml`, …)
 - **Ausência:** `ImportError` / pacote ou atributo de variante inexistente → `GrammarUnavailableError`.
 
 ### 3.10 `SelectedNode`
@@ -274,7 +283,8 @@ def select_semantic_nodes(
   - ninhos com ranges distintos → ambos (BDD TS-12)
   - mesmo `(start_byte, end_byte)` → um; prioridade de `kind`: declaração interna > wrapper (ex.: `export_statement`) (BDD TS-13)
   - ordem: `(start_byte, end_byte, kind)` crescente
-  - zero nós-alvo → um `SelectedNode` do root estrutural (`module` / `program` / `document`)
+  - zero nós-alvo → um `SelectedNode` do root estrutural (`module` / `program` / `document` / `stream`)
+  - alvos config (design §4.4 / BDD TS-16..TS-19): yaml → `document`/`block_mapping_pair`; json → `object`/`pair`/`array`; xml → `element`; toml → `table`/`pair`
 
 ### 3.12 `TreeSitterContextualChunker`
 
