@@ -83,3 +83,46 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — bdd v0.1.1. Prosseguir para interfaces (Architect) / testes unitários (QA) sem alteração de escopo.
+
+---
+
+## Review — Interfaces (v0.1.0 → v0.1.1)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `interfaces.md` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Comentários responsabilidade + motivo da separação em cada interface | OK | §3.1–§3.12 (após correção: `OfficialGrammarRegistry`, `SelectedNode`, `language_from_path`) |
+| `chunk_id` canônico §4.3.1 | OK | §3.4; handoff §5; I-T11-009 |
+| Erros tipados alinhados design §6 / BDD TS-05–07/14/15 | OK | §3.6 com matriz quando + política ERROR |
+| Registry TS vs TSX | OK | §3.8–§3.9; `path_extension` com ponto; variantes `language_typescript` / `language_tsx` |
+| Sem API de tamanho/linhas (DEC-003) | OK | I-T11-008; §3.7; §3.12 |
+| Alinhamento design/BDD (ninhos, dedupe, `len>=1`, root) | OK | §3.11–§3.12; I-T11-007 |
+
+### Achados (v0.1.0) — corrigidos em v0.1.1
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| `MAJOR` | `language_from_path` retornava `SourceLanguage` mas o texto dizia que o caller levantava em extensão desconhecida — contrato ambíguo | interfaces v0.1.0 §3.8 | `-> SourceLanguage \| None`; `None` ⇒ chunker levanta `GrammarUnavailableError` | Corrigido §3.5 / I-T11-010 |
+| `MAJOR` | `OfficialGrammarRegistry` no escopo sem seção própria (responsabilidade/motivo/TS-TSX) | interfaces v0.1.0 §1 vs §3.7 | Seção dedicada com variantes `.ts`/`.tsx` | Corrigido §3.9 |
+| `SUGGESTION` | `SelectedNode` sem responsabilidade/motivo explícitos; fora da tabela de escopo | interfaces v0.1.0 §3.9 | Documentar e incluir no escopo | Corrigido §3.10 + §1 |
+| `SUGGESTION` | Formato de `path_extension` (com/sem ponto) implícito | interfaces v0.1.0 §3.7 | Exigir sufixo lowercase com ponto | Corrigido I-T11-011 / §3.8 |
+| `SUGGESTION` | `ChunkingError.__init__` e matriz ERROR/ParseFailure só por referência | interfaces v0.1.0 §3.5 | Assinatura + quando de cada subclass + TS-15 | Corrigido §3.6 |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — interfaces v0.1.1. Prosseguir para testes unitários (QA) sem alteração de escopo.
