@@ -9,10 +9,17 @@ Motivo da separação
     Isolar configuração de processo (env) do domínio (arquivo JSON de conexões,
     catálogo, indexação). Tasks T02+ consomem estes valores; não antecipam APIs aqui.
 
-Compatibilidade Windows / macOS / Linux
-    Nomes de env são OS-agnostic. Paths usam ``pathlib.Path`` (sem hardcode de
-    ``\\`` ou ``/``). O mesmo contrato vale no host de desenvolvimento e na
-    imagem T19 (paths Linux da imagem; sem uso de ``.venv`` do host).
+Compatibilidade — Windows / macOS / Linux = primeira classe (não best-effort)
+    Metade da equipe desenvolve em Windows; o contrato trata Windows com a mesma
+    obrigatoriedade que macOS e Linux. Nomes de env são OS-agnostic. Paths usam
+    ``pathlib.Path`` (sem hardcode de ``\\`` ou ``/``). ``CONFIG_PATH`` aceita
+    paths nativos Windows (drive/UNC) e POSIX.
+
+venv (dev local) × Docker/T19 (entrega)
+    Dev local: processo pode rodar no venv do host (Windows PowerShell/cmd,
+    macOS ou Linux). Entrega padronizada (T19): imagem **não monta** e **não
+    usa** o ``.venv`` do host — motivo alinhado à entrega via Docker para equipe
+    mista. Este módulo não depende de layout ``Scripts\\`` vs ``bin/``.
 """
 
 from __future__ import annotations
@@ -32,7 +39,7 @@ Responsabilidade: único identificador de processo para esse limite.
 Motivo da separação: evita acoplar atributos Python aos nomes de env.
 Invariantes: string estável; não traduzida por OS.
 Erros: nenhum.
-Compatibilidade: idêntica em Windows, macOS e Linux.
+Compatibilidade: idêntica em Windows, macOS e Linux (first-class).
 """
 
 ENV_QUERY_WORKERS = "QUERY_WORKERS"
@@ -42,7 +49,7 @@ Responsabilidade: único identificador de processo para esse limite.
 Motivo da separação: mesmo motivo de ``ENV_INDEX_WORKERS``.
 Invariantes: string estável; não traduzida por OS.
 Erros: nenhum.
-Compatibilidade: idêntica em Windows, macOS e Linux.
+Compatibilidade: idêntica em Windows, macOS e Linux (first-class).
 """
 
 ENV_CONFIG_PATH = "CONFIG_PATH"
@@ -52,7 +59,10 @@ Responsabilidade: apontar (só declarar) o path; **não** carregar nem validar J
 Motivo da separação: carga/validação do JSON de conexões pertencem a T02, não a T01.
 Invariantes: string estável; valor tipado exposto como ``Path | None``.
 Erros: nenhum nesta constante.
-Compatibilidade: valor nativo do OS do host; na imagem T19, path Linux do container.
+Compatibilidade (Windows first-class): no host Windows o valor pode ser path
+nativo Windows; em macOS/Linux, POSIX; na imagem T19, path Linux do container.
+Tipagem sempre via ``pathlib.Path`` — sem hardcode de separador. T19 não usa
+``.venv`` do host.
 """
 
 DEFAULT_INDEX_WORKERS = 2
@@ -62,7 +72,7 @@ Responsabilidade: valor de bootstrap aprovado (não política de máximos — T0
 Motivo da separação: default versionado no contrato, não espalhado em callers.
 Invariantes: literal ``2``; usado só se env ausente/blank.
 Erros: nenhum.
-Compatibilidade: OS-agnostic.
+Compatibilidade: OS-agnostic (Windows, macOS, Linux, container T19).
 """
 
 DEFAULT_QUERY_WORKERS = 4
@@ -72,7 +82,7 @@ Responsabilidade: valor de bootstrap aprovado (não política de máximos — T0
 Motivo da separação: default versionado no contrato, não espalhado em callers.
 Invariantes: literal ``4``; usado só se env ausente/blank.
 Erros: nenhum.
-Compatibilidade: OS-agnostic.
+Compatibilidade: OS-agnostic (Windows, macOS, Linux, container T19).
 """
 
 # CONFIG_PATH ausente/nulo no bootstrap: default tipado é None (sem path default).
@@ -90,13 +100,16 @@ class SettingsBootstrapError(Exception):
         (T02+) e de falhas de infraestrutura.
 
     Invariantes
-        Mensagem cita o nome da variável e a razão da falha; não inclui segredos.
+        Mensagem cita o nome da variável e a razão tipada da falha; não inclui
+        segredos. **Sem dependência de shell:** não mencionar Activate.ps1,
+        activate.bat, source, bin/activate, Scripts, PowerShell, cmd ou bash.
 
     Erros
         Esta classe **é** o tipo de erro; não envolve outras exceções de OS.
 
-    Compatibilidade Windows / macOS / Linux
-        Tipo puro Python; comportamento idêntico em todos os OS.
+    Compatibilidade Windows / macOS / Linux (first-class)
+        Tipo puro Python; mesma DX de erro no host (venv) e no container T19
+        (entrega sem ``.venv`` do host).
     """
 
 
@@ -121,9 +134,10 @@ class AppSettings(Protocol):
     Erros
         O Protocol não levanta; falhas ocorrem em ``load_settings``.
 
-    Compatibilidade Windows / macOS / Linux
-        ``config_path`` usa ``pathlib.Path`` (paths nativos); sem separadores
-        hardcoded na implementação futura.
+    Compatibilidade Windows / macOS / Linux (first-class)
+        ``config_path`` usa ``pathlib.Path`` para paths nativos Windows (drive/UNC)
+        e POSIX; sem separadores hardcoded. Válido no venv do host e no runtime
+        T19 (que não monta/usa ``.venv`` do host).
     """
 
     @property
@@ -134,7 +148,7 @@ class AppSettings(Protocol):
         Motivo da separação: atributo tipado distinto do nome de env ``INDEX_WORKERS``.
         Invariantes: sempre ``int`` em instância válida; default conceitual ``2``.
         Erros: nenhum na propriedade; conversão inválida falha na carga.
-        Compatibilidade: OS-agnostic.
+        Compatibilidade: OS-agnostic (Windows, macOS, Linux, T19).
         """
         ...
 
@@ -146,7 +160,7 @@ class AppSettings(Protocol):
         Motivo da separação: atributo tipado distinto do nome de env ``QUERY_WORKERS``.
         Invariantes: sempre ``int`` em instância válida; default conceitual ``4``.
         Erros: nenhum na propriedade; conversão inválida falha na carga.
-        Compatibilidade: OS-agnostic.
+        Compatibilidade: OS-agnostic (Windows, macOS, Linux, T19).
         """
         ...
 
@@ -158,7 +172,9 @@ class AppSettings(Protocol):
         Motivo da separação: parsing do arquivo de conexões e segredos ficam em T02.
         Invariantes: ``None`` ⇔ env ausente ou só whitespace; senão ``Path(valor)``.
         Erros: nenhum na propriedade.
-        Compatibilidade: ``Path`` aceita paths Windows e POSIX; T19 usa paths Linux.
+        Compatibilidade (Windows first-class): aceita paths nativos Windows e
+        POSIX via ``pathlib.Path``; T19 usa path Linux da imagem (sem ``.venv``
+        do host). Proibido hardcodar separadores.
         """
         ...
 
@@ -183,19 +199,24 @@ def load_settings(
         - Sem I/O de arquivo, rede, DB ou parse JSON.
         - Sem logging de valores de env.
         - Sem validação min/max de workers (T04).
+        - OS-agnostic: não assume shell, ``Scripts\\``, ``bin/activate`` nem
+          ramifica defaults por sistema operacional.
 
     Erros
         ``SettingsBootstrapError`` se ``INDEX_WORKERS`` ou ``QUERY_WORKERS``
         estiverem presentes (não blank) e não forem conversíveis a ``int``.
+        Mensagem: nome da env + razão tipada; **sem** jargão de shell.
         Não usa fallback silencioso para o default nesses casos.
 
-    Compatibilidade Windows / macOS / Linux
-        Mesma semântica em todos os OS; diferença apenas no formato do string
-        de ``CONFIG_PATH``, interpretado via ``pathlib.Path``.
+    Compatibilidade Windows / macOS / Linux (first-class)
+        Mesma semântica no venv do host (Windows PowerShell/cmd, macOS, Linux)
+        e no processo da imagem T19. T19 = entrega padronizada e **não** monta
+        nem usa o ``.venv`` do host. Diferença de OS só no formato do string de
+        ``CONFIG_PATH``, sempre via ``pathlib.Path``.
 
     Nota de pipeline (T01 — gate de interfaces)
         Esta assinatura é a superfície de contrato. O corpo concreto (leitura,
         conversão, construção do snapshot) é implementado pelo Developer após
-        aprovação dos testes unitários — não nesta etapa.
+        aprovação dos testes unitários — não nesta etapa. Stub permanece ``...``.
     """
     ...

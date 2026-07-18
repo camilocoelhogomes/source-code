@@ -12,6 +12,9 @@ Invariantes
 Erros
     Nenhum.
 
-Compatibilidade Windows / macOS / Linux
-    Pacote Python puro; paths via layout do repositório, não separadores de shell.
+Compatibilidade — Windows / macOS / Linux = primeira classe
+    Pacote Python puro; utilizável no venv de dev local em Windows (PowerShell
+    ou cmd), macOS e Linux. Entrega Docker/T19 não depende do ``.venv`` do host
+    e usa o mesmo pacote no runtime da imagem. Paths de aplicação via
+    ``pathlib`` nos módulos (não separadores de shell).
 """
