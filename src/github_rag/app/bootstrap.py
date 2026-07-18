@@ -24,4 +24,4 @@ def run_catalog_sync(config: AppConfig, sync: CatalogSync) -> CatalogSyncResult:
     Motivo da separação
         Ponto único de wire; ENG-011 permanece em T14 (CS-10 / D-T07-003).
     """
-    raise NotImplementedError("run_catalog_sync — implementação T07 pendente")
+    return sync.sync(config)

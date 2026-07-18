@@ -8,6 +8,7 @@ from github_rag.app.bootstrap import run_catalog_sync
 from github_rag.catalog.memory import InMemoryCatalogRepository
 from github_rag.catalog.models import RepoOrigin, RepoState
 from github_rag.catalog.sync import CatalogSync, CatalogSyncError
+from github_rag.sources.github.errors import GitHubDiscoveryError
 from github_rag.sources.local.discovery import LocalDiscoveryIssue, LocalDiscoveryResult
 from tests.unit.catalog.sync_helpers import (
     SECRET_TOKEN_VALUE,
@@ -159,12 +160,13 @@ class TestUT07AbortGitHubNoMutation(unittest.TestCase):
             LocalDiscoveryResult(repos=(local_repo(),), issues=())
         )
         sync, _, _, loc = make_sync(catalog=catalog, github=github, local=local)
-        with self.assertRaises(CatalogSyncError):
+        with self.assertRaises(CatalogSyncError) as ctx:
             sync.sync(mixed_config())
         self.assertEqual(catalog.upsert_calls, 0)
         self.assertEqual(catalog.deactivate_calls, 0)
         self.assertEqual(loc.calls, 0)
         self.assertEqual(len(inner.list_active_catalog()), 1)
+        self.assertIsInstance(ctx.exception.__cause__, GitHubDiscoveryError)
 
 
 class TestUT08LocalIssuesNonFatal(unittest.TestCase):
@@ -215,7 +217,7 @@ class TestUT11OnlyReq020States(unittest.TestCase):
     def test_only_allowed_states(self) -> None:
         allowed = {s.value for s in RepoState}
         catalog = InMemoryCatalogRepository()
-        seed_active(
+        old = seed_active(
             catalog,
             connection_name="github-microservices",
             repo_identifier="my-org/old",
@@ -227,6 +229,9 @@ class TestUT11OnlyReq020States(unittest.TestCase):
         for entry in (*result.active, *result.deactivated):
             self.assertIn(entry.state.value, allowed)
             self.assertNotIn(entry.state.value, {"indisponivel", "desatualizado", "unavailable"})
+        deactivated = catalog.get_repository(old.id)
+        self.assertFalse(deactivated.active)
+        self.assertEqual(deactivated.state, RepoState.INDEXING)
 
 
 class TestUT12Idempotent(unittest.TestCase):
