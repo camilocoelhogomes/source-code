@@ -15,4 +15,5 @@
 | Unit tests | `0.2.1` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | MAJORs kinds estruturais fechados; RED OK |
 | Implementação config | `1d0a37b` / v0.2 | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | yaml/json/xml/toml; pins; `language_xml`; cobertura 98.51% |
 | Blue refactor (config) | pós-`1d0a37b` | `BLUE_APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | Sem mudança de código; baseline 594 passed / 98.51% |
-| Gate humano | PR | pendente | — | — | Único gate humano: review/merge no GitHub |
+| Gate humano | PR #9 | pendente re-review | — | — | Escopo config atendido (yaml/json/xml/toml); aguarda aprovação humana no GitHub |
+
