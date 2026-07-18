@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Task | `T08-main-snapshot` |
-| Estado | `PENDING_ARCHITECT_REVIEW` |
+| Estado | `BLUE_APPROVED_BY_ARCHITECT` |
 | Data | 2026-07-18 |
 | Cobertura pós-Blue | `97.35%` |
 

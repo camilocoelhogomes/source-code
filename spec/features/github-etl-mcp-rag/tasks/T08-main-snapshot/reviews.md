@@ -207,9 +207,42 @@
 | ID | Severidade | Evidência | Correção esperada | Status |
 |---|---|---|---|---|
 | M-IMP-01 | `MAJOR` | `clone.py` (pré-fix): scrub do remote com token **antes** de `git.fetch`; `filter=blob:none` arriscava `read_file` sem blobs (D-T08-004/008, BR-008, design §4.6/§7) | Fetch de todos os SHAs com URL autenticada; scrub no `finally`; remover `blob:none` | **fechado** em `clone.py` + assert de ordem em `test_clone.py` |
-| S-IMP-01 | `SUGGESTION` | `provider.py:113-114` `_ = SnapshotError` morto | Remover na Blue | aberto (não bloqueante) |
-| S-IMP-02 | `SUGGESTION` | `clone.py` ramos defensivos do `finally` / fallback `config_writer` (~88% no módulo) | Cobrir na Blue se meta de simplificação/cobertura do módulo | aberto (não bloqueante) |
+| S-IMP-01 | `SUGGESTION` | `provider.py:113-114` `_ = SnapshotError` morto | Remover na Blue | **fechado** (B-01) |
+| S-IMP-02 | `SUGGESTION` | `clone.py` ramos defensivos do `finally` / fallback `config_writer` (~88% no módulo) | Cobrir na Blue se meta de simplificação/cobertura do módulo | aberto (não bloqueante; sem meta Blue obrigatória) |
 
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — implementação alinhada às interfaces/design após correção M-IMP-01. Prosseguir para etapa Blue.
+
+## Review — Blue refactor
+
+| Campo | Valor |
+|---|---|
+| Data | 2026-07-18 |
+| Revisor | Tech Lead Architect |
+| Artefato | `refactoring.md` + `src/github_rag/snapshot/{provider,local}.py` |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Implementação base | `APPROVED_BY_ARCHITECT` |
+| Evidência | 373 passed, 1 skipped; cobertura 97.35% |
+| Resultado | `BLUE_APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Simplificação sem alterar contratos/comportamento | OK | B-01 remove hint morto; B-02 colapsa ramos duplicados em `_main_commit`/`_resolve_commit`; suíte inalterada |
+| Sem otimização sem medição | OK | `refactoring.md` § Análise: I/O Git síncrono; nenhuma meta de performance |
+| S-IMP-01 (código morto) | OK | `_ = SnapshotError` + import removidos de `provider.py` (commit `7186086`) |
+| Cobertura ≥ 95% | OK | 97.35% pós-Blue |
+| Clone BR-008 / D-T08-008 | OK | B-03 já fechado em M-IMP-01 (`clone.py` fetch→scrub `finally`) |
+
+### Achados
+
+| ID | Severidade | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| — | — | Nenhum BLOCKING/MAJOR | — | — |
+| S-IMP-02 | `SUGGESTION` | `clone.py` finally/config_writer | Cobertura extra opcional; sem alegação de performance | aberto (não bloqueante) |
+
+### Decisão
+
+`BLUE_APPROVED_BY_ARCHITECT` — Blue aceita. Prosseguir para documentação/changelog (já parcialmente em `7186086`) e gate humano via PR.
