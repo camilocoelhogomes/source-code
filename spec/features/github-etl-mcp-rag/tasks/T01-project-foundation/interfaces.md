@@ -6,7 +6,7 @@
 | Task | `T01-project-foundation` |
 | Autor | Tech Lead Architect |
 | Data | 2026-07-18 |
-| Estado | `CANDIDATE_FOR_HUMAN_APPROVAL` |
+| Estado | `HUMAN_INTERFACES_APPROVED` |
 | Versão | `0.2.0` (revisão pós-reprovação) |
 | Design base | `0.2.0` (`HUMAN_DESIGN_APPROVED`) |
 | BDD base | `0.2.0` (`HUMAN_BDD_APPROVED`) |
@@ -20,6 +20,7 @@
 |---|---|---|---|---|
 | 2026-07-18 | camilocoelhogomes | **REPROVADO** | `0.1.0` / candidato `9b945f4` | Feedback explícito: “Preciso que desenvolvedores windows também consigam trabalhar, metade da minha equipe usa Windows. Até por esse o motivo de entregar via docker.” |
 | 2026-07-18 | Tech Lead Architect | Revisado → novo candidato | `0.2.0` | Windows elevado a plataforma de **dev local de primeira classe** no contrato (não best-effort); venv = PowerShell/cmd/Unix; Docker/T19 = entrega padronizada **sem** montar/usar `.venv` do host — alinhado ao design `0.2.0` aprovado (D-T01-003, D-T01-007, D-T01-009). |
+| 2026-07-18 | camilocoelhogomes | **APROVADO** | `0.2.0` / candidato `41056ff` | Interfaces T01 v0.2.0 aprovadas explicitamente. |
 
 A reprovação reforça ENG-009 / REQ-036 / DEC-011 no **gate de interfaces**: o contrato Python de bootstrap não pode assumir Unix-only; a entrega padronizada via Docker existe precisamente para unificar runtime (inclusive para a metade da equipe em Windows), sem depender do `.venv` do host.
 
