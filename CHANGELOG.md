@@ -14,6 +14,13 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- Metadados contextuais SLM por chunk (T12): porta `MetadataGenerator` e
+  adaptador `OpenAICompatibleMetadataGenerator` via SDK oficial `openai`
+  (OpenAI-compatible local; DEC-015/BDD-024). Default de modelo Qwen Coder 3B
+  (`qwen2.5-coder:3b`; DEC-006). Saída `ChunkMetadata` frozen + `to_payload()`
+  JSON-safe; erros tipados (`MetadataConfigError`, `MetadataModelError`,
+  `MetadataResponseParseError`); `FakeMetadataGenerator` para testes/T14.
+  Dependência `openai`. Proibido inventar chunks ou prosa MCP (BR-010).
 - Adaptador Zoekt (T10): porta `ExactCodeIndex` com `ZoektExactCodeIndex`
   (CLI `zoekt-index` + HTTP oficial `POST /api/search`) e `FakeExactCodeIndex`
   injetável — DEC-016 / BDD-009 / BDD-024; erros tipados `ExactCodeIndexError`
@@ -38,6 +45,7 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
   sem indexação nem reconcile (handoff ENG-011 → T14). Origem/conexão no
   catálogo ativo (BDD-001/016/021/023); ausência = soft-delete sem estado
   extra fora de REQ-020.
+- Dependência de projeto `GitPython>=3.1`.
 - Chunking semântico Tree-sitter (T11): porta `ContextualChunker` e
   implementação `TreeSitterContextualChunker` com grammars oficiais
   (`tree-sitter` + python/java/javascript/typescript/markdown/**yaml/json/xml/toml**)
@@ -88,7 +96,7 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
   Windows cmd, macOS e Linux.
 - Harness pytest/pytest-cov com falha automática abaixo de 95% de cobertura.
 - Testes unitários e BDD: 594 testes aprovados (1 pulado sem Docker),
-  187 subtests, cobertura de 98.51% (inclui T11 com yaml/json/xml/toml).
+  187 subtests, cobertura de 98.51% (inclui T11 com yaml/json/xml/toml e T12 SLM).
 - Normalização cross-platform de EOL e ignores para `.venv`, cobertura,
   caches e `*.egg-info`.
 
