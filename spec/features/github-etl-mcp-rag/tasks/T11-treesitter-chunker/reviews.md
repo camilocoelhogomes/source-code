@@ -126,3 +126,63 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — interfaces v0.1.1. Prosseguir para testes unitários (QA) sem alteração de escopo.
+
+---
+
+## QA — Unit + BDD red (v0.1.1)
+
+| Campo | Valor |
+|---|---|
+| Autor | QA Engineer |
+| Data | 2026-07-18 |
+| Artefatos | `unit-test-plan.md` v0.1.1; `tests/unit/index/chunk/*`; `tests/bdd/test_treesitter_chunker.py` |
+| Resultado | `TESTS_READY_FOR_REVIEW` |
+
+### Evidência RED
+
+```bash
+PYTHONPATH=src .venv/bin/python -m pytest tests/unit/index/chunk tests/bdd/test_treesitter_chunker.py -q
+```
+
+Resultado: `6 errors during collection` — todos `ModuleNotFoundError` em:
+`github_rag.index.chunk.{types,errors,node_selectors,grammar_registry,treesitter}` (impl ainda inexistente; só stub `__init__.py`).
+
+---
+
+## Review — Unit + BDD red (v0.1.1 → v0.1.2)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `unit-test-plan.md` + `tests/unit/index/chunk/*` + `tests/bdd/test_treesitter_chunker.py` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Contratos interfaces 0.1.1 (`chunk_id`, frozen, erros, porta, registry, seletores) | OK | UT-T*, UT-E*, UT-N*, UT-G*, UT-C09/C13; BDD TS-04/09/10 |
+| Extremos / corners (vazio, binário, grammar, parse, ERROR) | OK | UT-C02–C08, UT-C15; BDD TS-05–07/14/15; UT-X* |
+| Alinhamento BDD TS-01..TS-15 | OK | `test_treesitter_chunker.py` cobre todos os cenários |
+| RED pela razão correta (módulos ausentes) | OK | 6× `ModuleNotFoundError` em `github_rag.index.chunk.*` |
+| DEC-003 não enfraquecido | OK | UT-C09 / TS-04 proíbem API tamanho/overlap/linhas; sem fallback genérico nos asserts |
+
+### Achados corrigidos nesta review (v0.1.2)
+
+| Severidade | Achado | Evidência | Correção | Status |
+|---|---|---|---|---|
+| `MAJOR` | Override `ChunkSourceFile.language` sem cobertura — risco de ignorar contrato §3.2 | plan/testes v0.1.1 | UT-C14: path `.rs` + `language=python` → sucesso | Corrigido |
+| `MAJOR` | Precedência binário vs extensão desconhecida ausente | design §3 fluxo erro | UT-C15: NUL + `.rs` → `BinarySourceError` | Corrigido |
+| `SUGGESTION` | `SelectedNode` frozen só lia campos | `test_node_selectors.py` | Assert `FrozenInstanceError` | Corrigido |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — unit-test-plan v0.1.2 e testes RED. Prosseguir para implementação (Developer) sem alteração de escopo.
