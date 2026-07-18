@@ -1,0 +1,22 @@
+---
+description: Orquestra descoberta e implementação com personas isoladas e aprovações humanas obrigatórias
+alwaysApply: true
+---
+
+# Orquestração obrigatória
+
+- Para novas features, carregue `.cursor/skills/feature-discovery/SKILL.md`.
+- Para implementar uma task aprovada, carregue `.cursor/skills/implementation-pipeline/SKILL.md`.
+- O agente principal apenas coordena etapas, invoca subagents, mantém o estado, solicita aprovações humanas e executa commits autorizados pelo workflow.
+- O agente principal nunca assume o papel de PO, Principal Engineer, Architect, QA ou Developer.
+- Cada persona deve executar em seu próprio subagent e receber somente o contexto e os arquivos necessários.
+- Nunca avance por inferência, silêncio ou aprovação de outra persona. A aprovação humana deve ser explícita.
+- Reprovação devolve o artefato ao subagent responsável; preserve comentários e histórico da decisão.
+- Toda documentação gerada pela spec deve ser salva na pasta raiz do projeto chamada `spec/`.
+- Antes de cada pedido de aprovação humana, faça um commit dos artefatos de especificação candidatos.
+- Após cada aprovação humana, registre decisão, autor e data no artefato e faça outro commit.
+- Não misture tasks: cada task aprovada passa individualmente pelo pipeline de implementação.
+- Respeite dependências e grupos paralelos definidos no plano aprovado.
+- Não implemente código antes da aprovação dos testes BDD, interfaces e testes unitários.
+- A cobertura mínima é 95%; configure relatório de cobertura quando o projeto não possuir um.
+- Pare imediatamente em todo gate `HITL` e aguarde a resposta humana.
