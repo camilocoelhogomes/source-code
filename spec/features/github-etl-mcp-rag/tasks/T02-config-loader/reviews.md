@@ -97,3 +97,44 @@ Nenhum.
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — BDD v0.1.0 apto para o gate de interfaces. Sem implementação nesta etapa.
+
+---
+
+## Review Interfaces — Tech Lead Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `interfaces.md` v0.1.0 + stubs `src/github_rag/config/{schema,secrets,loader,__init__}.py` |
+| Data | 2026-07-18 |
+| Branch | `feature/github-etl-mcp-rag-T02-config-loader` |
+| Modo | Autonomous pipeline (aprovação Architect substitui HITL) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Checks executados
+
+| Check | Resultado |
+|---|---|
+| Cobertura design §4: ConfigLoader, SecretResolver, modelos, erros | OK |
+| Responsabilidade + motivo da separação em cada tipo | OK |
+| Alinhamento BDD imports (`AppConfig`, `ConfigLoadError`, `ConfigLoader`, `GitConnection`, `GitHubConnection`) | OK |
+| Fronteira T01 (`config_path` injetado; sem reler env bootstrap) | OK — I-T02 / §1 |
+| BR-021 sem retorno parcial; redaction BDD-014 | OK — I-T02-005/009/007 |
+| `SecretResolutionError` + tradução para `ConfigLoadError` | OK — I-T02-006/007 |
+| Stubs sem lógica real (sem `json.loads`/I/O/resolve) | OK |
+| Estilo T01 (Protocol/`...` + docstrings) | OK |
+
+### Achados
+
+| ID | Severidade | Evidência | Achado | Correção |
+|---|---|---|---|---|
+| — | — | — | Nenhum BLOCKING/MAJOR | — |
+| S-01 | `SUGGESTION` | BDD usa `isinstance(AppConfig)` | Protocols `@runtime_checkable` bastam no gate; implementação Developer deve fornecer classes concretas compatíveis | Aceito — documentado em §5; Developer entrega dataclasses/concretos pós unitários |
+
+### Bloqueios abertos
+
+Nenhum.
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — interfaces v0.1.0 aptas para o gate de testes unitários (QA). Sem implementação real do loader nesta etapa.
