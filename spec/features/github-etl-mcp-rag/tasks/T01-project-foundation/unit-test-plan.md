@@ -6,11 +6,17 @@
 | Task | `T01-project-foundation` |
 | Autor | QA Engineer |
 | Data | 2026-07-18 |
-| Estado | `TESTS_READY_FOR_REVIEW` |
+| Estado | `HUMAN_UNIT_TESTS_APPROVED` |
 | Versão | `0.1.0` |
 | Interfaces base | `0.2.0` (`HUMAN_INTERFACES_APPROVED` / candidato `41056ff`) |
 | Branch | `feature/github-etl-mcp-rag-T01-project-foundation` |
 | Escopo | Somente testes unitários dos contratos `AppSettings` / `load_settings` / `SettingsBootstrapError` |
+
+## Histórico de aprovação
+
+| Data | Autor | Decisão | Versão / Commit candidato | Observações |
+|---|---|---|---|---|
+| 2026-07-18 | camilocoelhogomes | `HUMAN_UNIT_TESTS_APPROVED` | `0.1.0` / `507b6ac` | Testes unitários T01 aprovados explicitamente. |
 
 ## 1. Objetivo
 
