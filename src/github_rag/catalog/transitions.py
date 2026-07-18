@@ -24,6 +24,7 @@ from __future__ import annotations
 
 from typing import Final
 
+from .errors import InvalidStateTransitionError
 from .models import RepoState
 
 # ---------------------------------------------------------------------------
@@ -91,7 +92,9 @@ def is_transition_allowed(current: RepoState, target: RepoState) -> bool:
         ``True`` se permitida (incluindo no-op idempotente); ``False`` caso
         contrário. Não levanta.
     """
-    ...
+    if target == current:
+        return current in IDEMPOTENT_SELF_STATES
+    return target in ALLOWED_TRANSITIONS.get(current, frozenset())
 
 
 def ensure_transition_allowed(current: RepoState, target: RepoState) -> None:
@@ -107,7 +110,10 @@ def ensure_transition_allowed(current: RepoState, target: RepoState) -> None:
         evita divergência entre fake e adaptador PG e mantém o estado preservado
         em caso de rejeição.
     """
-    ...
+    if not is_transition_allowed(current, target):
+        raise InvalidStateTransitionError(
+            f"transição ilegal: {current.value} → {target.value}"
+        )
 
 
 def is_up_to_date(
@@ -131,4 +137,8 @@ def is_up_to_date(
         rebaixamento ``up_to_date → not_indexed`` é aplicado por
         ``CatalogRepository.reconcile_repository``.
     """
-    ...
+    return (
+        last_processed_commit is not None
+        and current_main_commit is not None
+        and last_processed_commit == current_main_commit
+    )

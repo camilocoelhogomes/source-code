@@ -11,10 +11,11 @@ Motivo da separação
     de módulo (`catalog.models`, `catalog.repository`), permitindo reorganização
     interna sem quebrar o handoff.
 
-Nota de etapa (gate de interfaces — CANDIDATE)
-    ``InMemoryCatalogRepository`` (fake) e ``PostgresCatalogRepository`` (adaptador)
-    são IMPLEMENTAÇÃO e NÃO são exportados aqui nesta etapa (gate unit/impl). Por
-    isso o BDD permanece RED até a implementação — comportamento esperado.
+Nota de etapa (gate de implementação)
+    ``InMemoryCatalogRepository`` (fake de domínio) já é exportado aqui, tornando
+    o BDD/unit verdes. ``PostgresCatalogRepository`` (adaptador) vive em
+    ``catalog.postgres`` e depende de SQLAlchemy/psycopg — importado sob demanda
+    para não exigir o driver no run de domínio.
 """
 
 from .errors import (
@@ -34,6 +35,7 @@ from .models import (
     RepoOrigin,
     RepoState,
 )
+from .memory import InMemoryCatalogRepository
 from .repository import CatalogRepository
 from .transitions import (
     ALLOWED_TRANSITIONS,
@@ -55,6 +57,7 @@ __all__ = [
     "FileProgress",
     "FileStage",
     "IndexingExecution",
+    "InMemoryCatalogRepository",
     "InvalidStateTransitionError",
     "Progress",
     "RepoOrigin",
