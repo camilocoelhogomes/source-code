@@ -209,3 +209,41 @@ Extremos: validation, dimensions, empty texts/batch/replace, purge escopado, ide
 ```
 
 Falha na coleta com `ModuleNotFoundError: No module named 'github_rag.index.vector.types'` (API de produção ainda inexistente além do placeholder `__init__.py`) — esperado nesta etapa. Deps `qdrant-client`/`openai` deixadas para o Developer.
+
+---
+
+## Review — Implementação
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `src/github_rag/index/vector/*` + `pyproject.toml` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Contratos types/errors/ports = interfaces | OK | `types.py`, `errors.py`, `ports.py` |
+| `QdrantVectorStore` assinaturas + Cosine + payload §4.8 | OK | `qdrant_store.py` `_to_point` / `_hit_from_payload` |
+| Point id UUID v5 (`repo\0commit\0chunk`) | OK | `_POINT_ID_NAMESPACE` + `_point_id` |
+| `replace_repo_commit` = upsert + purge | OK | `qdrant_store.py` L110–114 |
+| `delete_paths` escopado repo+commit+path | OK | Filter must com três FieldCondition |
+| SDK só `qdrant-client` / `openai` (deps no pyproject) | OK | imports; `pyproject.toml` L23–24 |
+| Embedder sem chat/completions; só `embeddings.create` | OK | `embedder.py` |
+| Sem chunking / geração de metadata | OK | módulo só consome `EnrichedChunk` |
+| Erros tipados + mapeamento SDK | OK | `VectorStoreError` / `EmbeddingError` wraps |
+| Validação scope/record/dimensão | OK | `_validate_scope` / `_validate_record` |
+| BDD + unitários verdes | OK | 62 passed (pytest) |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — implementação conforme design/interfaces. Prosseguir para Blue (refactor).
