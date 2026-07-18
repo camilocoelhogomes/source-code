@@ -138,3 +138,103 @@ Nenhum.
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — interfaces v0.1.0 aptas para o gate de testes unitários (QA). Sem implementação real do loader nesta etapa.
+
+---
+
+## Review Unit Tests — QA Engineer (candidato)
+
+| Campo | Valor |
+|---|---|
+| Autor | QA Engineer |
+| Artefato | `unit-test-plan.md` v0.1.0 + `tests/unit/config/{test_loader,test_secrets,test_schema,helpers}.py` |
+| Data | 2026-07-18 |
+| Branch | `feature/github-etl-mcp-rag-T02-config-loader` |
+| Modo | Autonomous pipeline (sem HITL intermediário) |
+| Resultado | `TESTS_READY_FOR_REVIEW` |
+
+### Cobertura de casos
+
+| Área | IDs | Extremos notáveis |
+|---|---|---|
+| Secrets | UT-S01..S09 | env blank, nome blank, não-vazamento, idempotência, não muta mapping |
+| Loader | UT-L01..L35 | path None, arquivo vazio, JSON parcial, type desconhecido, orgs vazia, repos vazia (válida), token literal, file:// relativo/Windows, sem parcial, injeção resolver |
+| Schema / redaction | UT-M01..M08 | Protocols, `get_value`, str/repr sem token, `EnvSecretRef` |
+
+### Evidência red
+
+```text
+PYTHONPATH=src python3 -m unittest discover -s tests/unit/config -t . -p "test_*.py"
+Ran 56 tests in ~0.04s
+FAILED (failures=87)
+```
+
+Razão esperada: stubs `load`/`resolve` retornam `None` (corpo `...`) em vez do comportamento tipado.
+
+### Decisão
+
+`TESTS_READY_FOR_REVIEW` — sem commit; sem implementação de produção; aguarda review Architect / handoff Developer.
+
+---
+
+## Review Unit Tests — Tech Lead Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `unit-test-plan.md` v0.1.0 → v0.1.1 + `tests/unit/config/*` |
+| Data | 2026-07-18 |
+| Branch | `feature/github-etl-mcp-rag-T02-config-loader` |
+| Modo | Autonomous pipeline (aprovação Architect substitui HITL) |
+| Resultado inicial | `CHANGES_REQUIRED` |
+| Resultado final | `APPROVED_BY_ARCHITECT` |
+
+### Checks executados
+
+| Check | Resultado |
+|---|---|
+| Cobertura contratos I-T02-003..014 / CFG-01..14 | OK após correção |
+| Extremos: path None, arquivo vazio, JSON parcial, types errados, blanks | OK após M-UT-01/03 |
+| Redaction segredo em erros / str/repr / L26 com conexão válida+ inválida | OK após M-UT-02/04 |
+| Falha total sem AppConfig parcial (BR-021 / UT-L26) | OK |
+| Stubs sem lógica de produção; suíte em RED | OK — confirmado |
+| Cruzamento plan ↔ testes executáveis | OK após v0.1.1 |
+
+### Achados (sobre v0.1.0 / suite inicial)
+
+| ID | Severidade | Evidência | Achado | Correção esperada |
+|---|---|---|---|---|
+| M-UT-01 | `MAJOR` | design §4.3 / interfaces §4.3: branches itens não-blank; plan UT-L21 só `[]` | Ausência de caso para item blank em `branches` (`[""]`, `["main", " "]`) | UT-L21b + teste correspondente |
+| M-UT-02 | `MAJOR` | CFG-13 / UT-L26; `test_loader.py` L26 sem assert de redaction | Mix conexão válida (token resolvível) + inválida não assertava ausência do valor em `str`/`repr` do `ConfigLoadError` | Assert `SECRET_TOKEN_VALUE not in str/repr(exc)` em UT-L26 |
+| M-UT-03 | `MAJOR` | design §4.4 path vazio + prefixo case-sensitive; plan UT-L22 só relativo | Sem caso para `file://` (path vazio) nem `FILE://...` (case) | UT-L22b |
+| M-UT-04 | `MAJOR` | CFG-07 / design §6 “sem dump integral”; UT-L04 só checava `SECRET_TOKEN_VALUE` (ausente no arquivo) | Asserção de dump fraca — não garantia ausência do conteúdo integral do arquivo | Assert conteúdo poison completo ausente de `str`/`repr` |
+| S-UT-01 | `SUGGESTION` | design §4.3 listas obrigatórias | Tipos errados (`orgs`/`repos`/`branches` string/null) só parcialmente cobertos via campos ausentes | Aceito e aplicado: UT-L28b |
+| S-UT-02 | `SUGGESTION` | `_assert_raises_load_error` | Tratava só `Ellipsis`, não `None` (mensagem red menos clara) | Aceito e aplicado |
+
+### Correções aplicadas pelo Architect (v0.1.1)
+
+| ID | Resolução |
+|---|---|
+| M-UT-01 | `test_ut_l21b_blank_branch_items_rejected` + linha no plan |
+| M-UT-02 | Redaction em `test_ut_l26_no_partial_config_on_one_invalid` |
+| M-UT-03 | `test_ut_l22b_empty_or_case_invalid_file_url_rejected` |
+| M-UT-04 | UT-L04 exige ausência do dump integral (`poison`) |
+| S-UT-01 | `test_ut_l28b_wrong_types_for_list_fields` |
+| S-UT-02 | Helper trata `None`/`Ellipsis` de forma uniforme |
+
+### Evidência red (pós-correção)
+
+```text
+PYTHONPATH=src python3 -m unittest discover -s tests/unit/config -t . -p "test_*.py"
+Ran 59 tests in ~0.05s
+FAILED (failures=102)
+```
+
+Razão: stubs `load`/`resolve` intactos (corpo `...` → `None`); sem implementação de produção.
+
+### Bloqueios abertos
+
+Nenhum.
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — unit-test-plan v0.1.1 + suites aptos para handoff Developer. Sem implementação de produção nesta etapa; suíte permanece RED.
