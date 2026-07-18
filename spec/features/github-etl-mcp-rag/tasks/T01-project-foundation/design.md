@@ -6,7 +6,7 @@
 | Task | `T01-project-foundation` |
 | Autor | Tech Lead Architect |
 | Data | 2026-07-18 |
-| Estado | `PENDING_HUMAN_DESIGN_APPROVAL` |
+| Estado | `HUMAN_DESIGN_APPROVED` |
 | Versão do design | `0.2.0` (revisão pós-reprovação) |
 | Branch | `feature/github-etl-mcp-rag-T01-project-foundation` |
 | Rastreabilidade | REQ-007; cobertura ≥95%; ENG-001; ENG-009; plano §1.3 |
@@ -17,6 +17,7 @@
 |---|---|---|---|---|
 | 2026-07-18 | camilocoelhogomes | **REPROVADO** | `0.1.0` (candidato anterior) | Feedback: “Preciso que desenvolvedores Windows também consigam trabalhar, metade da minha equipe usa Windows. Até por esse o motivo de entregar via docker.” |
 | 2026-07-18 | Tech Lead Architect | Revisado → novo candidato | `0.2.0` | Windows elevado a plataforma de desenvolvimento local de **primeira classe** (não best-effort); Docker/T19 permanece entrega padronizada sem `.venv` do host. |
+| 2026-07-18 | camilocoelhogomes | **APROVADO** | `0.2.0` / candidato `30272cb` | Design aprovado explicitamente; estado atualizado para `HUMAN_DESIGN_APPROVED`. |
 
 Mudança de requisito de plataforma (Windows first-class no fluxo de **dev local**) não altera escopo de produto; reforça ENG-009 e o motivo de REQ-036/DEC-011 (entrega via containers).
 
