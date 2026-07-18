@@ -122,3 +122,28 @@ Artefatos BDD, interfaces e unit-test-plan estão prontos para review. **Não ma
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — bdd/interfaces/unit-test-plan v0.1.1 e testes RED. Prosseguir para implementação (Developer) sem alteração de escopo. Produção **não** implementada nesta etapa.
+
+---
+
+## Review — Implementação (pronta para Architect)
+
+| Campo | Valor |
+|---|---|
+| Autor | Developer |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `READY_FOR_ARCHITECT_REVIEW` |
+
+### Entrega
+
+| Item | Evidência |
+|---|---|
+| Pacote `src/github_rag/index/metadata/` | `types`, `errors`, `ports`, `config`, `fakes`, `openai_slm`, `__init__` |
+| Dep `openai` | `pyproject.toml` |
+| TDD | `tests/bdd/test_slm_metadata.py` + `tests/unit/index/metadata/` — 48 passed |
+| Escopo | Consome `SemanticChunk` (T11); sem inventar chunks; sem prosa MCP; SDK `openai` (não HTTP caseiro) |
+| Blue | **Não** iniciado — aguarda aprovação técnica inicial do Architect |
+
+### Decisão
+
+`READY_FOR_ARCHITECT_REVIEW` — implementação pronta para review Architect. **Não** `BLUE_READY_FOR_REVIEW`.
