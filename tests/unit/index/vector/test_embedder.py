@@ -104,6 +104,16 @@ class TestEmbedderHappyAndFailures(unittest.TestCase):
         kwargs = stub.embeddings.create.call_args.kwargs
         self.assertEqual(kwargs.get("model"), "my-emb-model")
 
+    def test_ut_em09_count_mismatch_on_return(self) -> None:
+        stub = MagicMock()
+        stub.embeddings.create.return_value = _embedding_response(
+            [[0.1, 0.2, 0.3, 0.4]]
+        )
+        embedder = make_embedder(client=stub)
+        with self.assertRaises(EmbeddingValidationError) as ctx:
+            embedder.embed(("a", "b"))
+        self.assertIn("expected 2", str(ctx.exception))
+
 
 class TestEmbedderSdkConformity(unittest.TestCase):
     """UT-EM06 / VS-06."""

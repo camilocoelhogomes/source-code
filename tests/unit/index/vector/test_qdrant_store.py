@@ -528,5 +528,104 @@ class TestSearchFilterIdempotencySdk(unittest.TestCase):
         self.assertIn("records", inspect.signature(QdrantVectorStore.upsert).parameters)
 
 
+class TestCoverageBranches(unittest.TestCase):
+    """Cobertura de ramos tipados (delete vazio, ensure_collection, _invoke)."""
+
+    def test_delete_repo_rejects_blank_repo_id(self) -> None:
+        store = make_store()
+        for repo_id in ("", "   "):
+            with self.subTest(repo_id=repo_id):
+                with self.assertRaises(VectorValidationError):
+                    store.delete_repo(repo_id)
+
+    def test_delete_paths_empty_is_noop(self) -> None:
+        store = make_store()
+        scope = RepoCommitScope("repo-a", "c1")
+        vec = normalize((1.0, 0.0, 0.0, 0.0))
+        store.upsert(
+            scope,
+            [make_record(make_enriched(make_chunk(chunk_id="keep"), summary="ok"), vec)],
+        )
+        store.delete_paths(scope, ())
+        hits = store.search(vec, limit=5, repo_ids=["repo-a"])
+        self.assertEqual(len(hits), 1)
+
+    def test_ensure_collection_reuses_existing(self) -> None:
+        client = MagicMock()
+        client.get_collection.return_value = MagicMock()
+        store = QdrantVectorStore(
+            client=client,
+            collection_name="existing",
+            vector_size=VECTOR_SIZE,
+        )
+        store._ensure_collection()
+        client.get_collection.assert_called_once_with("existing")
+        client.create_collection.assert_not_called()
+        store._ensure_collection()
+        self.assertEqual(client.get_collection.call_count, 1)
+
+    def test_ensure_collection_create_race_recovers(self) -> None:
+        client = MagicMock()
+        client.get_collection.side_effect = [
+            RuntimeError("missing"),
+            MagicMock(),
+        ]
+        client.create_collection.side_effect = RuntimeError("already exists")
+        store = QdrantVectorStore(
+            client=client,
+            collection_name="race",
+            vector_size=VECTOR_SIZE,
+        )
+        store._ensure_collection()
+        self.assertTrue(store._collection_ready)
+
+    def test_ensure_collection_propagates_vector_store_error_on_get(self) -> None:
+        client = MagicMock()
+        client.get_collection.side_effect = VectorStoreError("auth failed")
+        store = QdrantVectorStore(
+            client=client,
+            collection_name="denied",
+            vector_size=VECTOR_SIZE,
+        )
+        with self.assertRaises(VectorStoreError) as ctx:
+            store._ensure_collection()
+        self.assertEqual(str(ctx.exception), "auth failed")
+        client.create_collection.assert_not_called()
+
+    def test_ensure_collection_propagates_vector_store_error_on_create(self) -> None:
+        client = MagicMock()
+        client.get_collection.side_effect = RuntimeError("missing")
+        client.create_collection.side_effect = VectorStoreError("quota")
+        store = QdrantVectorStore(
+            client=client,
+            collection_name="quota",
+            vector_size=VECTOR_SIZE,
+        )
+        with self.assertRaises(VectorStoreError) as ctx:
+            store._ensure_collection()
+        self.assertEqual(str(ctx.exception), "quota")
+
+    def test_invoke_reraises_vector_store_error(self) -> None:
+        store = make_store()
+
+        def boom() -> None:
+            raise VectorStoreError("already typed")
+
+        with self.assertRaises(VectorStoreError) as ctx:
+            store._invoke("noop", boom)
+        self.assertEqual(str(ctx.exception), "already typed")
+
+    def test_invoke_wraps_generic_exception(self) -> None:
+        store = make_store()
+
+        def boom() -> None:
+            raise RuntimeError("network")
+
+        with self.assertRaises(VectorStoreError) as ctx:
+            store._invoke("upsert", boom)
+        self.assertIn("qdrant upsert failed", str(ctx.exception))
+        self.assertIn("network", str(ctx.exception))
+
+
 if __name__ == "__main__":
     unittest.main()
