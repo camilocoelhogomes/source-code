@@ -16,6 +16,8 @@ alwaysApply: true
 - Antes de cada pedido de aprovação humana, faça um commit dos artefatos de especificação candidatos.
 - Após cada aprovação humana, registre decisão, autor e data no artefato e faça outro commit.
 - Não misture tasks: cada task aprovada passa individualmente pelo pipeline de implementação.
+- Todo desenvolvimento de uma task deve ocorrer em branch exclusiva criada a partir da `main` atualizada; nunca desenvolva diretamente na `main`.
+- Mescle a branch na `main` somente após todas as aprovações humanas, testes e cobertura obrigatória, sem force push.
 - Respeite dependências e grupos paralelos definidos no plano aprovado.
 - Não implemente código antes da aprovação dos testes BDD, interfaces e testes unitários.
 - A cobertura mínima é 95%; configure relatório de cobertura quando o projeto não possuir um.
