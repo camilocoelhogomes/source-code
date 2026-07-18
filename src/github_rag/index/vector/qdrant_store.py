@@ -25,10 +25,6 @@ from qdrant_client.models import (
     VectorParams,
 )
 
-_PAYLOAD_INDEX_FIELDS: tuple[str, ...] = ("repo_id", "commit_sha", "path")
-
-_T = TypeVar("_T")
-
 from github_rag.index.chunk.types import SemanticChunk, SourceLanguage
 from github_rag.index.vector.errors import (
     VectorDimensionError,
@@ -41,6 +37,11 @@ from github_rag.index.vector.types import (
     SemanticHit,
     VectorRecord,
 )
+
+_T = TypeVar("_T")
+
+# Campos filtrados em purge/delete/search — índices KEYWORD no setup (design §4.8).
+_PAYLOAD_INDEX_FIELDS: tuple[str, ...] = ("repo_id", "commit_sha", "path")
 
 # Namespace fixo do produto para point id UUID v5 (design §4.7 / I-T13-010).
 _POINT_ID_NAMESPACE = uuid.UUID("7c9e6679-7425-40de-944b-e07fc1f90ae7")

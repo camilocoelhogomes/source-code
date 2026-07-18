@@ -6,6 +6,10 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Alterado
 
+- Qdrant vector store (T13): no setup da collection, `QdrantVectorStore` solicita
+  `create_payload_index` KEYWORD para `repo_id`, `commit_sha` e `path`. Setup
+  idempotente (índice já existente / warning `:memory:` não aborta); filtros
+  continuam válidos.
 - Descoberta local (T20 / DT-001): `GitFilesystemInspector.inspect_repo` passa a
   usar **GitPython** (`git.Repo`) em vez de parse ad-hoc de `.git` / refs /
   `packed-refs` (BR-023, DEC-015). Contrato `LocalRepoDiscovery` e BDD-016/018

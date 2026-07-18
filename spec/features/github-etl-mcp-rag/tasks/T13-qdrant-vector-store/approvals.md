@@ -10,6 +10,9 @@
 | Unit tests | `0.1.1` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | Pipeline autônomo |
 | Unit tests (delta índices) | `0.1.2` | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | UT-Q22..UT-Q25 |
 | Implementação | — | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | Contratos/SDKs/payload/UUID v5 OK; 62 testes verdes |
+| Implementação (delta índices) | — | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | `_ensure_payload_indexes` KEYWORD; UT-Q22..25 verdes |
 | Blue refactor | — | `BLUE_APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | DRY `_invoke`; sem otimização especulativa |
+| Blue (delta índices) | — | `BLUE_APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | Índices promovidos (PR #13); imports agrupados |
 | Docs / changelog | — | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | CHANGELOG + README `index.vector` |
+| Docs (delta índices) | — | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 | CHANGELOG + risco PR atualizado |
 | Gate humano | PR | pendente | — | — | Único gate humano: review/merge no GitHub |

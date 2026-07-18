@@ -332,3 +332,46 @@ Falha na coleta com `ModuleNotFoundError: No module named 'github_rag.index.vect
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — prosseguir TDD (UT-Q22..25) e implementação.
+
+---
+
+## Review — Implementação DELTA T13 (payload indexes)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `qdrant_store.py` (`_ensure_collection` / `_ensure_payload_indexes`) + UT-Q22..Q25 |
+| Contratos | design `0.1.1` / interfaces `0.1.1` / unit-test-plan `0.1.2` |
+| Data | 2026-07-18 |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| SUGGESTION | Ordem de imports/constantes no módulo | `qdrant_store.py:17–43` | Agrupar no Blue opcional |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — delta de índices KEYWORD no setup conforme contrato; porta `VectorStore` inalterada.
+
+---
+
+## Review — Blue DELTA T13 (payload indexes)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `refactoring.md` + imports em `qdrant_store.py` |
+| Data | 2026-07-18 |
+| Resultado | `BLUE_APPROVED_BY_ARCHITECT` |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | SUGGESTION de imports resolvido | constantes após imports | — |
+
+### Decisão
+
+`BLUE_APPROVED_BY_ARCHITECT` — índices promovidos por pedido humano; Blue só ordem de imports.
