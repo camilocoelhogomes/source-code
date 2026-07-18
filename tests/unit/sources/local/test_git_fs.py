@@ -1,32 +1,67 @@
-"""Testes unitários de git_fs (T06)."""
+"""Testes unitários de git_fs (T06 + T20 GitPython)."""
 
 from __future__ import annotations
 
+import inspect
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
+from git import Repo
+
+from github_rag.sources.local import git_fs
 from github_rag.sources.local.git_fs import GitFilesystemInspector
 
 
-def _init_git_repo(path: Path, *, with_main: bool = True) -> None:
+def _init_git_repo(path: Path, *, with_main: bool = True) -> Repo:
+    """Cria worktree Git real (GitPython-válido) para inspeção."""
     path.mkdir(parents=True, exist_ok=True)
-    git_dir = path / ".git"
-    git_dir.mkdir()
-    (git_dir / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
+    repo = Repo.init(path)
     if with_main:
-        heads = git_dir / "refs" / "heads"
-        heads.mkdir(parents=True)
-        (heads / "main").write_text("abc123\n", encoding="utf-8")
+        (path / "README").write_text("x", encoding="utf-8")
+        repo.index.add(["README"])
+        repo.index.commit("init")
+        if "main" not in repo.heads:
+            repo.create_head("main")
+        repo.heads.main.checkout()
+    else:
+        (path / "README").write_text("x", encoding="utf-8")
+        repo.index.add(["README"])
+        repo.index.commit("init")
+        if "main" in repo.heads:
+            # rename main away if git defaulted to main
+            repo.create_head("develop")
+            repo.heads.develop.checkout()
+            repo.delete_head("main", force=True)
+    return repo
 
 
 def _init_gitdir_file_repo(work_dir: Path, git_dir: Path) -> None:
-    work_dir.mkdir(parents=True)
-    git_dir.mkdir(parents=True)
-    heads = git_dir / "refs" / "heads"
-    heads.mkdir(parents=True)
-    (heads / "main").write_text("def456\n", encoding="utf-8")
-    (work_dir / ".git").write_text(f"gitdir: {git_dir.resolve()}\n", encoding="utf-8")
+    """Worktree com `.git` file apontando para um git dir real."""
+    import shutil
+
+    donor = work_dir.parent / f"{work_dir.name}-donor"
+    _init_git_repo(donor)
+    work_dir.mkdir(parents=True, exist_ok=True)
+    if git_dir.exists():
+        shutil.rmtree(git_dir)
+    shutil.copytree(donor / ".git", git_dir)
+    (work_dir / ".git").write_text(
+        f"gitdir: {git_dir.resolve()}\n", encoding="utf-8"
+    )
+
+
+def _init_packed_main_repo(path: Path) -> None:
+    """Repo com main apenas em packed-refs (sem loose ref)."""
+    repo = _init_git_repo(path, with_main=True)
+    main_ref = path / ".git" / "refs" / "heads" / "main"
+    sha = main_ref.read_text(encoding="utf-8").strip()
+    packed = path / ".git" / "packed-refs"
+    packed.write_text(f"# pack-refs with: peeled fully-peeled\n{sha} refs/heads/main\n", encoding="utf-8")
+    main_ref.unlink()
+    # ensure heads dir empty of main
+    repo.close()
 
 
 class TestGitFilesystemInspector(unittest.TestCase):
@@ -88,17 +123,17 @@ class TestGitFilesystemInspector(unittest.TestCase):
 
     def test_inspect_main_in_packed_refs(self) -> None:
         repo = self.root / "packed"
-        _init_git_repo(repo, with_main=False)
-        packed = repo / ".git" / "packed-refs"
-        packed.write_text("# pack\nabc refs/heads/main\n", encoding="utf-8")
+        _init_packed_main_repo(repo)
         result = self.inspector.inspect_repo(repo)
         self.assertTrue(result.has_main_branch)
+        self.assertTrue(result.is_valid_candidate)
 
     def test_inspect_not_git(self) -> None:
         plain = self.root / "plain"
         plain.mkdir()
         result = self.inspector.inspect_repo(plain)
         self.assertFalse(result.is_git_repo)
+        self.assertEqual(result.reason, "not a git repository")
 
     def test_inspect_git_without_main(self) -> None:
         repo = self.root / "no-main"
@@ -106,16 +141,97 @@ class TestGitFilesystemInspector(unittest.TestCase):
         result = self.inspector.inspect_repo(repo)
         self.assertTrue(result.is_git_repo)
         self.assertFalse(result.has_main_branch)
+        self.assertEqual(result.reason, "main branch not found")
 
     def test_inspect_not_directory(self) -> None:
         f = self.root / "file"
         f.write_text("x", encoding="utf-8")
         result = self.inspector.inspect_repo(f)
         self.assertFalse(result.is_git_repo)
+        self.assertEqual(result.reason, "not a directory")
 
     def test_parse_invalid_scheme_raises(self) -> None:
         with self.assertRaises(ValueError):
             self.inspector.parse_file_url("https://example.com/x")
+
+    def test_parse_empty_path_raises(self) -> None:
+        with self.assertRaises(ValueError):
+            self.inspector.parse_file_url("file://")
+
+    def test_parse_relative_path_raises(self) -> None:
+        with self.assertRaises(ValueError):
+            self.inspector.parse_file_url("file:relative/path")
+
+    def test_expand_candidates_base_not_directory(self) -> None:
+        f = self.root / "not-dir"
+        f.write_text("x", encoding="utf-8")
+        self.assertEqual(self.inspector.expand_candidates(f, "*"), ())
+
+    def test_expand_candidates_non_star_prefix_pattern(self) -> None:
+        nested = self.root / "nest" / "svc"
+        nested.mkdir(parents=True)
+        found = self.inspector.expand_candidates(self.root, "svc")
+        self.assertEqual(list(found), [nested])
+
+    def test_to_native_path_windows_drive_without_leading_slash(self) -> None:
+        with mock.patch.object(git_fs.os, "name", "nt"):
+            self.assertEqual(git_fs._to_native_path("C:/repos"), Path("C:/repos"))
+
+    # --- T20: conformidade GitPython / DT-001 ---
+
+    def test_t20_inspect_uses_gitpython_repo(self) -> None:
+        """UT-T20-09: inspect_repo deve abrir via git.Repo."""
+        repo_path = self.root / "spy-repo"
+        _init_git_repo(repo_path)
+        with mock.patch.object(
+            git_fs, "Repo", wraps=Repo, create=True
+        ) as repo_cls:
+            result = self.inspector.inspect_repo(repo_path)
+        self.assertTrue(result.is_valid_candidate)
+        self.assertTrue(repo_cls.called, "GitPython Repo must be used")
+
+    def test_t20_bare_repo_rejected(self) -> None:
+        """UT-T20-07: bare rejeitado (paridade T06 / D-T20-006)."""
+        work = self.root / "bare-donor"
+        _init_git_repo(work)
+        bare = self.root / "bare.git"
+        Repo(work).clone(bare, bare=True)
+        result = self.inspector.inspect_repo(bare)
+        self.assertFalse(result.is_valid_candidate)
+        self.assertEqual(result.reason, "not a git repository")
+
+    def test_t20_incomplete_git_dir_rejected(self) -> None:
+        """UT-T20-08: .git sem objects → not a git repository (delta §3.2)."""
+        repo = self.root / "incomplete"
+        repo.mkdir()
+        git_dir = repo / ".git"
+        git_dir.mkdir()
+        (git_dir / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
+        heads = git_dir / "refs" / "heads"
+        heads.mkdir(parents=True)
+        (heads / "main").write_text("a" * 40 + "\n", encoding="utf-8")
+        result = self.inspector.inspect_repo(repo)
+        self.assertFalse(result.is_git_repo)
+        self.assertEqual(result.reason, "not a git repository")
+
+    def test_t20_no_adhoc_packed_refs_or_loose_ref_parse(self) -> None:
+        """UT-T20-11: produção sem parse ad-hoc de refs/packed-refs."""
+        source = inspect.getsource(git_fs)
+        self.assertNotIn("packed-refs", source)
+        self.assertNotIn("_PACKED_REF_MAIN", source)
+        self.assertNotIn("_resolve_git_dir", source)
+        self.assertNotIn("_has_main_branch", source)
+        self.assertNotIn('refs" / "heads"', source)
+        self.assertNotIn("refs/heads", source)
+
+    def test_t20_repo_opened_as_context_manager(self) -> None:
+        """UT-T20-10: Repo usado como context manager."""
+        source = inspect.getsource(GitFilesystemInspector.inspect_repo)
+        self.assertRegex(
+            source,
+            r"with\s+Repo\s*\(",
+            msg="inspect_repo must open GitPython Repo as context manager",
+        )
 
 
 if __name__ == "__main__":

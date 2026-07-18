@@ -14,6 +14,8 @@ import unittest
 from pathlib import Path
 from typing import Any
 
+from git import Repo
+
 from github_rag.catalog.models import RepoOrigin
 from github_rag.config.schema import _AppConfig, _GitConnection, _Revisions
 from github_rag.sources.local.discovery import LocalRepoDiscovery
@@ -27,15 +29,24 @@ def _git_connection(url: str) -> _GitConnection:
 
 
 def _init_git_repo(path: Path, *, with_main: bool = True, branch: str = "main") -> None:
-    """Cria repositório Git mínimo em filesystem para testes."""
+    """Cria repositório Git real (GitPython-válido) para testes BDD."""
     path.mkdir(parents=True, exist_ok=True)
-    git_dir = path / ".git"
-    git_dir.mkdir()
-    (git_dir / "HEAD").write_text(f"ref: refs/heads/{branch}\n", encoding="utf-8")
+    repo = Repo.init(path)
+    (path / "README").write_text("bdd", encoding="utf-8")
+    repo.index.add(["README"])
+    repo.index.commit("init")
     if with_main:
-        ref_dir = git_dir / "refs" / "heads"
-        ref_dir.mkdir(parents=True)
-        (ref_dir / branch).write_text("deadbeef" * 5 + "\n", encoding="utf-8")
+        if branch not in repo.heads:
+            repo.create_head(branch)
+        getattr(repo.heads, branch).checkout()
+        if branch != "main" and "main" in repo.heads:
+            repo.delete_head("main", force=True)
+    else:
+        if "main" in repo.heads:
+            repo.create_head("develop")
+            repo.heads.develop.checkout()
+            repo.delete_head("main", force=True)
+    repo.close()
 
 
 def _file_url(path: Path) -> str:
