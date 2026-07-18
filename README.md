@@ -127,6 +127,25 @@ gen = OpenAICompatibleMetadataGenerator(
 metadata = gen.generate(chunk)  # ChunkMetadata → metadata.to_payload()
 ```
 
+## Índice vetorial Qdrant e embeddings (T13)
+
+O pacote `github_rag.index.vector` persiste cada chunk enriquecido
+(`SemanticChunk` + `ChunkMetadata`) no Qdrant via `qdrant-client` e produz
+vetores com `OpenAICompatibleEmbedder` (SDK `openai`, endpoint de embeddings
+apenas — distinto da SLM de metadados T12). Reindexação por repositório usa
+`replace_repo_commit` (substitui vetores do commit anterior).
+
+```python
+from qdrant_client import QdrantClient
+from github_rag.index.vector import QdrantVectorStore
+
+store = QdrantVectorStore(
+    client=QdrantClient(":memory:"),
+    vector_size=768,  # alinhar a Embedder.dimensions
+)
+# Orquestrador (T14): Embedder.embed → VectorRecord → store.replace_repo_commit
+```
+
 ## Configuração de conexões (T02)
 
 O arquivo JSON apontado por `CONFIG_PATH` (via `AppSettings.config_path`)
