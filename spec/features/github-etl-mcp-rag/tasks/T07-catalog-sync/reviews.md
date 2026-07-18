@@ -90,3 +90,42 @@ Gate BDD v0.1.0: cenários CS-01..12 cobrem aceite, política de ausência, pres
 ### Parecer
 
 Gate INTERFACES v0.1.0: superfície sync-only com DI hexagonal; S-01/S-02 fechados; sem CRUD/reconcile/indexação. Sem BLOCKING/MAJOR. `APPROVED_BY_ARCHITECT`.
+
+## Gate UNIT_TESTS — 2026-07-18
+
+| Campo | Valor |
+|---|---|
+| Artefato | `unit-test-plan.md` v0.1.0 + suíte RED |
+| Reviewer | Tech Lead Architect |
+| Decisão | `APPROVED_BY_ARCHITECT` |
+
+### Checklist
+
+| # | Critério | Resultado |
+|---|---|---|
+| 1 | Matriz UT-01..18 cobre CS-01..12 + corners (idempotência, multi-conn, chave, abort ordem) | OK |
+| 2 | Extremos/falhas/idempotência sem enfraquecer contratos interfaces/BDD | OK |
+| 3 | RED pela razão esperada (`NotImplementedError` nos stubs) | OK — 28 failed / 2 passed |
+| 4 | BDD CS-01..12 executáveis; stubs sem implementação | OK |
+| 5 | Spies/`RecordingCatalog` para CS-08/CS-10; sem rede/PG | OK |
+
+### Achados
+
+| ID | Severidade | Evidência | Correção esperada | Resultado |
+|---|---|---|---|---|
+| U-1 | SUGGESTION | Extremos do plano: `CatalogSyncError.__cause__`; suíte sem assert `from GitHubDiscoveryError` | Na implementação (ou UT extra): `exc.__cause__` é `GitHubDiscoveryError` | Aberto → impl |
+| U-2 | SUGGESTION | Extremo “indexing ausente”; UT-11 só valida enum, não `deactivated.state == INDEXING` | Assert explícito de preservação `INDEXING` no soft-delete | Aberto → impl |
+| — | — | UT-15 / CS-04 verdes por inspeção de superfície (esperado pré-impl) | — | Info |
+
+### Evidência RED
+
+```text
+28 failed, 2 passed (--no-cov)
+Falhas: NotImplementedError em CatalogSync.sync / run_catalog_sync
+Passaram: TestUT15NoCrudSurface, TestCS04NoCrud (dir surface)
+AssertionError de comportamento verde: 0
+```
+
+### Parecer
+
+Gate UNIT_TESTS v0.1.0: cobertura CS/UT aderente às interfaces aprovadas; RED demonstrado (28× NIE). Sem BLOCKING/MAJOR. `APPROVED_BY_ARCHITECT`.

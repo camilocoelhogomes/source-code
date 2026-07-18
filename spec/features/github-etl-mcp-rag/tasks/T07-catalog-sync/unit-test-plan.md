@@ -5,7 +5,7 @@
 | Feature | `github-etl-mcp-rag` |
 | Task | `T07-catalog-sync` |
 | Versão | `0.1.0` |
-| Estado | `DRAFT` |
+| Estado | `APPROVED_BY_ARCHITECT` |
 | Interfaces base | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
 | BDD base | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
 
