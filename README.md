@@ -88,6 +88,7 @@ eligible = PathspecFileEligibilityFilter().filter(
 )
 ```
 
+
 ## Configuração de conexões (T02)
 
 O arquivo JSON apontado por `CONFIG_PATH` (via `AppSettings.config_path`)
@@ -167,6 +168,24 @@ result = run_catalog_sync(config, sync)
 
 Repos ausentes saem do catálogo ativo (`active=False`); estados permanecem
 somente os de REQ-020 (sem `indisponível`).
+
+## Índice Zoekt (T10)
+
+Busca exata de código via adaptador fino sobre a API/CLI oficiais do Zoekt
+(`src/github_rag/index/zoekt/`). Consumidores (T14/T16) usam a porta
+`ExactCodeIndex`; testes usam `FakeExactCodeIndex` sem processo Zoekt.
+
+```python
+from github_rag.index.zoekt import (
+    ExactSearchQuery,
+    FakeExactCodeIndex,
+    ZoektExactCodeIndex,
+)
+
+index = ZoektExactCodeIndex.from_environ()  # ZOEKT_URL, ZOEKT_INDEX_DIR, …
+# ou FakeExactCodeIndex() em testes
+hits = index.search(ExactSearchQuery(pattern="authenticate", repository="org/repo"))
+```
 
 ## Catálogo (PostgreSQL)
 

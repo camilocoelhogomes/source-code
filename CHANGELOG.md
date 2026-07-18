@@ -14,6 +14,12 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- Adaptador Zoekt (T10): porta `ExactCodeIndex` com `ZoektExactCodeIndex`
+  (CLI `zoekt-index` + HTTP oficial `POST /api/search`) e `FakeExactCodeIndex`
+  injetável — DEC-016 / BDD-009 / BDD-024; erros tipados `ExactCodeIndexError`
+  para T14; envs `ZOEKT_*` via `from_environ` sem alterar `AppSettings`.
+- Pacote `github_rag.index.zoekt` (`models`, `port`, `client`, `runner`,
+  `index`, `fake`, `errors`).
 - Snapshot da `main` (T08): `MainSnapshotProvider` / `DefaultMainSnapshotProvider`
   obtém tip, árvore, conteúdo completo de arquivo e diff de paths entre commits
   (BDD-005, BDD-017, ENG-012); local via GitPython; tip GitHub via PyGithub com
