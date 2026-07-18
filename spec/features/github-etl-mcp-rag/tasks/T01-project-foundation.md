@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T01-project-foundation` |
 | Feature | `github-etl-mcp-rag` |
-| Estado | `IMPLEMENTATION_COMPLETE_AWAITING_DOCUMENTATION_HITL` |
+| Estado | `DONE` |
 | Onda | W0 |
 
 ## Objetivo
