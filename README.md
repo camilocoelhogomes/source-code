@@ -59,8 +59,8 @@ python -m pytest
 
 O comando executa testes unitários e BDD com relatório de cobertura no
 terminal. O projeto exige cobertura mínima de 95%; a execução falha
-automaticamente abaixo desse limite. A suíte completa atual está em 144
-testes com cobertura de 100% (T01+T02+T04).
+automaticamente abaixo desse limite. A suíte completa atual está em 244
+testes (1 pulado sem Docker) com cobertura de 99.29% (T01+T02+T03+T04).
 
 ## Configuração de conexões (T02)
 
@@ -90,6 +90,27 @@ Defaults de engenharia (via env / `load_settings`):
 
 Capacidade `< 1` é rejeitada por `WorkerLimiterError`. Pools de indexação e
 consulta são isolados (`create_index_limiter` / `create_query_limiter`).
+
+## Catálogo (PostgreSQL)
+
+O catálogo de repositórios usa PostgreSQL como fonte de verdade (`src/github_rag/catalog/`).
+O domínio (estados, transições, comparação de commit) é puro e testável sem PG via
+fake in-memory; o adaptador PostgreSQL (`catalog/postgres/`) implementa a mesma
+porta `CatalogRepository` com SQLAlchemy 2.x + psycopg3.
+
+Configuração via variável de ambiente `DATABASE_URL`
+(`postgresql+psycopg://usuario:senha@host:porta/banco`).
+
+Schema versionado com Alembic:
+
+```bash
+alembic upgrade head
+```
+
+Os testes de integração contra PostgreSQL real usam o marcador `integration`
+(`pytest -m integration`) e são pulados automaticamente quando não há PG/Docker
+disponível; o run padrão (`python -m pytest`) cobre domínio e fake, sem exigir
+PostgreSQL.
 
 ## Entrega por container
 

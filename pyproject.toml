@@ -8,12 +8,19 @@ version = "0.1.0"
 description = "GitHub ETL, MCP and RAG application"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "sqlalchemy>=2",
+    "alembic",
+    "psycopg[binary]",
+]
 
 [project.optional-dependencies]
 dev = [
     "pytest",
     "pytest-cov",
+]
+integration = [
+    "testcontainers[postgres]",
 ]
 
 [tool.setuptools.packages.find]
@@ -22,10 +29,19 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--cov=github_rag --cov-report=term-missing"
+markers = [
+    "integration: testes que exigem PostgreSQL real (Docker/testcontainers); pulados se indisponível",
+]
 
 [tool.coverage.run]
 branch = true
 source = ["github_rag"]
+# Adaptador PostgreSQL: I/O só exercível contra PG real (testes `integration`,
+# excluídos do run padrão de domínio — design §3.3/D-T03-010). Omitido do gate
+# de cobertura ≥95% do run padrão para não penalizar quem não tem Docker.
+omit = [
+    "*/catalog/postgres/*",
+]
 
 [tool.coverage.report]
 fail_under = 95
