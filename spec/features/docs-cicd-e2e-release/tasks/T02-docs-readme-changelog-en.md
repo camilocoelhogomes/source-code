@@ -4,12 +4,13 @@
 |---|---|
 | Task ID | `T02-docs-readme-changelog-en` |
 | Feature | `docs-cicd-e2e-release` |
-| Estado | `READY_FOR_IMPLEMENTATION` |
+| Estado | `PENDING_HUMAN_PLAN_APPROVAL` |
 | Onda | W0 |
+| Plano | v0.2.0 |
 
 ## Objetivo
 
-Entregar `README.md` e `CHANGELOG.md` em inglês, com README orientado ao usuário final (imagem GHCR, compose de usuário, variáveis essenciais, uso básico UI/MCP).
+Entregar `README.md` e `CHANGELOG.md` em inglês, com README orientado ao usuário final (imagem GHCR, compose de usuário T19, variáveis essenciais, uso básico UI/MCP).
 
 ## Escopo
 
@@ -22,8 +23,8 @@ Entregar `README.md` e `CHANGELOG.md` em inglês, com README orientado ao usuár
 ## Fora de escopo
 
 - Pasta `docs/` completa de produto (T03) e contributing detalhado (T07).
-- Workflows, Robot, release.
-- Reescrita dos composes T19.
+- Workflows, criação de suíte Robot, release.
+- Reescrita dos composes T19 ou da suíte T21.
 
 ## Dependências
 
@@ -44,9 +45,9 @@ Entregar `README.md` e `CHANGELOG.md` em inglês, com README orientado ao usuár
 
 ## Rastreabilidade
 
-- REQ-004, REQ-018–019, REQ-021–022; BR-010; ENG-012; BDD-007.
+- REQ-004, REQ-018–019, REQ-021; BR-010; ENG-012; BDD-007.
 
 ## Handoff
 
-- Link para `docs/` / contributing a ser completado em T03/T07.
-- Rollback: reverter arquivos de docs.
+- T03/T07 completam `docs/`; T06 alinha tags GHCR.
+- Rollback: reverter README/CHANGELOG.

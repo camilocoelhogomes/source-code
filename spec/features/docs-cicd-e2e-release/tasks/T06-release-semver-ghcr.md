@@ -4,8 +4,9 @@
 |---|---|
 | Task ID | `T06-release-semver-ghcr` |
 | Feature | `docs-cicd-e2e-release` |
-| Estado | `READY_FOR_IMPLEMENTATION` |
+| Estado | `PENDING_HUMAN_PLAN_APPROVAL` |
 | Onda | W1 |
+| Plano | v0.2.0 |
 
 ## Objetivo
 
@@ -23,18 +24,19 @@ Após merge na `main`, versionar automaticamente via Conventional Commits (fallb
 - Permissões: `contents: write`, `packages: write`.
 - Falha de build/push = falha observável; não reportar sucesso com tag parcial enganosa.
 - Garantir que `docker-compose.yml` (T19) permanece utilizável apontando para a imagem pública (BDD-006) — ajuste mínimo só se o compose ainda não referenciar GHCR corretamente (justificar; ownership continua T19).
-- Não alterar código de domínio.
+- Não alterar código de domínio; não criar suíte Robot.
 
 ## Fora de escopo
 
-- Gate de PR / Robot (T01/T04/T05).
+- Gate de PR / invocação Robot (T01/T04/T05).
 - Assinatura de imagem, SBOM, provenance avançada.
 - Self-hosted runners.
+- Declaração de MVP entregue (gate T19+T21 em `github-etl-mcp-rag`).
 
 ## Dependências
 
 - **Dura:** `github-etl-mcp-rag` / `T19-container-delivery` (Dockerfile + compose de usuário apontando para imagem pública).
-- Independente de T04/T05 no DAG (paralelo em W1); em operação, merges na `main` devem já passar pelo gate quando T05 estiver ativo.
+- Independente de T04/T05 no DAG (paralelo em W1 após T19); em operação, merges na `main` devem já passar pelo gate quando T05 estiver ativo (que por sua vez exige T21).
 
 ## Critérios de aceite
 

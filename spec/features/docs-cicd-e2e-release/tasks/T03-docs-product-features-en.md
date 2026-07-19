@@ -4,8 +4,9 @@
 |---|---|
 | Task ID | `T03-docs-product-features-en` |
 | Feature | `docs-cicd-e2e-release` |
-| Estado | `READY_FOR_IMPLEMENTATION` |
+| Estado | `PENDING_HUMAN_PLAN_APPROVAL` |
 | Onda | W0 |
+| Plano | v0.2.0 |
 
 ## Objetivo
 
@@ -20,8 +21,8 @@ Criar documentação em inglês em `docs/` cobrindo as features do produto (MVP)
 
 ## Fora de escopo
 
-- Seção completa de contribuidores / Podman / e2e (T07).
-- CI/CD e Robot.
+- Seção completa de contribuidores / Podman / e2e T21 (T07).
+- CI/CD e criação de suíte Robot.
 - Alterar código de domínio.
 
 ## Dependências
@@ -41,9 +42,9 @@ Criar documentação em inglês em `docs/` cobrindo as features do produto (MVP)
 
 ## Rastreabilidade
 
-- REQ-004, REQ-020, REQ-022; BR-010; ENG-012; BDD-007.
+- REQ-004, REQ-020; BR-010; ENG-012; BDD-007.
 
 ## Handoff
 
-- T07 adiciona `docs/contributing` (ou equivalente).
-- Rollback: remover/reverter `docs/` de produto.
+- T07 adiciona contributing (incl. e2e T21).
+- Rollback: reverter `docs/` de produto.

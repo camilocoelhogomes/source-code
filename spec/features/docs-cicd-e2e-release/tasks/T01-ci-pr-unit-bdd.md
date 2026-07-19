@@ -4,12 +4,13 @@
 |---|---|
 | Task ID | `T01-ci-pr-unit-bdd` |
 | Feature | `docs-cicd-e2e-release` |
-| Estado | `READY_FOR_IMPLEMENTATION` |
+| Estado | `PENDING_HUMAN_PLAN_APPROVAL` |
 | Onda | W0 |
+| Plano | v0.2.0 |
 
 ## Objetivo
 
-Criar o workflow de CI de PR que executa **testes unitários do projeto** e BDD em `ubuntu-latest`, sem publicar imagem nem alterar versão, estabelecendo os jobs/checks estáveis do gate — base obrigatória e **pré-requisito** do e2e (T05 / ENG-007 / REQ-012).
+Criar o workflow de CI de PR que executa **testes unitários do projeto** e BDD em `ubuntu-latest`, sem publicar imagem nem alterar versão, estabelecendo os jobs/checks estáveis do gate — base obrigatória e **pré-requisito** do e2e (T05 / ENG-007 / REQ-012). O e2e posterior **invoca** a suíte T21 (não criada aqui).
 
 ## Escopo
 
@@ -17,11 +18,12 @@ Criar o workflow de CI de PR que executa **testes unitários do projeto** e BDD 
 - Jobs (nomes estáveis, ENG-011): pelo menos `unit` e `bdd` (ou equivalentes documentados); ambos são parte obrigatória do gate de merge e pré-condição do job e2e em T05.
 - Instalar deps de teste (venv/pip conforme projeto) e rodar a suíte **unitária** existente com cobertura (fail_under 95% do projeto), além dos BDD.
 - Garantir que o workflow de PR **não** faz push GHCR nem edita `pyproject.toml` version.
-- Documentar no handoff os nomes exatos dos checks para branch protection (completo após T05) e que unitários/BDD devem estar verdes antes do e2e.
+- Documentar no handoff os nomes exatos dos checks para branch protection (completo após T05) e que unitários/BDD devem estar verdes antes do e2e (suíte T21).
 
 ## Fora de escopo
 
-- Job e2e / Podman / Robot (T05).
+- Job e2e / Podman / invocação Robot T21 (T04/T05).
+- Criar suíte Robot (ownership = T21).
 - Workflow de release (T06).
 - Alterar código de domínio ou `spec/` (exceto artefatos desta feature).
 - Ownership dos composes T19.
@@ -50,5 +52,5 @@ Criar o workflow de CI de PR que executa **testes unitários do projeto** e BDD 
 ## Handoff
 
 - Contratos: `PrQualityGate` (fase unit/BDD — pré-condição obrigatória do e2e).
-- Próximas: T05 adiciona e2e **só** após unitários + BDD verdes; T07 referencia comandos de teste.
+- Próximas: T05 adiciona e2e **só** após unitários + BDD verdes, invocando T21; T07 referencia comandos de teste.
 - Rollback: remover/reverter o workflow.
