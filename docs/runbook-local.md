@@ -3,6 +3,19 @@
 Primary platform: **linux/amd64** (ENG-006). On Apple Silicon, Docker may
 emulate amd64; expect slower SLM/Zoekt.
 
+## Pré-requisitos Podman / Compose (F-T04-001)
+
+Para stacks e2e com Podman: instale **Podman** e o binário **`podman-compose`**
+(ou um compose provider no `PATH` usado por `podman compose`).
+
+```bash
+command -v podman-compose
+# ou:
+podman compose version
+```
+
+Instalação típica (macOS Homebrew): `brew install podman-compose`.
+
 ## Which compose file?
 
 | File | Audience | Command |

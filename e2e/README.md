@@ -4,6 +4,29 @@ Ownership: **T21-mvp-e2e-robot** (`github-etl-mcp-rag`).
 Runtime: **Podman** + `docker-compose.e2e.yml` (T19).  
 Reference GitHub repo: `camilocoelhogomes/source-code` (this project).
 
+## Pré-requisitos (F-T04-001)
+
+- **Podman** instalado e em execução.
+- Provider Compose no `PATH`: binário **`podman-compose`**, ou o subcomando
+  `podman compose` com um compose provider resolvido no `PATH`.
+
+Verifique:
+
+```bash
+command -v podman-compose
+# ou, se usar o plugin/subcomando:
+podman compose version
+```
+
+Instalação típica (macOS Homebrew):
+
+```bash
+brew install podman-compose
+```
+
+Sem o provider no `PATH`, `podman compose -f docker-compose.e2e.yml ...` falha
+antes do stack subir.
+
 ## HITL local (obrigatório para prova real)
 
 Checklist operacional da auditoria (gate T04, sem secrets):
