@@ -132,3 +132,73 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — interfaces.md `0.1.0` congelam `github_rag.e2e` (I-T21-001..020) alinhados ao design `0.1.1` e BDD E2E-01..10. Prosseguir para unit-test-plan (QA).
+
+---
+
+## Review — Unit test plan `0.1.0` — QA (submissão)
+
+| Campo | Valor |
+|---|---|
+| Autor | QA Engineer |
+| Artefato | `unit-test-plan.md` + `tests/unit/e2e/` |
+| Data | 2026-07-18 |
+| Resultado | `TESTS_READY_FOR_REVIEW` / Estado plano `PENDING_ARCHITECT_REVIEW` |
+
+### Entrega
+
+| Item | Evidência |
+|---|---|
+| Plano | UT-C/E/P/L/S/X — credenciais HITL/CI, redaction, paths/timeouts, launcher, suite (exclude bdd015, HOST_*, down idempotente), exports |
+| Suíte | `tests/unit/e2e/` — 50 testes |
+| RED | `ImportError` de `github_rag.e2e` (pacote ainda inexistente) |
+
+### Decisão
+
+Aguardando review Architect do unit-test-plan / suíte RED. Sem implementação `src/`.
+
+---
+
+## Review — Unit test plan `0.1.0` → `0.1.1` — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `unit-test-plan.md` + `tests/unit/e2e/` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (aprovação Architect substitui HITL intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` (após correções em `0.1.1`) |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Contratos I-T21-* / E2E-01..10 | OK | matriz UT-C/E/P/L/S/X alinhada a interfaces 0.1.0 |
+| Extremos / empty / inválidos | OK (após fix) | blank HITL/CI; orphan repo_root; raw stderr vazio |
+| Falhas + finally `down` | OK | UT-S04..S06/S14; UT-L04/L05/L08 |
+| Idempotência `down` | OK | UT-L07; UT-S15 |
+| Redaction (sem tautologia) | OK (após fix) | UT-C08b/C10, UT-E01/E02, UT-L04, UT-S09 |
+| CI vs HITL | OK (após fix) | UT-C06..C08b; UT-S02/S03 |
+| Exclude `bdd015` explícito | OK | UT-S07 regex (não substring) |
+| Sem compose/Robot real | OK (após fix) | doubles + mocks UT-S12/X03/L05/L06 |
+| BDD-015 fora; E2E-08 no BDD | OK | plano §3/§5 |
+
+### Achados (v0.1.0) — corrigidos em v0.1.1
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| `MAJOR` | UT-S12 chamava `run_mvp_e2e` sem double de robot → risco de Robot CLI real pós-impl | `test_suite.py` UT-S12 v0.1.0 | Mock `DefaultRobotMvpSuite` no módulo `suite`; TypeError posicional | Corrigido |
+| `MAJOR` | UT-X03 não exercitava `SystemExit(run_mvp_e2e)` | `test_exports.py` UT-X03 v0.1.0 | `main()` com mock `run_mvp_e2e` → `SystemExit(code)` | Corrigido |
+| `MAJOR` | CI com `E2E_GITHUB_TOKEN` blank + `GITHUB_TOKEN` ausente da matriz | plano / credentials v0.1.0 | UT-C08b | Corrigido |
+| `MAJOR` | UT-C01 assert redaction com token fora do env (tautologia) | `test_credentials.py` UT-C01 | Remover assert inútil; redaction em C08b/C10 | Corrigido |
+| `MAJOR` | UT-L05/L06 frágeis (dead `pass`, try/except AssertionError, sucesso sem assert) | `test_launcher.py` | HTTP mock urllib+httpx determinístico | Corrigido |
+| `SUGGESTION` | HITL `E2E_GITHUB_TOKEN` blank + `GITHUB_TOKEN` válido | corner preferência | UT-C05b | Aceito/corrigido |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — unit-test-plan.md `0.1.1` + suíte `tests/unit/e2e/` cobrem contratos, extremos, CI/HITL, redaction, exclude bdd015, idempotência `down`, sem compose/Robot real. Prosseguir para implementação Developer (TDD GREEN + cobertura ≥95%).
