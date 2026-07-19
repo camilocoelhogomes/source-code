@@ -51,3 +51,40 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — bdd.md v0.1.1 + `tests/bdd/test_container_delivery.py` alinhados ao design 0.1.0. Prosseguir para interfaces.
+
+---
+
+## Review — Interfaces `0.1.0` — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `interfaces.md` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (aprovação Architect substitui HITL) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Porta `ContainerRuntime.boot()` | OK | I-T19-002; §4 |
+| `run_container_boot` + `DefaultContainerRuntime` keyword-only | OK | I-T19-003/004; §5; alinha CD-01..04 |
+| Ordem D-T19-003 + fail-fast BDD-022 | OK | I-T19-005/006/014 |
+| Wiring helpers + env sem reabrir T01 | OK | I-T19-008/009; §6/§10 |
+| Health `/healthz` | OK | I-T19-007; §7; CD-01 |
+| `__main__` + `mcp_stdio` | OK | I-T19-010/015; §8 |
+| Exports públicos CD-10 | OK | I-T19-016; §9 |
+| Manifesto separado (Dockerfile/compose asserts) | OK | I-T19-017; M-T19-*; §11 |
+| Comentários responsabilidade/motivo em cada contrato | OK | §§4–9 |
+| Sem domínio / sem implementação produção | OK | I-T19-018/020 |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — interfaces.md v0.1.0 sólidas e alinhadas a design 0.1.0 + BDD 0.1.1. Prosseguir para unit plan / stubs.
