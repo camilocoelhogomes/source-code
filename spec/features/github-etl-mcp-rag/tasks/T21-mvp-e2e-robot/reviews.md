@@ -43,3 +43,45 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — design.md `0.1.1` alinhado a REQ-045–052, BDD-026–028, ENG-018–020 e handoff `E2eStackLauncher` / `RobotMvpSuite`. Prosseguir para BDD.
+
+---
+
+## Review — BDD `0.1.0` → `0.1.1` — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `bdd.md` + `tests/bdd/test_mvp_e2e_robot.py` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (aprovação Architect substitui HITL intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` (após correções em `0.1.1`) |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Cobre BDD-026–028 e critérios da task | OK | bdd.md §§E2E-01..10, ROBOT-01..06; tabela aceite; mapeamento BDD-001–024 |
+| Exclui BDD-015 | OK | E2E-07; ROBOT-06; mapeamento 015 = Não |
+| CI exige `E2E_GITHUB_TOKEN` | OK | E2E-02; design D-T21-006 |
+| Doubles; sem compose up real no pytest | OK | docstring + RecordingLauncher/RobotRunner; D-T21-008 |
+| Green path não skipa BDD observáveis | OK | política Camada B; `manual_or_partial` ≠ skip; negative + fixture local no path |
+| Contratos alinhados ao design 0.1.1 | OK | ordem resolve→up→healthy→robot→down; HOST_*; handoff E2E-09 |
+
+### Achados (v0.1.0) — corrigidos em v0.1.1
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| `MAJOR` | E2E-02 podia passar se `E2eCredentialResolver.resolve` retornasse sucesso sem `E2E_GITHUB_TOKEN` (falha não obrigatória) | `test_mvp_e2e_robot.py` `test_ci_with_only_actions_github_token_fails` (v0.1.0) | Exigir falha explícita (`fail` se resolve OK; `assertTrue(failed)`) | Corrigido no teste |
+| `MAJOR` | Assert de exclusão `bdd015` aceitava mera substring `bdd015` (falso positivo sem `--exclude`) | regex E2E-07 v0.1.0 | Exigir `--exclude` / `exclude=` / lista `excludes`; negar Discovery Cursor | Corrigido teste + bdd E2E-07 |
+| `MAJOR` | E2E-03 usava `assertNotIn(SECRET_TOKEN, "compose failed")` (tautologia); E2E-10 podia passar só com `exit=N` sem inspecionar mensagem | E2E-03/10 v0.1.0 | Redaction via `E2eCredentialError` + `str(E2eStackError)` + argv robot | Corrigido teste + bdd E2E-10 |
+| `SUGGESTION` | E2E-01 com `assertRaises` + ramo `pass` em exit ≠ 0 era inconsistente | E2E-01 v0.1.0 | Unificar: falha obrigatória + `up` não chamado | Corrigido |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — BDD contratos E2E-01..10 + documentação Robot green path alinhados ao design `0.1.1`, BDD-026–028, exclusão BDD-015, CI `E2E_GITHUB_TOKEN`, doubles sem Podman real. Prosseguir para interfaces.
