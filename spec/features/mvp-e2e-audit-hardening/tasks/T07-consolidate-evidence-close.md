@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T07-consolidate-evidence-close` |
 | Feature | `mvp-e2e-audit-hardening` |
-| Estado | `PENDING_PO_REVIEW` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Onda | W5 |
 | Plano | v0.1.0 |
 

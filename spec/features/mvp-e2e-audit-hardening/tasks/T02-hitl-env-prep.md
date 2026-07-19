@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T02-hitl-env-prep` |
 | Feature | `mvp-e2e-audit-hardening` |
-| Estado | `PENDING_PO_REVIEW` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Onda | W0 |
 | Plano | v0.1.0 |
 

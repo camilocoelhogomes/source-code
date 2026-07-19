@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T04-run-e2e-robot` |
 | Feature | `mvp-e2e-audit-hardening` |
-| Estado | `PENDING_PO_REVIEW` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Onda | W2 |
 | Plano | v0.1.0 |
 
