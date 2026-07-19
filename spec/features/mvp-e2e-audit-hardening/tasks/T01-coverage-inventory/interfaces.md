@@ -186,4 +186,4 @@ T06 ParentGapFillBacklog  →  tasks gap-* no pai (após T05)
 - [x] Schema §6 (colunas, domínios, regras integral/lacuna, exclusão 015) congelado.
 - [x] Contrato de consumo T06 explícito.
 - [x] Explicitado: **nenhuma** interface Python de runtime.
-- [ ] Materialização do Markdown (implementação documental — etapa posterior do Developer).
+- [x] Materialização do Markdown (`audit/coverage-inventory.md` — `APPROVED_BY_ARCHITECT`).

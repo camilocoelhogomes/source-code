@@ -193,3 +193,46 @@ Nenhum.
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — unitários aptos para implementação documental da matriz. Gate `ARCHITECT_UNIT_TESTS` (modo autonomous; substitui HITL). Não implementar a matriz nesta etapa de review.
+
+---
+
+## Review Implementação (matriz) — Tech Lead Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `audit/coverage-inventory.md` (tip `47643c0`) |
+| Data | 2026-07-18 |
+| Branch | `feature/mvp-e2e-audit-hardening-T01-coverage-inventory` |
+| Worktree | `/Users/camilocoelhogomes/projects/github_rag-wt-T01` |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Checks executados
+
+| Check | Resultado |
+|---|---|
+| Schema §6: 8 colunas, 23 linhas `{001..014}∪{016..024}` | OK |
+| Cabeçalho: feature, data, critério integral, exclusão 015, inspeção estática | OK |
+| Nota fixa BDD-015 + sem linha de status | OK |
+| BR-001 / denylist T21 003/006/013/024 = `lacuna` + `nota_parcial_t21` ≠ `—` | OK |
+| D-T01-005: todas `superficie=ui` com `evidencia_browser=nao` ⇒ `lacuna` | OK (001/002/007/009/010/016/019/023) |
+| Classificação conservadora: parciais T21 e UI API-smoke como `lacuna` | OK (incl. 005/008/017/018/022) |
+| `coberto-integral` (004/011/012/014/020/021) com evidência Robot e/ou pytest real | OK — pytest cobre omit/include (012) e token MCP (014); Robot cobre 004/011/020/021 |
+| Handoff T06 + priorização denylist/UI | OK |
+| Sem alteração `e2e/` ou produto nesta task | OK |
+| BDD+unit canônicos | OK — `30 passed` (pytest via `.venv` do repo principal; cov fail-under N/A: sem import `github_rag`) |
+
+### Achados
+
+| ID | Severidade | Evidência | Achado | Correção esperada |
+|---|---|---|---|---|
+| — | — | — | Nenhum BLOCKING / MAJOR aberto | — |
+| S-IMP-01 | `SUGGESTION` | `mcp.robot` BDD-012 só asserta `hits` | Fatia Robot fraca para omit/include; integral sustentado por `tests/bdd/test_mcp_evidence_server.py` | Nenhuma na T01; T06 pode fortalecer assert Robot se quiser paridade e2e |
+
+### Bloqueios abertos
+
+Nenhum.
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — matriz `CoverageInventory` apta; gate `ARCHITECT_IMPLEMENTATION` (modo autonomous). Prosseguir etapa Blue.

@@ -6,6 +6,11 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- Inventário de cobertura MVP e2e (T01 / feature `mvp-e2e-audit-hardening`):
+  matriz documental `CoverageInventory` em
+  `spec/features/mvp-e2e-audit-hardening/audit/coverage-inventory.md`
+  (BDD-001–024 exc. 015; inspeção estática; SoT de lacunas para T06). Sem
+  alteração de `e2e/` nem produto.
 - Prova e2e do MVP (T21): pacote `github_rag.e2e` com contratos
   `E2eStackLauncher` / `RobotMvpSuite` (`PodmanE2eStackLauncher`,
   `DefaultRobotMvpSuite`, `E2eCredentialResolver`), suíte Robot Framework em
