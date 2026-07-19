@@ -156,3 +156,87 @@ Revisar `bdd.md` `0.1.0` e aprovar (`APPROVED_BY_ARCHITECT`) ou devolver com ach
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — interfaces.md `0.1.0` adequadas para unitários de helpers e implementação Robot/fixture.
+
+---
+
+## QA — Unit tests `0.1.0` ready for Architect review
+
+| Campo | Valor |
+|---|---|
+| Autor | QA Engineer |
+| Artefatos | `unit-test-plan.md` + `tests/unit/e2e/test_catalog_indexing_keywords.py` + extensão `tests/unit/e2e/test_coverage_gaps.py` |
+| Data | 2026-07-19 |
+| Versão | `0.1.0` |
+| Pipeline | autonomous (Architect aprova gates; sem HITL intermediário) |
+| Status | `TESTS_READY_FOR_REVIEW` |
+| Worktree | `/Users/camilocoelhogomes/projects/github_rag-wt-T24` |
+| Branch | `feature/github-etl-mcp-rag-T24-gap-catalog-indexing-integral` |
+
+### Entrega
+
+| Item | Evidência |
+|---|---|
+| Plano extremos/corners | `unit-test-plan.md` UT-T24-C*/P*/H*/E*/M*/R*/S* |
+| Unitários helpers | `test_catalog_indexing_keywords.py` — import `e2e/robot/libraries/CatalogIndexingKeywords.py` |
+| Seed launcher | `test_coverage_gaps.py` — `test_ensure_local_git_fixture_seeds_bdd006_paths` + idempotência com `.git` |
+| Sem produção | `CatalogIndexingKeywords.py` / seed **não** implementados |
+| RED demonstrado | pytest → `ImportError`/`ModuleNotFoundError` (library) + `AssertionError` (seed paths) |
+
+### Casos cobertos (resumo)
+
+| Grupo | IDs | Foco |
+|---|---|---|
+| Cron UTC | C01–C06 | minuto absoluto, wrap 59/23:59, `now` None→UTC, formato 5 campos |
+| Parse MCP | P01–P08 | id/identifier, repo ausente, JSON inválido, null, envelope aninhado, selectors ausentes |
+| Host commit | H01–H04 | tip muda, SHA distinto, sem `.git`, path custom |
+| Eligibility | E01–E04 | paths include/exclude, idempotência, gitignore, sem `.git` |
+| Main-only | M01–M04 | HEAD main, branch other, uncommitted, idempotência |
+| Resolve path | R01–R02 | repos_root / default |
+| Seed launcher | S01–S02 | BDD-006 paths + rerun com `.git` existente |
+
+### Pedido ao Architect
+
+Revisar `unit-test-plan.md` `0.1.0` e unitários RED; aprovar (`APPROVED_BY_ARCHITECT`) ou devolver com BLOCKING/MAJOR. Após aprovação: implementação Developer de `CatalogIndexingKeywords.py` + seed `ensure_local_git_fixture`.
+
+---
+
+## Review — Unit tests `0.1.1` — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefatos | `unit-test-plan.md` + `tests/unit/e2e/test_catalog_indexing_keywords.py` + extensão seed em `tests/unit/e2e/test_coverage_gaps.py` |
+| Data | 2026-07-19 |
+| Pipeline | autonomous (aprovação Architect substitui HITL intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Matriz UT-T24-C*/P*/H*/E*/M*/R*/S* vs interfaces §6–7 | OK | plan §§2.1–2.7; testes espelham IDs |
+| Extremos cron UTC (wrap 59 / 23:59 / now=None) | OK | C01–C06 |
+| Parse MCP (id/identifier, ausente, JSON inválido, null, envelope, selectors) | OK | P01–P08 |
+| Host commit / eligibility / main-only / resolve | OK | H*/E*/M*/R* |
+| Seed launcher não early-return cego + compat T21 | OK | S01–S02; S03 via S01 + `creates_repo` |
+| Tokens canônicos I-T24-009 (não só paths vazios) | OK após correção | E01 + S01 reforçados |
+| Sem implementação de produção | OK | `CatalogIndexingKeywords.py` ausente; seed T24 ausente |
+| RED reproduzível | OK | 30 failed (`ModuleNotFoundError` ×28 + seed AssertionError ×2) |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| `MAJOR` | E01 aceitava `markers={}` e arquivos sem tokens se o módulo não exportasse constantes | `test_catalog_indexing_keywords.py` E01 (versão 0.1.0) | Assertar tokens canônicos §4 no conteúdo dos paths + mapa não vazio | **Corrigido** na review (`0.1.1`) |
+| `MAJOR` | S01 só assertava existência de paths, sem tokens include/exclude | `test_coverage_gaps.py` S01 | Assertar `T24_INCLUDE_*` / `T24_EXCLUDE_*` no blob seed | **Corrigido** na review (`0.1.1`) |
+| `SUGGESTION` | P06 cobre um envelope lista; outros wrappers MCP `content[]` ficam para integração | P06 | Opcional ampliar se flaky no Robot | Aberto residual — não bloqueia |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — unitários `0.1.1` suficientes e aderentes a `interfaces.md` (extremos/corners). Prosseguir para implementação Developer de `CatalogIndexingKeywords.py` + seed `ensure_local_git_fixture` (modo autônomo).
