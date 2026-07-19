@@ -69,6 +69,13 @@ def _require_env(environ: Mapping[str, str], name: str) -> str:
     return value.strip()
 
 
+def _env_flag(environ: Mapping[str, str], name: str) -> bool:
+    raw = environ.get(name, "")
+    if not isinstance(raw, str):
+        return False
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def wait_for_postgres(
     environ: Mapping[str, str],
     *,
@@ -239,6 +246,7 @@ def wire_indexing_stack(
         snapshot=snapshot,
         orchestrator=orchestrator,
         github_token=github_token,
+        defer_enqueue=_env_flag(environ, "E2E_DEFER_STARTUP_INDEX"),
     )
     return orchestrator, reconcile
 

@@ -92,6 +92,14 @@ class DefaultIndexingOrchestrator:
     def enqueue(self, repository_ids: Sequence[int]) -> None:
         for repository_id in repository_ids:
             entry = self._catalog.get_repository(repository_id)
+            if entry.state == RepoState.UP_TO_DATE:
+                continue
+            if entry.state == RepoState.INDEXING:
+                with self._lock:
+                    if repository_id not in self._queued_ids:
+                        self._queue.append(repository_id)
+                        self._queued_ids.add(repository_id)
+                continue
             if entry.state not in {
                 RepoState.NOT_INDEXED,
                 RepoState.ERROR,

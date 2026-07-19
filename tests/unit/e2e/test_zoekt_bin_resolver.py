@@ -43,10 +43,14 @@ class RecordingPodmanCommand:
             return self.ps_code, self.ps_stdout, ""
         if " ps " in blob or blob.endswith(" ps") or " ps -q" in blob:
             return self.ps_code, self.ps_stdout, ""
+        if cmd[:2] == ["podman", "exec"] and len(cmd) > 3 and cmd[3] == "mkdir":
+            return 0, "", ""
         if cmd[:2] == ["podman", "cp"]:
             return self.cp_code, "", "" if self.cp_code == 0 else "cp failed"
         if cmd[:2] == ["podman", "exec"] and "rm" not in cmd:
-            return self.exec_code, "", "" if self.exec_code == 0 else "index failed"
+            if self.exec_code == 0:
+                return 0, "", ""
+            return self.exec_code, "", f"index failed with exit {self.exec_code}"
         if cmd[:2] == ["podman", "exec"] and "rm" in cmd:
             return 0, "", ""
         return 0, "", ""
@@ -106,7 +110,9 @@ class TestZoektBinResolver(unittest.TestCase):
             )
         self.assertEqual(code, 0)
         exec_calls = [
-            c for c, _ in runner.calls if c[:2] == ["podman", "exec"] and "rm" not in c
+            c
+            for c, _ in runner.calls
+            if c[:2] == ["podman", "exec"] and "zoekt-index" in c
         ]
         self.assertEqual(len(exec_calls), 1)
         self.assertIn("/data/index", exec_calls[0])
@@ -123,12 +129,25 @@ class TestZoektBinResolver(unittest.TestCase):
                 compose_file=compose,
                 run_command=runner,
             )
+        mkdir_calls = [
+            c
+            for c, _ in runner.calls
+            if c[:2] == ["podman", "exec"] and len(c) > 3 and c[3] == "mkdir"
+        ]
         cp_calls = [c for c, _ in runner.calls if c[:2] == ["podman", "cp"]]
         rm_calls = [
             c for c, _ in runner.calls if c[:2] == ["podman", "exec"] and "rm" in c
         ]
+        self.assertEqual(len(mkdir_calls), 1)
         self.assertEqual(len(cp_calls), 1)
         self.assertEqual(len(rm_calls), 1)
+        kinds = []
+        for cmd, _ in runner.calls:
+            if cmd[:2] == ["podman", "exec"] and len(cmd) > 3 and cmd[3] == "mkdir":
+                kinds.append("mkdir")
+            elif cmd[:2] == ["podman", "cp"]:
+                kinds.append("cp")
+        self.assertEqual(kinds[:2], ["mkdir", "cp"])
 
     def test_ut_p08_06_materialize_wrapper_executable(self) -> None:
         from github_rag.e2e.zoekt_bin import materialize_zoekt_index_wrapper
@@ -216,18 +235,20 @@ class TestZoektBinResolver(unittest.TestCase):
                     run_command=runner,
                 )
 
-    def test_ut_p08_14_exec_nonzero_exit_code(self) -> None:
+    def test_ut_p08_14_exec_nonzero_raises(self) -> None:
+        from github_rag.e2e.errors import E2eStackError
         from github_rag.e2e.zoekt_bin import exec_zoekt_index_cli
 
         runner = RecordingPodmanCommand(exec_code=2)
         with tempfile.TemporaryDirectory() as tmp:
-            code = exec_zoekt_index_cli(
-                ["-index", "/x", "-name", "r", tmp],
-                compose_file=REPO_ROOT / "docker-compose.e2e.yml",
-                run_command=runner,
-                env={"EXTRA": "1"},
-            )
-        self.assertEqual(code, 2)
+            with self.assertRaises(E2eStackError) as ctx:
+                exec_zoekt_index_cli(
+                    ["-index", "/x", "-name", "r", tmp],
+                    compose_file=REPO_ROOT / "docker-compose.e2e.yml",
+                    run_command=runner,
+                    env={"EXTRA": "1"},
+                )
+        self.assertIn("2", str(ctx.exception))
 
     def test_ut_p08_15_resolve_none_env_uses_os_environ_override(self) -> None:
         from github_rag.e2e.zoekt_bin import resolve_zoekt_index_bin
@@ -257,6 +278,50 @@ class TestZoektBinResolver(unittest.TestCase):
 
         self.assertIsNone(_explicit_index_bin(None))
         self.assertIsNone(_explicit_index_bin({"ZOEKT_INDEX_BIN": "zoekt-index"}))
+
+    def test_ut_p08_18_mkdir_failure_raises_before_cp(self) -> None:
+        from github_rag.e2e.errors import E2eStackError
+        from github_rag.e2e.zoekt_bin import exec_zoekt_index_cli
+
+        class MkdirFailRunner(RecordingPodmanCommand):
+            def __call__(
+                self,
+                cmd: Sequence[str],
+                env: Mapping[str, str],
+            ) -> tuple[int, str, str]:
+                if cmd[:2] == ["podman", "exec"] and len(cmd) > 3 and cmd[3] == "mkdir":
+                    self.calls.append((list(cmd), dict(env)))
+                    return 1, "", "mkdir failed"
+                return super().__call__(cmd, env)
+
+        runner = MkdirFailRunner()
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(E2eStackError) as ctx:
+                exec_zoekt_index_cli(
+                    ["-index", "/x", "-name", "r", tmp],
+                    compose_file=REPO_ROOT / "docker-compose.e2e.yml",
+                    run_command=runner,
+                )
+        self.assertIn("mkdir", str(ctx.exception).lower())
+        cp_calls = [c for c, _ in runner.calls if c[:2] == ["podman", "cp"]]
+        self.assertEqual(cp_calls, [])
+
+    def test_ut_t35_cp_timeout_raises(self) -> None:
+        from github_rag.e2e.errors import E2eStackError
+        from github_rag.e2e import zoekt_bin
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with mock.patch.object(
+                zoekt_bin,
+                "_subprocess_run",
+                side_effect=E2eStackError.from_stderr("podman cp timed out after 1.0s"),
+            ):
+                with self.assertRaises(E2eStackError) as ctx:
+                    zoekt_bin._default_run_command(
+                        ["podman", "cp", f"{tmp}/.", "cid:/tmp/tree/"],
+                        {"ZOEKT_CP_TIMEOUT_SECONDS": "1"},
+                    )
+        self.assertIn("timed out", str(ctx.exception).lower())
 
 
 class TestHostEnvZoektBin(unittest.TestCase):

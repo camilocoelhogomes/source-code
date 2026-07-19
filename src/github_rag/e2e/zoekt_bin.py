@@ -28,6 +28,12 @@ CommandRunner = Callable[
 _DEFAULT_INDEX_BIN = "zoekt-index"
 _CONTAINER_INDEX_DIR = "/data/index"
 _WRAPPER_FILENAME = "zoekt-index"
+_DEFAULT_MKDIR_TIMEOUT_SECONDS = 60.0
+_DEFAULT_CP_TIMEOUT_SECONDS = 300.0
+_DEFAULT_EXEC_TIMEOUT_SECONDS = 900.0
+_ENV_MKDIR_TIMEOUT = "ZOEKT_MKDIR_TIMEOUT_SECONDS"
+_ENV_CP_TIMEOUT = "ZOEKT_CP_TIMEOUT_SECONDS"
+_ENV_EXEC_TIMEOUT = "ZOEKT_EXEC_TIMEOUT_SECONDS"
 
 
 def default_wrapper_dir(repo_root: Path, *, e2e: bool = False) -> Path:
@@ -109,6 +115,87 @@ def _parse_zoekt_index_args(args: Sequence[str]) -> tuple[str, str]:
     return name, tree
 
 
+def _timeout_seconds(env: Mapping[str, str], key: str, default: float) -> float:
+    raw = env.get(key, "").strip()
+    if not raw:
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        return default
+
+
+def _subprocess_run(
+    cmd: Sequence[str],
+    env: Mapping[str, str],
+    *,
+    timeout_seconds: float,
+    operation: str,
+) -> tuple[int, str, str]:
+    import subprocess
+
+    try:
+        completed = subprocess.run(
+            list(cmd),
+            env=dict(env),
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise E2eStackError.from_stderr(
+            f"{operation} timed out after {timeout_seconds}s",
+        ) from exc
+    return completed.returncode, completed.stdout or "", completed.stderr or ""
+
+
+def _resolve_podman_timeout(
+    cmd: Sequence[str], env: Mapping[str, str]
+) -> tuple[float, str]:
+    if cmd[:2] == ["podman", "cp"]:
+        return (
+            _timeout_seconds(env, _ENV_CP_TIMEOUT, _DEFAULT_CP_TIMEOUT_SECONDS),
+            "podman cp",
+        )
+    if cmd[:2] == ["podman", "exec"] and len(cmd) > 3 and cmd[3] == "mkdir":
+        return (
+            _timeout_seconds(
+                env, _ENV_MKDIR_TIMEOUT, _DEFAULT_MKDIR_TIMEOUT_SECONDS
+            ),
+            "podman exec mkdir",
+        )
+    if cmd[:2] == ["podman", "exec"] and "zoekt-index" in cmd:
+        return (
+            _timeout_seconds(
+                env, _ENV_EXEC_TIMEOUT, _DEFAULT_EXEC_TIMEOUT_SECONDS
+            ),
+            "podman exec zoekt-index",
+        )
+    return (
+        _timeout_seconds(env, _ENV_MKDIR_TIMEOUT, _DEFAULT_MKDIR_TIMEOUT_SECONDS),
+        "podman",
+    )
+
+
+def _run_podman_step(
+    run_command: CommandRunner,
+    cmd: Sequence[str],
+    env: Mapping[str, str],
+    *,
+    timeout_seconds: float,
+    operation: str,
+) -> tuple[int, str, str]:
+    if run_command is _default_run_command:
+        return _subprocess_run(
+            cmd,
+            env,
+            timeout_seconds=timeout_seconds,
+            operation=operation,
+        )
+    return run_command(cmd, env)
+
+
 def exec_zoekt_index_cli(
     args: Sequence[str],
     *,
@@ -123,9 +210,37 @@ def exec_zoekt_index_cli(
     name, tree_host = _parse_zoekt_index_args(args)
     cid = find_zoekt_container_id(compose_file, run_command, effective)
     tree_container = f"/tmp/zoekt-tree-{os.getpid()}"
+    mkdir_timeout = _timeout_seconds(
+        effective, _ENV_MKDIR_TIMEOUT, _DEFAULT_MKDIR_TIMEOUT_SECONDS
+    )
+    cp_timeout = _timeout_seconds(
+        effective, _ENV_CP_TIMEOUT, _DEFAULT_CP_TIMEOUT_SECONDS
+    )
+    exec_timeout = _timeout_seconds(
+        effective, _ENV_EXEC_TIMEOUT, _DEFAULT_EXEC_TIMEOUT_SECONDS
+    )
+
+    mkdir_cmd = ["podman", "exec", cid, "mkdir", "-p", tree_container]
+    mkdir_code, _, mkdir_err = _run_podman_step(
+        run_command,
+        mkdir_cmd,
+        effective,
+        timeout_seconds=mkdir_timeout,
+        operation="podman exec mkdir",
+    )
+    if mkdir_code != 0:
+        raise E2eStackError.from_stderr(
+            mkdir_err or f"podman exec mkdir failed with exit {mkdir_code}",
+        )
 
     cp_cmd = ["podman", "cp", f"{tree_host}/.", f"{cid}:{tree_container}/"]
-    cp_code, _cp_out, cp_err = run_command(cp_cmd, effective)
+    cp_code, _cp_out, cp_err = _run_podman_step(
+        run_command,
+        cp_cmd,
+        effective,
+        timeout_seconds=cp_timeout,
+        operation="podman cp",
+    )
     if cp_code != 0:
         raise E2eStackError.from_stderr(
             cp_err or f"podman cp tree failed with exit {cp_code}",
@@ -142,10 +257,27 @@ def exec_zoekt_index_cli(
         name,
         tree_container,
     ]
-    exec_code, _exec_out, exec_err = run_command(exec_cmd, effective)
+    exec_code, _exec_out, exec_err = _run_podman_step(
+        run_command,
+        exec_cmd,
+        effective,
+        timeout_seconds=exec_timeout,
+        operation="podman exec zoekt-index",
+    )
 
     rm_cmd = ["podman", "exec", cid, "rm", "-rf", tree_container]
-    run_command(rm_cmd, effective)
+    _run_podman_step(
+        run_command,
+        rm_cmd,
+        effective,
+        timeout_seconds=mkdir_timeout,
+        operation="podman exec rm",
+    )
+
+    if exec_code != 0:
+        raise E2eStackError.from_stderr(
+            exec_err or f"zoekt-index failed with exit {exec_code}",
+        )
 
     return exec_code
 
@@ -186,16 +318,15 @@ if __name__ == "__main__":
 def _default_run_command(
     cmd: Sequence[str], env: Mapping[str, str]
 ) -> tuple[int, str, str]:
-    import subprocess
-
-    completed = subprocess.run(
-        list(cmd),
-        env=dict(env),
-        capture_output=True,
-        text=True,
-        check=False,
+    effective = dict(os.environ)
+    effective.update({k: str(v) for k, v in env.items()})
+    timeout, operation = _resolve_podman_timeout(cmd, effective)
+    return _subprocess_run(
+        cmd,
+        effective,
+        timeout_seconds=timeout,
+        operation=operation,
     )
-    return completed.returncode, completed.stdout or "", completed.stderr or ""
 
 
 def resolve_zoekt_index_bin(
