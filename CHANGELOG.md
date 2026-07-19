@@ -6,6 +6,14 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- Pacote de fechamento da auditoria (T07 / `mvp-e2e-audit-hardening`): contrato
+  `AuditClosurePack` em
+  `spec/features/mvp-e2e-audit-hardening/audit/closure-pack.md` — índice de
+  evidências T01–T06, métricas de sucesso, backlog pai T22–T27, ordem
+  run-first → falha → gap-fill, status `CLOSURE_READY` (encerrável /
+  aguardando merge); MVP de produto **não** entregue; BDD
+  `tests/bdd/test_mvp_e2e_audit_closure_pack.py`. Sem fix de produto
+  (`src/github_rag/**`, `e2e/robot/**`, composes).
 - Inventário de cobertura MVP e2e (T01 / feature `mvp-e2e-audit-hardening`):
   matriz documental `CoverageInventory` em
   `spec/features/mvp-e2e-audit-hardening/audit/coverage-inventory.md`
@@ -39,6 +47,15 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
   F-T04-003=consequência); pytest T03 com zero falhas (sem task inventada);
   BDD `tests/bdd/test_mvp_e2e_audit_failure_backlog.py`. Sem fix de produto
   nesta feature (`src/github_rag/**`, `e2e/robot/**`, composes).
+- Backlog de lacunas / gap-fill (T06 / `mvp-e2e-audit-hardening`): contrato
+  `ParentGapFillBacklog` — índice
+  `spec/features/mvp-e2e-audit-hardening/audit/gap-fill-backlog-index.md` +
+  tasks pai T23–T27 (`gap-ui-browser`, `gap-catalog-indexing-integral`,
+  `gap-negative-integral`, `gap-mcp-parallel-slo`, `gap-sdk-dec015-conformity`);
+  UI exige browser (API sozinha insuficiente); classificação `gap-teste` /
+  `assert-fraco`; sem duplicar T22; BDD
+  `tests/bdd/test_mvp_e2e_audit_gap_fill_backlog.py`. Sem keywords/browser/
+  produto nesta feature (`src/github_rag/**`, `e2e/robot/**`, composes).
 - Prova e2e do MVP (T21): pacote `github_rag.e2e` com contratos
   `E2eStackLauncher` / `RobotMvpSuite` (`PodmanE2eStackLauncher`,
   `DefaultRobotMvpSuite`, `E2eCredentialResolver`), suíte Robot Framework em
