@@ -35,3 +35,71 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — design v0.1.0. Prosseguir para BDD e interfaces.
+
+---
+
+## Review — BDD (v0.1.0) — QA → Architect
+
+| Campo | Valor |
+|---|---|
+| Autor | QA Engineer |
+| Artefato | `bdd.md` + `tests/bdd/test_mcp_evidence_server.py` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `READY_FOR_ARCHITECT_REVIEW` |
+
+### Entrega QA
+
+| Item | Detalhe |
+|---|---|
+| Cenários | MCP-01..MCP-12 |
+| Produto | BDD-011, BDD-012, BDD-013, BDD-014, BDD-015 (capacidade), BDD-024 |
+| Extras | sem `ask_codebase`; `reformulate=False`; `list_repos` sem `local_path`/token; encoding read_file; erros tipados |
+| Fixtures | `FakeQueryService`+spy, `InMemoryCatalogRepository`, `SemaphoreWorkerLimiter` |
+| Estado testes | **RED** — import de `DefaultMcpEvidenceServer` / `McpToolError` falha (produção T17 ainda ausente) |
+| Comando | `python -m pytest tests/bdd/test_mcp_evidence_server.py -q` |
+
+### Pedido ao Architect
+
+Revisar alinhamento design §4 / D-T17-* e aprovar ou devolver com achados. QA **não** auto-aprova.
+
+---
+
+## Review — BDD (v0.1.0) — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `bdd.md` + `tests/bdd/test_mcp_evidence_server.py` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário; aprovação Architect substitui HITL) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| BDD-011 — 5 tools / evidências / sem narrativa-SLM | OK | MCP-01, MCP-08 |
+| BDD-012 — omit/include `DetailFields` na superfície | OK | MCP-02, MCP-03 (exact+semantic) |
+| BDD-013 — pool query / excedentes aguardam / list_repos incluso | OK | MCP-04 (+ `list_repos`) |
+| BDD-014 — token ausente | OK | MCP-05, MCP-12 |
+| BDD-015 — capacidade list/call/`run` | OK | MCP-06 |
+| BDD-024 — SDK `mcp`/`FastMCP`; ban imports | OK | MCP-07 |
+| D-T17-009/010 — `reformulate=False`; sem `chunk_metadata_summary` | OK | MCP-09 |
+| D-T17-008 — `list_repos` sem `local_path`; commits §4.5 | OK | MCP-10 |
+| D-T17-007 — UTF-8 / base64 | OK | MCP-11 |
+| Fixtures fakes; sem Cursor/Zoekt/Qdrant | OK | § Fixtures; testes |
+
+### Achados (corrigidos nesta review)
+
+| Severidade | Achado | Evidência | Correção | Status |
+|---|---|---|---|---|
+| `MAJOR` | MCP-03 não exercitava `semantic_search` com todos `include_*=True` | design §4.4; bdd MCP-03 | Teste + critérios atualizados | Corrigido |
+| `MAJOR` | MCP-04 não proveava `list_repos` sob `query_limiter` | D-T17-006 | `test_list_repos_also_respects_query_limiter` | Corrigido |
+| `MAJOR` | MCP-10 omitia `last_processed_commit` / `current_main_commit` | design §4.5 | Critérios + asserts | Corrigido |
+| `SUGGESTION` | Verificação explícita “pool index não usado” é fraca | MCP-04 texto | Aceito — construção injeta só query limiter; unit opcional | Aceito |
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — bdd.md v0.1.0 + testes alinhados ao design APPROVED. Prosseguir para interfaces.
