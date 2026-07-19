@@ -3,24 +3,25 @@
 | Campo | Valor |
 |---|---|
 | Feature ID | `github-etl-mcp-rag` |
-| Versão do plano | `0.1.6` |
+| Versão do plano | `0.1.7` |
 | Estado | `READY_FOR_IMPLEMENTATION` |
-| Requisitos base | `requirements.md` v0.4.0 (aprovado 2026-07-18, commit `7747a27`) |
-| Natureza | delta sobre v0.1.5 — conformidade SDK OSS / ORM (BR-023–024, DEC-015–016, BDD-024, DT-001) |
-| Revisão humana (plano anterior) | plano v0.1.5 aprovado em 2026-07-18 por `camilocoelhogomes` (commit candidato `bfc9189`) |
-| Revisão PO | `PO_PLAN_APPROVED` em 2026-07-18 — rastreabilidade BR-023–024, DEC-015–016, BDD-024, DT-001 ok; T20 cobre dívida sem mudar BDD-016/018; T03 só confirma ORM; sem explosão de escopo. |
-| Revisão humana (plano 0.1.6) | `aprovo` em 2026-07-18 por `camilocoelhogomes` (commit candidato `f92e7d3`). |
+| Requisitos base | `requirements.md` v0.5.0 (aprovado 2026-07-18, commit `37f7def`) |
+| Natureza | delta sobre v0.1.6 — T19 residual (3 composes + `.env.example`) + **T21-mvp-e2e-robot** (prova MVP); gate MVP = T19+T21 |
+| Revisão humana (plano 0.1.6) | `aprovo` em 2026-07-18 por `camilocoelhogomes` (commit candidato `f92e7d3`) |
+| Revisão PO (plano 0.1.7) | `PO_PLAN_REVIEW` aprovado em 2026-07-18 por `product-owner` |
+| Revisão humana (plano 0.1.7) | `aprovo` em 2026-07-18 por `camilocoelhogomes` (commit candidato `bbf46d608ea75930577eae5362a82719a9b8cf6d`) |
 
 ## 1. Arquitetura
 
 ### 1.1 Visão
 
-Sistema local em containers com quatro superfícies:
+Sistema local em containers com quatro superfícies de produto + uma prova e2e:
 
 1. **Bootstrap/config** — lê `CONFIG_PATH`, valida JSON Sourcebot-like, resolve segredos por `{ "env": "..." }`, descobre repositórios GitHub e locais, sincroniza o catálogo PostgreSQL e, **no startup do container**, reconcilia indexação (tip `main` × último commit processado) enfileirando o que não estiver `atualizado` (ENG-011).
 2. **ETL de indexação** — fila limitada por workers; por repositório: snapshot `main` → (se reindex) arquivos **modificados no commit** reindexados **por arquivo inteiro** → elegibilidade → Zoekt (busca exata) **e** RAG: **Tree-sitter produz cada chunk semântico** → **SLM local gera metadados contextuais para cada chunk** → **Qdrant persiste vetor + payload (chunk + metadados)**; falha parcial invalida e reinicia o repo inteiro.
 3. **Consulta** — busca exata (Zoekt), semântica (embeddings/Qdrant com payload dos chunks Tree-sitter + metadados SLM), leitura de arquivo e árvore; compartilhada por UI e MCP.
 4. **Superfícies** — UI de gestão/busca (sem editar config) e servidor MCP (somente evidências).
+5. **Prova e2e do MVP (T21)** — suíte Robot Framework sobe stack real com **Podman** + `docker-compose.e2e.yml` (T19), indexa **este repositório** via GitHub real e valida BDD-001–024 observáveis; BDD-015 permanece HITL fora do Robot.
 
 PostgreSQL é a fonte de verdade de catálogo, origem, estados e último commit processado (acesso **somente** via SQLAlchemy 2.x + Alembic + psycopg3 — BR-024 / T03).
 
@@ -53,6 +54,11 @@ PostgreSQL é a fonte de verdade de catálogo, origem, estados e último commit 
 ┌─────────────┐     ┌──────────┐
 │ Query ports │────►│ UI + MCP │
 └─────────────┘     └──────────┘
+
+Empacotamento (T19): Dockerfile + docker-compose.yml + docker-compose.e2e.yml
+                     + docker-compose.dev.yml + .env.example
+Prova MVP (T21):     Podman + compose e2e → Robot (BDD-001–024 observáveis)
+Consumidor externo:  docs-cicd-e2e-release (esteira/docs/release; sem ownership Robot)
 ```
 
 ### 1.1.1 Fluxo RAG semântico (obrigatório)
@@ -73,13 +79,24 @@ Zoekt permanece o caminho de busca exata e **não** substitui Tree-sitter/SLM/Qd
 
 **Arquivo modificado (ENG-012):** diff entre último commit processado e tip `main`. Paths adicionados/modificados elegíveis → reindexar o **arquivo inteiro** no tip (não delta/hunk como unidade). Paths removidos → limpar índices daquele path. Primeiro index → todos os elegíveis. Falha parcial → restart do **repositório inteiro** (BR-005).
 
+### 1.1.3 Ownership empacotamento vs prova e2e (delta 0.5.0)
+
+| Artefato | Dono | Gate |
+|---|---|---|
+| `Dockerfile`, `.env.example`, runbook local, `docker-compose.yml`, `docker-compose.e2e.yml`, `docker-compose.dev.yml` | **T19** | Testes de manifesto/delivery (doubles ok); **sem** Robot / `compose up` real obrigatório |
+| Suíte Robot Framework, prova Podman + stack real + GitHub real | **T21** | BDD-001–024 observáveis; BDD-015 fora |
+| Esteira Actions, docs EN, release GHCR | `docs-cicd-e2e-release` | **consome** T19+T21; não cria suíte Robot |
+| PR #19 | só T19 (container) | T21 = **nova PR** |
+
+**MVP entregue** somente com T19 **e** T21 verdes (REQ-047, BR-026).
+
 ### 1.2 Decisões de engenharia (não alteram escopo de produto)
 
 | ID | Decisão | Motivo |
 |---|---|---|
 | ENG-001 | Aplicação principal em **Python 3.12+** (API HTTP + workers + MCP SDK); UI web leve (SPA ou templates) consumindo a API. | Ecossistema maduro para MCP, Tree-sitter, embeddings/SLM e FastAPI; um runtime local. |
 | ENG-009 | Desenvolvimento local usa **`python -m venv`** (padrão `.venv/`) para instalar e isolar dependências; README documenta create/activate/install/test. Delivery por containers (T19) instala deps na imagem e **não** monta/usa o `.venv` do host. | Feedback humano no candidato `7d6f14a`; alinha REQ-007 (local) com REQ-036 (containers) sem conflito. |
-| ENG-002 | Compose com serviços: `app`, `postgres`, `qdrant`, `zoekt` (e runtime SLM atrás de porta abstrata). | Isola estado e índices; delivery padronizado (REQ-036). |
+| ENG-002 | Compose com serviços: `app`, `postgres`, `qdrant`, `zoekt` (e runtime SLM atrás de porta abstrata). Três arquivos: usuário, e2e, dev (REQ-043). | Isola estado e índices; delivery padronizado (REQ-036). |
 | ENG-003 | Defaults: `INDEX_WORKERS=2`, `QUERY_WORKERS=4` (ajustáveis por env; máximos documentados na imagem). | Leve em máquina de desenvolvedor; dúvida não bloqueante fechada para MVP. |
 | ENG-004 | Agenda por **cron**: env (`INDEX_CRON` ou nome fixado no design) define default no boot; preferência de expressão cron persistida na UI (PostgreSQL) prevalece em runtime. | REQ-017 + BDD-003; feedback humano `e22a2a7`. |
 | ENG-010 | Configuração do scheduler = **expressão cron** (UI e env). “Uma vez ao dia” de REQ-017 é caso especial de cron; permite também N vezes/dia, horário a horário, etc., sem segundo modelo de config. | Facilita configuração; não contradiz o valor do requisito. |
@@ -93,6 +110,10 @@ Zoekt permanece o caminho de busca exata e **não** substitui Tree-sitter/SLM/Qd
 | ENG-014 | **Zoekt (DEC-016):** adaptador fino sobre API HTTP e/ou CLI **oficial** do Zoekt; sem reinventar formato de índice nem protocolo. | DEC-016; ausência de SDK Python maduro. |
 | ENG-015 | **PostgreSQL (BR-024):** catálogo exclusivamente via **SQLAlchemy 2.x** + **Alembic** + **psycopg3** (T03 já alinhado). Proibido SQL ad hoc paralelo fora do ORM/migrations para o catálogo. | BR-024, BDD-024. |
 | ENG-016 | **DT-001:** inspeção Git ad-hoc de T06 migra para GitPython na task `T20-refactor-local-discovery-git-sdk`, preservando contrato e BDD-016/018. | BR-023, DEC-015, BDD-024. |
+| ENG-017 | **T19 residual:** entrega explícita dos **3** composes + `.env.example` sem segredos; gate com testes de manifesto/doubles; **fora** Robot e `compose up` real obrigatório (REQ-043–044, DEC-017). PR #19 = só container. | Delta 0.5.0; evita expandir PR #19. |
+| ENG-018 | **T21:** dona da suíte Robot em `e2e/robot/` (ou path estável documentado); runtime **Podman** + `docker-compose.e2e.yml`; GitHub real = este repo; credenciais local HITL e/ou `E2E_GITHUB_TOKEN`→`GITHUB_TOKEN` no container; sem secrets no git (REQ-045–051, DEC-018–020). | Prova MVP observável. |
+| ENG-019 | Layout Robot por superfície (`health`, `catalog_indexing`, `ui`, `mcp`); BDD-015 excluído; timeout/retry limitado só para rate-limit GitHub. | Reduz flakiness; alinha DEC-019. |
+| ENG-020 | `docs-cicd-e2e-release` **apenas consome** T19+T21; não recria Robot (DEC-021, BR-030). | Uma ownership canônica. |
 
 ### 1.3 Fronteiras de módulo
 
@@ -113,7 +134,8 @@ Zoekt permanece o caminho de busca exata e **não** substitui Tree-sitter/SLM/Qd
 | `query` | Exact, semantic, read_file, list_tree via portas existentes | Narrativa; client paralelo ad-hoc |
 | `mcp` | Tools aprovadas via SDK oficial **`mcp`** | SLM narrativo |
 | `ui` | API **FastAPI** + frontend; status, progresso, cron, buscas | CRUD de conexões/token |
-| `delivery` | Dockerfile/compose; deps/SDKs das tasks nas imagens | Lógica de domínio |
+| `delivery` | Dockerfile, 3 composes, `.env.example`, runbook; deps/SDKs nas imagens | Suíte Robot; prova e2e real |
+| `e2e.robot` (T21) | Suíte Robot + orquestração Podman da prova MVP | Domínio; esteira Actions; ownership docs/release |
 
 ## 2. Interfaces de alto nível
 
@@ -138,6 +160,8 @@ Contratos lógicos (detalhamento de métodos fica no pipeline por task). Cada po
 | `QueryService` | Exact + semantic + read + tree (reutiliza portas; sem client paralelo) | Compartilhado UI/MCP |
 | `McpEvidenceServer` | Tools MCP via SDK `mcp`; sem narrativa/SLM | DEC-008, BR-011 |
 | `ManagementUiApi` | Listagem, checkbox, progresso, cron, buscas (FastAPI) | BR-017; ENG-001 |
+| `E2eStackLauncher` (T21) | Subir/derrubar stack via Podman + `docker-compose.e2e.yml` | Runtime ≠ asserções Robot |
+| `RobotMvpSuite` (T21) | Validar BDD-001–024 observáveis com GitHub real | Não é dona dos composes nem da esteira |
 
 Estados de repositório (enum fechado, REQ-020 — sem estados extras): `não indexado` | `na fila` | `indexando` | `atualizado` | `erro`.
 
@@ -147,9 +171,11 @@ Estados de repositório (enum fechado, REQ-020 — sem estados extras): `não in
 
 Etapas de progresso por arquivo (mínimo): `zoekt` | `tree_sitter` | `metadata_persisted` (metadados SLM por chunk + persistência Qdrant; REQ-022).
 
+Variáveis canônicas e2e (REQ-049; valores reais nunca no git): `CONFIG_PATH`, `GITHUB_TOKEN` (fluxo GitHub; no CI via mapeamento de `E2E_GITHUB_TOKEN`), `DATABASE_URL`, `ZOEKT_URL`, `QDRANT_URL`, `OPENAI_BASE_URL`, opcionais de workers/cron/`OPENAI_API_KEY`/superfície — documentadas em `.env.example` (T19).
+
 ## 3. Ordem de implementação e dependências
 
-Ordem recomendada (crítico → superfícies):
+Ordem recomendada (crítico → superfícies → empacotamento → prova MVP):
 
 1. Fundação e contratos compartilhados  
 2. Config + catálogo + workers  
@@ -159,7 +185,8 @@ Ordem recomendada (crítico → superfícies):
 6. Orquestrador de indexação + scheduler  
 7. Serviços de consulta  
 8. MCP e UI (paralelos)  
-9. Delivery por containers  
+9. Delivery por containers (**3 composes**) — T19  
+10. Prova e2e Robot/Podman — T21  
 
 ### DAG (task → depende de)
 
@@ -184,6 +211,7 @@ T16-query-services                → T07, T10, T13, T08
 T17-mcp-evidence-server           → T04, T16, T07
 T18-management-ui                 → T14, T15, T16, T07
 T19-container-delivery            → T17, T18, T20
+T21-mvp-e2e-robot                 → T19
 ```
 
 **Sequência RAG no orquestrador (T14):** para cada arquivo da leva (inteiro se modificado) → `ContextualChunker` → para cada chunk `MetadataGenerator` → `VectorStore.upsert` (vetor + payload). Boot: sync catálogo → startup reconcile → fila.
@@ -191,6 +219,8 @@ T19-container-delivery            → T17, T18, T20
 **Nota T03:** já conforme BR-024 / ENG-015 (SQLAlchemy 2.x + Alembic + psycopg3); sem mudança de escopo nesta revisão — apenas confirmação de conformidade ORM.
 
 **Nota T20:** refactor de conformidade (DT-001); não altera contrato de `LocalRepoDiscovery` nem BDD-016/018; pode rodar cedo em paralelo após T06; T19 depende de T20 para fechar BDD-024 na entrega.
+
+**Nota T19 / T21:** T19 fecha empacotamento (incl. compose e2e) em PR de container; T21 depende do compose e2e e é o gate da prova MVP em PR separada. `docs-cicd-e2e-release` bloqueia consumo e2e em T19+T21.
 
 ## 4. Grupos paralelos (ondas)
 
@@ -204,11 +234,12 @@ T19-container-delivery            → T17, T18, T20
 | W5 | `T14` | Orquestração (só portas; Tree-sitter→SLM→Qdrant) |
 | W6 | `T15`, `T16` | Agenda (APScheduler) + consulta (sem client paralelo) |
 | W7 | `T17`, `T18` | Superfícies (SDK `mcp` + FastAPI) |
-| W8 | `T19` | Delivery (deps/SDKs das tasks + T20 fechada) |
+| W8 | `T19` | Delivery: Dockerfile + **3 composes** + `.env.example` (sem Robot) |
+| W9 | `T21` | Prova MVP: Robot + Podman + GitHub real |
 
 **Critical path:**  
-`T01 → T02 → T05/T06 → T07 → T14 → T16 → T17/T18 → T19`  
-(com `T03`, `T04`, `T08`–`T13` alimentando `T14`; `T20` após `T06` em W3, paralelo ao path crítico, e gate de conformidade em `T19`).
+`T01 → T02 → T05/T06 → T07 → T14 → T16 → T17/T18 → T19 → T21`  
+(com `T03`, `T04`, `T08`–`T13` alimentando `T14`; `T20` após `T06` em W3, paralelo ao path crítico, e gate de conformidade em `T19`; **MVP só após T21**).
 
 ## 5. Estratégia para reduzir retrabalho
 
@@ -218,10 +249,12 @@ T19-container-delivery            → T17, T18, T20
 4. **RAG fixo Tree-sitter→SLM→Qdrant** — evita retrabalho de chunking genérico e garante metadados por chunk no payload.  
 5. **Falha total por repositório** — modelo de dados sem “commit parcial”; remove migrações de estado híbrido.  
 6. **Config imutável em runtime** — alterações exigem restart (BR-020); UI nunca escreve conexões.  
-7. **Containers por último** — após APIs estáveis; compose apenas empacota deps/SDKs já escolhidos.  
-8. **Segredo fora do domínio** — `SecretResolver` único; testes BDD-014 em fundação/config.  
+7. **Containers antes da prova e2e** — T19 estabiliza os 3 composes; T21 só consome `docker-compose.e2e.yml`.  
+8. **Segredo fora do domínio** — `SecretResolver` único; testes BDD-014 / BDD-027 sem secrets no git.  
 9. **Tasks verticais testáveis** — cada task fecha um incremento com BDD + interfaces + unit + impl no implementation-pipeline.  
-10. **Conformidade SDK cedo** — defaults DEC-015 nas tasks de adaptador; T20 elimina DT-001 sem mudar contrato de descoberta local.
+10. **Conformidade SDK cedo** — defaults DEC-015 nas tasks de adaptador; T20 elimina DT-001 sem mudar contrato de descoberta local.  
+11. **Ownership Robot única (T21)** — evita suíte duplicada em `docs-cicd-e2e-release`.  
+12. **PR separada para e2e** — PR #19 não absorve Robot; reduz escopo e retrabalho de review.
 
 ## 6. Rastreabilidade requisito → task
 
@@ -245,8 +278,9 @@ T19-container-delivery            → T17, T18, T20
 | T16 | REQ-002,026–027,030; reutiliza portas T10/T13/T08; **sem client paralelo ad-hoc** | BDD-009–012; BDD-024 |
 | T17 | REQ-003,028–033; DEC-008,**015**; SDK oficial **`mcp`** | BDD-011–015; BDD-024 |
 | T18 | REQ-006,012,017,020–027,035; BR-012,017; **FastAPI** (ENG-001) | BDD-002,003,007,009–010,016,023; BDD-024 |
-| T19 | REQ-036–038; DEC-011; ENG-011; deps/SDKs das tasks (incl. T20) nas imagens | BDD-020; BDD-024 |
+| T19 | REQ-036–038,**043–044,050**; BR-025; DEC-011,**017**; ENG-011,**017**; 3 composes + `.env.example` | BDD-020–022,024,**025**,**028** (parte T19) |
 | T20 | BR-023; DEC-015; **DT-001**; migrar inspeção Git T06 → **GitPython** | BDD-016,018 (preservar); BDD-024 |
+| T21 | REQ-045–049,**051–052**; BR-025–030; DEC-017–021; ENG-018–020 | BDD-026–028; exercita BDD-001–024 observáveis (exceto BDD-015) |
 
 ## 7. Riscos e mitigações
 
@@ -257,9 +291,12 @@ T19-container-delivery            → T17, T18, T20
 | Qualidade de chunks/embeddings | Chunks **só** Tree-sitter (DEC-003); SLM por chunk (BR-010); sem chunking genérico; portas T11–T13 estáveis |
 | Wildcards amplos | Descoberta (T05) só inclusão; catálogo listável antes de indexar |
 | Config/volume errados | Validação total em T02; erros de volume em T06 sem cadastro parcial |
-| Exposição de token | SecretResolver + testes BDD-014 em T02/T05/T17/T18 |
+| Exposição de token | SecretResolver + testes BDD-014 / BDD-027; `.env.example` sem segredos |
 | Heterogeneidade de máquinas | T19 documenta recursos; amd64 primário |
 | Integração sem SDK (DT-001) | T20 migra T06 para GitPython; ENG-013/014 nas tasks de adaptador; gate T19 |
+| Flakiness e2e GitHub real | ENG-019; falha explícita se token ausente; T21 isolada de T19 |
+| Atraso dos 3 composes | T21 e `docs-cicd-e2e-release` bloqueiam explicitamente em T19 |
+| Duplicar Robot em outra feature | ENG-020 / DEC-021; ownership só T21 |
 
 ## 8. Migração / rollback
 
@@ -267,13 +304,17 @@ Greenfield: sem migração de dados legados. Rollback = não promover imagem/tag
 
 **T20:** refactor interno de adaptação Git; rollback = reverter a task/PR; contrato de descoberta e catálogo permanecem estáveis.
 
+**T19:** rollback = não usar tag/imagem; remover/reverter composes se necessário; não afeta prova T21 até reentrega.
+
+**T21:** rollback = reverter suíte/PR; MVP deixa de estar “entregue”; esteira consumidora falha até restaurar.
+
 ## 9. Handoff
 
-Plano **v0.1.6** — `READY_FOR_IMPLEMENTATION` (aprovação humana 2026-07-18, commit candidato `f92e7d3`). Delta sobre v0.1.5:
+Plano **v0.1.7** — `READY_FOR_IMPLEMENTATION` (delta requisitos 0.5.0; `HUMAN_PLAN_APPROVAL` em `bbf46d6`). Delta sobre v0.1.6:
 
-- ENG-013–016 alinhados a BR-023–024, DEC-015–016, BDD-024.
-- Tasks T05–T19 com SDK/ORM explícitos; T03 confirmado ORM (sem refactor).
-- Nova task `T20-refactor-local-discovery-git-sdk` (DT-001) em W3 (paralela após T06); T19 depende de T20; BDD-016/018 preservados.
-- Estratégia anti-retrabalho: SDKs só nos adaptadores; T14 não importa SDKs.
-
-Tasks `T01`–`T20` prontas para o pipeline de implementação (respeitar ondas e dependências).
+- ENG-017–020: ownership T19 (3 composes) vs T21 (Robot/Podman/GitHub real); MVP = T19+T21; consumidor `docs-cicd-e2e-release`.
+- DAG: `T21 → T19`; onda W9; critical path estendido até T21.
+- Task `T19-container-delivery` atualizada (escopo residual; fora Robot).
+- Nova task `T21-mvp-e2e-robot`.
+- Tasks `T01`–`T18`, `T20` permanecem conforme plano 0.1.6 aprovado (sem mudança de escopo neste delta).
+- Tasks **T19** e **T21** neste delta: `READY_FOR_IMPLEMENTATION`.

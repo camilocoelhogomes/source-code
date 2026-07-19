@@ -1,0 +1,11 @@
+# Aprovações — docs-cicd-e2e-release
+
+| Gate | Versão / Commit | Decisão | Autor | Data | Observações |
+|---|---|---|---|---|---|
+| HUMAN_REQUIREMENTS_APPROVAL | 0.1.0 / `ae1941ebd43ca97ef6d77a55004847f4af4d72db` | aprovado | camilocoelhogomes | 2026-07-18 | Requisitos aprovados explicitamente; inicia ENGINEERING_REFINEMENT. |
+| PO_PLAN_REVIEW | 0.1.0 | aprovado | product-owner | 2026-07-18 | Rastreabilidade/valor/escopo ok vs reqs 0.1.0; T01–T07 cobrem REQ/BR/BDD; ownership T19 respeitado; W1+ bloqueia em T19. Aguarda HUMAN_PLAN_APPROVAL. |
+| PO_PLAN_REVIEW | 0.1.1 | aprovado | product-owner | 2026-07-18 | Re-review pós-feedback humano: unitários+BDD pré-condição obrigatória do e2e (REQ-012/ENG-007; T01/T05); sem mudança de escopo. Aguarda HUMAN_PLAN_APPROVAL. |
+| HUMAN_PLAN_APPROVAL | 0.1.1 / `8d0f84b64a6a03fab361b072ac02e456dd7e92ca` | aprovado | camilocoelhogomes | 2026-07-18 | Plano e tasks T01–T07 aprovados (`aprovo`); estado READY_FOR_IMPLEMENTATION. |
+| HUMAN_REQUIREMENTS_APPROVAL | 0.2.0 / `37f7def` | aprovado | camilocoelhogomes | 2026-07-18 | redução ownership Robot → T21. |
+| PO_PLAN_REVIEW | 0.2.0 | aprovado | product-owner | 2026-07-18 | Rastreabilidade/valor/escopo ok vs reqs 0.2.0; T04 consome T21 (sem Robot duplicado); W0 livre; W1+ bloqueia em T19+T21; critical path T04→T05. Aguarda HUMAN_PLAN_APPROVAL. |
+| HUMAN_PLAN_APPROVAL | 0.2.0 / `bbf46d6` | aprovado | camilocoelhogomes | 2026-07-18 | T04 consome T21. |

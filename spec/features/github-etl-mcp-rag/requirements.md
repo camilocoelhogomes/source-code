@@ -3,14 +3,15 @@
 ## Identificação
 
 - **Feature ID:** `github-etl-mcp-rag`
-- **Versão:** 0.4.0
+- **Versão:** 0.5.0
 - **Estado:** `READY_FOR_IMPLEMENTATION`
-- **Natureza:** delta sobre integrações via SDK OSS de mercado e PostgreSQL via ORM; o conteúdo funcional de `0.3.0` permanece válido; requisitos e plano aprovados.
+- **Natureza:** delta de prova e2e do MVP (Robot + Podman + stack real + indexação GitHub); o conteúdo funcional de `0.4.0` permanece válido.
 - **Aprovação humana (requisitos 0.3.0):** `aprovo` em 2026-07-18 por `camilocoelhogomes` (commit candidato `71ed647`).
 - **Aprovação humana (requisitos 0.4.0):** `aprovado` em 2026-07-18 por `camilocoelhogomes` (commit candidato `7747a27`).
-- **Artefatos de engenharia:** `implementation-plan.md` v0.1.6 e tasks `T01`–`T20` em `READY_FOR_IMPLEMENTATION` (aprovação humana do plano: `f92e7d3`).
+- **Aprovação humana (requisitos 0.5.0):** `aprovo` em 2026-07-18 por `camilocoelhogomes` (commit candidato `37f7def0ecacabcb079feaec780016735fefc9fd`).
+- **Artefatos de engenharia:** `implementation-plan.md` v0.1.7 e tasks T19/T21 do delta 0.5.0 em `READY_FOR_IMPLEMENTATION` (`HUMAN_PLAN_APPROVAL` em 2026-07-18, commit candidato `bbf46d608ea75930577eae5362a82719a9b8cf6d`). Pré-delta: plano v0.1.6 / T01–T20 (`f92e7d3`).
 - **Rastreabilidade:** requisitos `REQ-*`, regras `BR-*`, decisões `DEC-*` e cenários `BDD-*`.
-- **Histórico deste delta:** `0.3.0` → `0.4.0` — BR-023–024, DEC-015–016, BDD-024; dívida T06 (inspeção Git ad-hoc → GitPython) documentada para task de refactor no plano.
+- **Histórico deste delta:** `0.4.0` → `0.5.0` — REQ-043–052, BR-025–030, DEC-017–021, BDD-025–028; ownership T19 (3 composes) + T21 (Robot e2e); MVP só entregue com prova e2e real; `docs-cicd-e2e-release` deixa de ser dona da suíte Robot.
 
 ## Problema
 
@@ -64,6 +65,36 @@ Arquitetos precisam realizar Discovery sobre centenas ou milhares de microsservi
 - **REQ-037:** Permitir configurar por variáveis de ambiente o caminho do arquivo declarativo (`CONFIG_PATH`), o token GitHub e os limites de workers.
 - **REQ-038:** Permitir montar no container os volumes que contêm os repositórios locais referenciados pelas conexões do JSON.
 
+### Empacotamento e prova e2e do MVP (delta 0.5.0)
+
+- **REQ-043:** A task `T19-container-delivery` entrega e é dona de: `Dockerfile` (build da imagem do produto), `.env.example` (somente nomes/valores não secretos), runbook local de empacotamento, e os **três** arquivos compose com testes de manifesto passando:
+  - `docker-compose.yml` (usuário final / imagem pública);
+  - `docker-compose.e2e.yml` (stack e2e);
+  - `docker-compose.dev.yml` (desenvolvimento).
+- **REQ-044:** A task `T19-container-delivery` **não** é gate de prova do MVP em stack real: seus testes BDD/unitários de delivery podem continuar com doubles/manifestos (sem `compose up` real obrigatório no gate de T19).
+- **REQ-045:** A task `T21-mvp-e2e-robot` (nova) é dona da suíte **Robot Framework** e2e que sobe a stack real com **Podman** + `docker-compose.e2e.yml` e valida os cenários BDD-001–BDD-024 **observáveis em runtime** (UI, MCP, healthchecks, efeitos de indexação/busca). BDD-015 (narrativa Discovery no Cursor) permanece validação humana e **fora** do Robot.
+- **REQ-046:** O repositório de referência da integração GitHub no e2e é **este próprio repositório** (`github_rag` / `source-code` conforme remoto do projeto).
+- **REQ-047:** O MVP desta feature só pode ser considerado **entregue** quando T19 (REQ-043) e T21 (REQ-045) estiverem verdes com a suíte Robot passando sobre stack real e GitHub real.
+- **REQ-048:** Credenciais do e2e: **local HITL** (operador exporta variáveis ou usa `.env` **local não versionado**) **e** secrets da esteira CI. É proibido commit de `.env` com segredos, tokens ou valores reais de credenciais; apenas `.env.example` sem segredos.
+- **REQ-049:** Variáveis canônicas mínimas para e2e com indexação GitHub (valores reais nunca no git):
+
+  | Variável | Obrigatória | Notas |
+  |---|---|---|
+  | `CONFIG_PATH` | sim | Caminho do JSON montado no container |
+  | `GITHUB_TOKEN` | sim (fluxo GitHub) | Referenciada no JSON por `{ "env": "GITHUB_TOKEN" }` |
+  | `E2E_GITHUB_TOKEN` | sim no CI | Secret da esteira; injetado no container como `GITHUB_TOKEN` (não usar o `GITHUB_TOKEN` default do Actions como substituto do token de produto) |
+  | `DATABASE_URL` | sim | Tipicamente injetada pelo compose |
+  | `ZOEKT_URL` | sim | Tipicamente injetada pelo compose |
+  | `QDRANT_URL` | sim | Tipicamente injetada pelo compose |
+  | `OPENAI_BASE_URL` | sim (RAG) | Tipicamente serviço SLM do compose |
+  | `INDEX_WORKERS` / `QUERY_WORKERS` / `INDEX_CRON` | não | Defaults do produto |
+  | `OPENAI_API_KEY` | não | Placeholder local aceitável |
+  | Demais de superfície (`UI_*`, `MCP_*`, paths de volume) | conforme compose/e2e | Documentar em `.env.example` |
+
+- **REQ-050:** PR #19 permanece no escopo **container** de T19 (fechamento com os 3 composes); a prova Robot/e2e ocorre em **nova task/PR** (T21), não expandindo o escopo e2e dentro do mesmo PR de T19.
+- **REQ-051:** Runtime obrigatório para a prova e2e local e para a suíte T21: **Podman**.
+- **REQ-052:** A feature `docs-cicd-e2e-release` **consome** a suíte Robot e os composes desta feature; **não** é dona nem recria a suíte Robot (ver delta dessa feature).
+
 ### UI de gestão e busca
 
 - **REQ-020:** Exibir, por repositório, um dos estados: `não indexado`, `na fila`, `indexando`, `atualizado` ou `erro`.
@@ -115,6 +146,12 @@ Arquitetos precisam realizar Discovery sobre centenas ou milhares de microsservi
 - **BR-022:** Wildcards de repositório em conexões GitHub são filtros exclusivamente de inclusão; somente repositórios correspondentes podem entrar no catálogo.
 - **BR-023:** Integrações com serviços ou protocolos externos devem usar SDK open source de mercado ou o cliente oficial do fornecedor; é proibido reinventar cliente HTTP, CLI ou protocolo do zero para esses serviços. Stdlib para I/O local genérico (ex.: `pathlib`, parse de URL `file://`) permanece permitido quando não substitui um cliente de serviço.
 - **BR-024:** O acesso ao PostgreSQL deve ocorrer obrigatoriamente via ORM **SQLAlchemy 2.x**, com migrations **Alembic** e driver **psycopg3**, alinhado à implementação já entregue em `T03-catalog-persistence`. É proibido SQL ad hoc paralelo fora do ORM/migrations para o catálogo.
+- **BR-025:** Ownership de empacotamento: **T19** = Dockerfile + 3 composes + `.env.example` + boot/delivery; **T21** = suíte Robot e2e + prova em stack real com Podman.
+- **BR-026:** Critério de “MVP entregue” exige T21 verde com BDD-001–BDD-024 observáveis em e2e real (exceto BDD-015 narrativo).
+- **BR-027:** E2e usa GitHub real (sem mock da API GitHub na suíte Robot) e este repositório como referência de indexação.
+- **BR-028:** Segredos de e2e existem em HITL local e/ou secrets CI; nunca em arquivos versionados (`.env` real, JSON com token em claro, logs/artefatos).
+- **BR-029:** Podman é o runtime obrigatório da prova e2e do MVP (T21).
+- **BR-030:** `docs-cicd-e2e-release` não duplica ownership da suíte Robot; apenas a invoca na esteira após T21.
 
 ## Contrato declarativo da configuração
 
@@ -186,6 +223,11 @@ O contrato mantém o padrão Sourcebot de arquivo externo, `CONFIG_PATH`, `conne
 - **DEC-014:** Wildcards de repositórios GitHub são usados somente para inclusão.
 - **DEC-015:** Defaults de SDK / cliente oficial para integrações externas (substituíveis apenas por outro SDK OSS de mercado equivalente, não por cliente caseiro). Ver tabela abaixo.
 - **DEC-016:** Zoekt não possui SDK Python maduro de mercado; a integração deve ser um **adaptador fino** sobre a API HTTP e/ou CLI **oficial** do Zoekt, sem reimplementar formato de índice nem protocolo proprietário do zero.
+- **DEC-017:** Prova do MVP em stack real fica em **T21** (nova task/PR); T19 fecha só empacotamento incluindo os 3 composes.
+- **DEC-018:** Suíte e2e = Robot Framework; runtime = Podman + `docker-compose.e2e.yml`.
+- **DEC-019:** Cobertura mínima e2e = BDD-001–024 observáveis; BDD-015 fora do Robot.
+- **DEC-020:** Credenciais = local HITL + secrets CI; secret CI canônico `E2E_GITHUB_TOKEN` mapeado para `GITHUB_TOKEN` no container.
+- **DEC-021:** Ownership da suíte Robot permanece em `github-etl-mcp-rag` / T21; `docs-cicd-e2e-release` consome.
 
 Defaults de SDK (DEC-015):
 
@@ -221,6 +263,7 @@ Defaults de SDK (DEC-015):
 11. A UI atualiza progresso, etapa e rastreabilidade por arquivo.
 12. Ao concluir, o último commit processado é registrado e o repositório passa a `atualizado`.
 13. Usuários pesquisam na UI ou agentes recuperam evidências pelas tools MCP.
+14. (Delta 0.5.0) Operador/CI sobe a stack e2e com Podman + `docker-compose.e2e.yml`, fornece credenciais sem commitá-las, e a suíte Robot (T21) valida os fluxos observáveis BDD-001–024 contra GitHub real (este repositório). Somente então o MVP é considerado entregue.
 
 ## Fluxos alternativos e erros
 
@@ -235,6 +278,9 @@ Defaults de SDK (DEC-015):
 - Falha de rede, Zoekt, parser, modelo local, PostgreSQL ou Qdrant: a execução fica em `erro`; uma nova tentativa reinicia o repositório inteiro.
 - Arquivo excluído ou ignorado: não entra no pipeline de indexação.
 - Limite de workers atingido: os repositórios ou consultas excedentes aguardam capacidade.
+- Token GitHub / `E2E_GITHUB_TOKEN` ausente ou inválido no e2e: a suíte Robot falha de forma explícita; MVP não é entregue.
+- Stack e2e não sobe (Podman/compose/deps): T21 falha; MVP não é entregue.
+- Regressão em fluxo observável BDD-001–024: Robot falha; MVP não é entregue.
 
 ## Restrições
 
@@ -248,17 +294,22 @@ Defaults de SDK (DEC-015):
 - Cobertura mínima de testes do projeto: 95%.
 - O produto deve operar com centenas ou milhares de repositórios, sujeito aos recursos locais configurados.
 - Integrações externas conforme BR-023–024 e DEC-015–016 (SDK OSS / ORM; Zoekt via API/CLI oficial).
+- Prova e2e do MVP: Podman + Robot (T21); cobertura unitária/BDD do projeto permanece ≥ 95%; Robot é gate adicional, não substitui unitários/BDD.
+- T19 residual deve entregar os 3 composes antes ou em paralelo coordenado com T21 (T21 depende do compose e2e).
 
 ## Fora de escopo do MVP
 
 - Branches diferentes de `main`.
 - Alterações locais não confirmadas em commit.
 - Histórico completo de commits; indexa-se o snapshot atual.
-- Pull requests, issues, GitHub Actions e webhooks.
+- Pull requests, issues e webhooks do produto (a esteira CI/CD de qualidade/release fica em `docs-cicd-e2e-release`, consumindo T21).
 - Geração de narrativa ou operação `ask_codebase` no MCP.
 - Busca baseada no conteúdo de CSV e imagens.
 - Definições/referências de símbolos, diffs e demais operações MCP não aprovadas.
 - SLA ou meta numérica de latência.
+- Commit de `.env` com credenciais; criação automatizada de `.env` secret no repositório.
+- Ownership da esteira GitHub Actions, docs EN e release GHCR (permanecem em `docs-cicd-e2e-release`).
+- Automatizar no Robot a validação narrativa humana de BDD-015.
 
 ## Métrica de sucesso
 
@@ -269,6 +320,8 @@ Defaults de SDK (DEC-015):
   3. qual repositório deve ser editado;
   4. quais repositórios ou fluxos devem ser retestados.
 - Repositórios cujo commit da `main` já foi processado não são reindexados.
+- (Delta 0.5.0) T19 entrega Dockerfile + 3 composes com testes de empacotamento verdes.
+- (Delta 0.5.0) T21 sobe stack com Podman e passa Robot nos BDD-001–024 observáveis com GitHub real deste repositório — condição necessária para declarar MVP entregue.
 
 ## Critérios de aceite BDD
 
@@ -446,6 +499,40 @@ Defaults de SDK (DEC-015):
 **E** nenhuma dessas integrações deve reinventar cliente HTTP, CLI ou protocolo do zero  
 **E** a dívida DT-001 (T06 ad-hoc → GitPython) deve ser eliminada pela task de refatoração correspondente no plano, sem mudar os critérios de BDD-016 e BDD-018.
 
+### BDD-025 — T19 entrega os três composes e a imagem buildável
+
+**Dado** a task `T19-container-delivery` concluída  
+**Quando** os artefatos de empacotamento forem inspecionados  
+**Então** devem existir `Dockerfile`, `docker-compose.yml`, `docker-compose.e2e.yml`, `docker-compose.dev.yml` e `.env.example` sem segredos  
+**E** os testes de manifesto/delivery de T19 devem passar  
+**E** T19 não precisa executar Robot nem `compose up` real como gate próprio.
+
+### BDD-026 — T21 sobe stack e2e com Podman e prova o MVP
+
+**Dado** os artefatos de T19 (incluindo `docker-compose.e2e.yml`) disponíveis  
+**E** Podman disponível  
+**E** `CONFIG_PATH`, token GitHub (`GITHUB_TOKEN` local ou `E2E_GITHUB_TOKEN` no CI mapeado) e demais vars canônicas (REQ-049) fornecidas sem commit de segredos  
+**Quando** a suíte Robot Framework de T21 executar sobre a stack real  
+**Então** os cenários BDD-001–BDD-024 observáveis em runtime devem passar (UI, MCP, healthchecks, indexação/busca com GitHub real deste repositório)  
+**E** BDD-015 permanece fora do Robot  
+**E** falha em qualquer fluxo observável impede declarar o MVP entregue.
+
+### BDD-027 — Credenciais de e2e sem versionar segredos
+
+**Dado** execução local HITL ou esteira CI do e2e  
+**Quando** as credenciais forem fornecidas  
+**Então** devem vir de ambiente local não versionado e/ou secrets da esteira  
+**E** nenhum `.env` com token/segredo real deve ser commitado  
+**E** logs, healthchecks e artefatos não devem expor o token.
+
+### BDD-028 — Separação T19 / T21 e consumo por docs-cicd
+
+**Dado** o delta 0.5.0  
+**Quando** ownership for avaliado  
+**Então** T19 é dona do empacotamento (Dockerfile + 3 composes) e fecha em PR de container (PR #19)  
+**E** T21 é dona da suíte Robot e2e em nova PR  
+**E** `docs-cicd-e2e-release` consome a suíte e os composes sem recriar o Robot.
+
 ## Riscos
 
 - Centenas ou milhares de repositórios, arquivos sem limite explícito e SLM local podem exceder CPU, memória, disco ou tempo aceitável.
@@ -458,6 +545,8 @@ Defaults de SDK (DEC-015):
 - Diferenças de arquitetura e capacidade entre máquinas dos desenvolvedores podem afetar compatibilidade e desempenho das imagens.
 - Ausência de meta objetiva de latência e de um conjunto fechado de perguntas de avaliação limita a mensuração quantitativa do MVP.
 - Integrações implementadas sem SDK de mercado (ex.: DT-001 em T06) elevam custo de manutenção e risco de bugs em edge cases já resolvidos por bibliotecas maduras.
+- E2e com GitHub real (T21) aumenta flakiness (rate limit, rede, permissões do token) e tempo de execução.
+- Atraso dos 3 composes em T19 bloqueia T21 e o consumo por `docs-cicd-e2e-release`.
 
 ## Dúvidas não bloqueantes para refinamento técnico
 
@@ -468,6 +557,8 @@ Defaults de SDK (DEC-015):
 - Conjunto representativo de perguntas e repositórios para a validação humana da coerência.
 - Escolha entre APScheduler e outro scheduler cron maduro equivalente (DEC-015 permite equivalente).
 - Runtime local concreto por trás do cliente OpenAI-compatible para SLM/embeddings (Ollama, vLLM, etc.), sem alterar a porta abstrata BR-009.
+- Layout exato de `e2e/robot/` e política de timeout/retry sob rate limit (plano T21).
+- Se o gate local HITL de T21 exige secret CI já configurado ou apenas prova local com token do operador antes do CI consumir a suíte.
 
 ## Matriz resumida de rastreabilidade
 
@@ -478,5 +569,8 @@ Defaults de SDK (DEC-015):
 | Gerir e pesquisar pela UI | REQ-020–027, BR-009–011 | BDD-007, BDD-009–010 |
 | Recuperar evidências via MCP | REQ-028–033, DEC-008 | BDD-011–013, BDD-015 |
 | Distribuir por containers | REQ-036–038, DEC-011–012 | BDD-020–022 |
+| Empacotar 3 composes (T19) | REQ-043–044, REQ-050, BR-025, DEC-017 | BDD-025, BDD-028 |
+| Provar MVP com Robot/Podman (T21) | REQ-045–047, REQ-051–052, BR-026–027, BR-029–030, DEC-018–021 | BDD-026, BDD-028 |
+| Credenciais e2e sem commit | REQ-048–049, BR-028, DEC-020 | BDD-027 |
 | Proteger credenciais | REQ-011, REQ-041, BR-008, BR-012, BR-019, DEC-009 | BDD-014, BDD-019, BDD-022 |
 | Integrar via SDK OSS / ORM | BR-023–024, DEC-015–016, DT-001 | BDD-024 |
