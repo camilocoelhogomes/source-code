@@ -27,3 +27,42 @@ Nenhum `BLOCKING` / `MAJOR`.
 | Severidade | Achado | Resultado |
 |---|---|---|
 | — | — | — |
+
+## R-T26-BDD-001
+
+| Campo | Valor |
+|---|---|
+| Artefato | `bdd.md` + `tests/bdd/test_mcp_parallel_slo.py` |
+| Reviewer | tech-lead-architect |
+| Data | 2026-07-19 |
+| Decisão | `APPROVED_BY_ARCHITECT` |
+
+### Achados
+
+Nenhum `BLOCKING` / `MAJOR`. RED: `ModuleNotFoundError: github_rag.concurrency.parallel_slo`.
+
+## R-T26-IFACE-001
+
+| Campo | Valor |
+|---|---|
+| Artefato | `interfaces.md` |
+| Reviewer | tech-lead-architect |
+| Data | 2026-07-19 |
+| Decisão | `APPROVED_BY_ARCHITECT` |
+
+### Achados
+
+Nenhum `BLOCKING` / `MAJOR`.
+
+## R-T26-UNIT-001
+
+| Campo | Valor |
+|---|---|
+| Artefato | `unit-test-plan.md` + testes unitários novos |
+| Reviewer | tech-lead-architect |
+| Data | 2026-07-19 |
+| Decisão | `APPROVED_BY_ARCHITECT` |
+
+### Achados
+
+Nenhum `BLOCKING` / `MAJOR`. RED pré-impl confirmado (import + keywords/robot ausentes).
