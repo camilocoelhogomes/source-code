@@ -6,6 +6,10 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Corrigido
 
+- E2e indexing boot race (T35): `E2E_DEFER_STARTUP_INDEX` no launcher e2e evita
+  enqueue no startup reconcile; `enqueue` re-dispara repos `indexing`; wrapper
+  zoekt faz `mkdir -p` antes de `podman cp`, timeouts configuráveis e erros
+  propagados — desbloqueia BDD-002 pós-T34 (F-W1-007).
 - Host local repos path (T34): `LocalRepoDiscovery` remapeia `file:///repos/*`
   para `HOST_REPOS` quando app roda no host (e2e T21); corrige issue
   `local volume path is inaccessible: /repos` (F-W1-008 / BDD-016).

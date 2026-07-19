@@ -106,6 +106,17 @@ class TestOrchestratorCorners(unittest.TestCase):
         with self.assertRaises(RepositorySourceError):
             snapshot_source_for(entry, github_token=None)
 
+    def test_enqueue_requeues_indexing(self) -> None:
+        orch, _, catalog, snap, exact, _ = make_orchestrator()
+        rid = seed_repo(
+            catalog, state=RepoState.INDEXING, last=None, current="C1"
+        )
+        snap.tip = "C1"
+        orch.enqueue([rid])
+        orch.run_until_idle()
+        self.assertEqual(catalog.get_repository(rid).state, RepoState.UP_TO_DATE)
+        self.assertEqual(len(exact.index_calls), 1)
+
     def test_index_from_error_state(self) -> None:
         orch, _, catalog, snap, exact, vector = make_orchestrator()
         rid = seed_repo(catalog, state=RepoState.ERROR)

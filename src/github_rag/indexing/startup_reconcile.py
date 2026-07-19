@@ -28,11 +28,13 @@ class DefaultStartupIndexReconcile:
         snapshot: MainSnapshotProvider,
         orchestrator: IndexingOrchestrator,
         github_token: str | None = None,
+        defer_enqueue: bool = False,
     ) -> None:
         self._catalog = catalog
         self._snapshot = snapshot
         self._orchestrator = orchestrator
         self._github_token = github_token
+        self._defer_enqueue = defer_enqueue
 
     def run(self) -> None:
         for entry in list(self._catalog.list_active_catalog()):
@@ -53,8 +55,11 @@ class DefaultStartupIndexReconcile:
                     datetime.now(timezone.utc),
                 )
                 self._catalog.mark_queued(entry.id)
-                self._orchestrator.enqueue([entry.id])
+                if not self._defer_enqueue:
+                    self._orchestrator.enqueue([entry.id])
             elif entry.state == RepoState.QUEUED:
-                self._orchestrator.enqueue([entry.id])
+                if not self._defer_enqueue:
+                    self._orchestrator.enqueue([entry.id])
             elif entry.state in {RepoState.NOT_INDEXED, RepoState.ERROR}:
-                self._orchestrator.enqueue([entry.id])
+                if not self._defer_enqueue:
+                    self._orchestrator.enqueue([entry.id])

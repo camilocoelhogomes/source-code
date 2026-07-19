@@ -210,7 +210,14 @@ class PodmanE2eStackLauncher:
             repos_dir=Path(effective["HOST_REPOS"]),
             zoekt_index_dir=Path(effective["ZOEKT_INDEX_HOST"]),
             zoekt_index_bin=str(zoekt_bin),
-            extra=token_extra,
+            extra={
+                **token_extra,
+                **(
+                    {"E2E_DEFER_STARTUP_INDEX": "1"}
+                    if self.compose_file.name == COMPOSE_E2E.name
+                    else {}
+                ),
+            },
         )
         self._app_process = subprocess.Popen(
             [sys.executable, "-m", "github_rag.delivery"],
