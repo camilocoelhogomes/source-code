@@ -39,6 +39,8 @@ class RecordingPodmanCommand:
     ) -> tuple[int, str, str]:
         self.calls.append((list(cmd), dict(env)))
         blob = " ".join(str(c) for c in cmd)
+        if cmd[:2] == ["podman", "ps"]:
+            return self.ps_code, self.ps_stdout, ""
         if " ps " in blob or blob.endswith(" ps") or " ps -q" in blob:
             return self.ps_code, self.ps_stdout, ""
         if cmd[:2] == ["podman", "cp"]:
@@ -73,7 +75,7 @@ class TestZoektBinResolver(unittest.TestCase):
         self.assertEqual(cid, "cid999")
         ps_calls = [c for c, _ in runner.calls if "ps" in c]
         self.assertTrue(ps_calls)
-        self.assertIn("zoekt", ps_calls[0])
+        self.assertIn("zoekt", " ".join(str(x) for x in ps_calls[0]))
 
     def test_ut_p08_03_container_absent_raises(self) -> None:
         from github_rag.e2e.errors import E2eStackError

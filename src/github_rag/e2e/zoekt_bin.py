@@ -54,29 +54,34 @@ def find_zoekt_container_id(
     run_command: CommandRunner,
     env: Mapping[str, str] | None = None,
 ) -> str:
-    """Resolve CID do serviço zoekt via ``podman compose ps -q zoekt``."""
+    """Resolve CID do serviço zoekt via ``podman ps`` (filtro por nome).
+
+    ``podman-compose`` (provider externo de ``podman compose``) não aceita
+    ``ps -q <service>`` — usar filtro estável ``name=_zoekt_``.
+    """
+    _ = compose_file  # reservado para mensagens de erro / evolução futura
     effective = dict(os.environ)
     if env:
         effective.update({k: str(v) for k, v in env.items()})
     cmd = [
         "podman",
-        "compose",
-        "-f",
-        str(compose_file.resolve()),
         "ps",
         "-q",
-        "zoekt",
+        "--filter",
+        "name=_zoekt_",
+        "--filter",
+        "status=running",
     ]
     code, stdout, stderr = run_command(cmd, effective)
     if code != 0:
         raise E2eStackError.from_stderr(
-            stderr or f"podman compose ps zoekt failed with exit {code}",
+            stderr or f"podman ps zoekt failed with exit {code}",
         )
     cid = stdout.strip().splitlines()[0].strip() if stdout.strip() else ""
     if not cid:
         raise E2eStackError.from_stderr(
             "zoekt container not running; ensure compose stack is up "
-            f"({compose_file.name})",
+            "(service zoekt)",
         )
     return cid
 
