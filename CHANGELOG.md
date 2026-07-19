@@ -71,6 +71,20 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
   `assert-fraco`; sem duplicar T22; BDD
   `tests/bdd/test_mvp_e2e_audit_gap_fill_backlog.py`. Sem keywords/browser/
   produto nesta feature (`src/github_rag/**`, `e2e/robot/**`, composes).
+- Prova integral de conformidade DEC-015/BDD-024 (T27 /
+  `gap-sdk-dec015-conformity`): suíte consolidada
+  `tests/bdd/test_dec015_conformity.py` (DEC015-01..13) prova, por inspeção
+  estática (`ast`/`tomllib` + referência a suítes já existentes de
+  T05/T08/T10/T11/T13/T15/T17/T18/T20), que cada integração da tabela
+  DEC-015 (PyGithub, GitPython, pathspec, Tree-sitter, Qdrant/openai,
+  APScheduler, `mcp`, FastAPI, SQLAlchemy 2/Alembic/psycopg3, Zoekt real,
+  DT-001) usa o SDK/binding oficial, sem reimplementação caseira. `pyproject.toml`
+  fecha o único gap real encontrado: `alembic`/`psycopg[binary]` passam a
+  declarar faixa de versão (`alembic>=1.13`, `psycopg[binary]>=3`). DEC015-14
+  sincroniza `spec/features/mvp-e2e-audit-hardening/audit/coverage-inventory.md`
+  (linha `BDD-024` → `coberto-integral`) e as duas suítes de auditoria da
+  feature filha. Sem alteração de `src/github_rag/**`, `e2e/robot/**` ou
+  composes.
 - Prova e2e do MVP (T21): pacote `github_rag.e2e` com contratos
   `E2eStackLauncher` / `RobotMvpSuite` (`PodmanE2eStackLauncher`,
   `DefaultRobotMvpSuite`, `E2eCredentialResolver`), suíte Robot Framework em

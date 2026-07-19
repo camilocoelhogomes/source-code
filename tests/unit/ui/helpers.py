@@ -1,7 +1,8 @@
-"""Helpers compartilhados — unit/BDD UI (T18)."""
+"""Helpers compartilhados — unit/BDD UI (T18 / T27 I-T27-002)."""
 
 from __future__ import annotations
 
+import ast
 from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
@@ -24,6 +25,48 @@ from github_rag.ui.api import DefaultManagementUiApi
 REPO_ROOT = Path(__file__).resolve().parents[3]
 WEB_ROOT = REPO_ROOT / "web"
 UI_PKG = REPO_ROOT / "src" / "github_rag" / "ui"
+
+DOMAIN_MODULES = ("ports.py", "labels.py", "serialize.py", "errors.py")
+"""Módulos de domínio puro do pacote ``ui`` (sem transporte HTTP).
+
+Responsabilidade
+    Enumerar os arquivos que não devem depender de FastAPI/Starlette.
+
+Motivo da separação
+    Migrado de ``tests/unit/ui/test_imports.py`` (I-T27-002) para o local
+    canônico de helpers já consumido por ``tests/bdd/test_management_ui.py``.
+"""
+FASTAPI_MODULES = ("app.py", "api.py")
+"""Módulos de transporte HTTP do pacote ``ui`` — devem importar ``fastapi``."""
+FORBIDDEN_IN_DOMAIN = frozenset({"fastapi", "starlette", "uvicorn", "httpx"})
+"""Imports banidos nos módulos de domínio puro (``DOMAIN_MODULES``)."""
+FORBIDDEN_HOMEMADE = frozenset({"urllib", "urllib3", "aiohttp", "requests"})
+"""Clientes HTTP caseiros banidos em todo o pacote ``ui`` (BDD-024/DEC-015)."""
+
+
+def imports_of_file(path: Path) -> set[str]:
+    """Nomes top-level importados (AST) por um único arquivo ``.py``.
+
+    Responsabilidade
+        Mesma extração que hoje vive como ``_imports`` privado em
+        ``tests/unit/ui/test_imports.py`` — promovida a público para reuso.
+
+    Motivo da separação
+        Espelha ``collect_imports`` de ``tests/unit/mcp/helpers.py`` (que
+        opera sobre um diretório inteiro); UI precisa de granularidade por
+        arquivo porque a regra difere por módulo (``DOMAIN_MODULES`` vs
+        ``FASTAPI_MODULES``). Duas funções, escopos diferentes — não são a
+        mesma responsabilidade.
+    """
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                names.add(alias.name.split(".")[0])
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            names.add(node.module.split(".")[0])
+    return names
 
 
 class SpyOrchestrator:

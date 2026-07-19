@@ -62,7 +62,6 @@ T21_KNOWN_PARTIAL_OR_SMOKE = frozenset(
         "BDD-003",  # cron ativo; não espera ciclo 24h
         "BDD-006",  # hits via busca; exclusão CSV/binários não integral
         "BDD-013",  # paralelo MCP sob limite; sem SLO rígido
-        "BDD-024",  # smoke imagem; pin DEC-015 é gate unitário
     }
 )
 ABSENT_EVIDENCE = frozenset({"ausente", "n/a", "—", "-", ""})
@@ -357,7 +356,7 @@ class TestINV07LacunaDocumentation(unittest.TestCase):
             )
 
     def test_t21_known_partial_or_smoke_must_be_lacuna_with_nota(self) -> None:
-        """M-01 / BR-001: BDD-003/006/013/024 (T21 parcial/smoke) ⇒ lacuna + nota."""
+        """M-01 / BR-001: BDD-003/006/013 (T21 parcial/smoke) ⇒ lacuna + nota."""
         _, _, rows = _load_matrix()
         by_id = _rows_by_id(rows)
         for bdd_id in sorted(T21_KNOWN_PARTIAL_OR_SMOKE):

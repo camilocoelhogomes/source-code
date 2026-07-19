@@ -1,29 +1,22 @@
-"""Unit — conformidade imports UI / FastAPI (T18 / BDD-024)."""
+"""Unit — conformidade imports UI / FastAPI (T18 / BDD-024).
+
+I-T27-002: constantes e extração AST promovidas a ``tests/unit/ui/helpers.py``
+(mesma asserção, mesmo resultado — refactor comportamentalmente neutro).
+"""
 
 from __future__ import annotations
 
-import ast
 import unittest
 from pathlib import Path
 
-UI_PKG = Path(__file__).resolve().parents[3] / "src" / "github_rag" / "ui"
-
-DOMAIN_MODULES = ("ports.py", "labels.py", "serialize.py", "errors.py")
-FASTAPI_MODULES = ("app.py", "api.py")
-FORBIDDEN_IN_DOMAIN = frozenset({"fastapi", "starlette", "uvicorn", "httpx"})
-FORBIDDEN_HOMEMADE = frozenset({"urllib", "urllib3", "aiohttp", "requests"})
-
-
-def _imports(path: Path) -> set[str]:
-    tree = ast.parse(path.read_text(encoding="utf-8"))
-    names: set[str] = set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                names.add(alias.name.split(".")[0])
-        elif isinstance(node, ast.ImportFrom) and node.module:
-            names.add(node.module.split(".")[0])
-    return names
+from tests.unit.ui.helpers import (
+    DOMAIN_MODULES,
+    FASTAPI_MODULES,
+    FORBIDDEN_HOMEMADE,
+    FORBIDDEN_IN_DOMAIN,
+    UI_PKG,
+    imports_of_file,
+)
 
 
 class TestUiImports(unittest.TestCase):
@@ -31,19 +24,30 @@ class TestUiImports(unittest.TestCase):
         for name in DOMAIN_MODULES:
             path = UI_PKG / name
             self.assertTrue(path.is_file(), msg=name)
-            found = _imports(path) & FORBIDDEN_IN_DOMAIN
+            found = imports_of_file(path) & FORBIDDEN_IN_DOMAIN
             self.assertFalse(found, msg=f"{name}: {found}")
 
     def test_app_api_use_fastapi(self) -> None:
         for name in FASTAPI_MODULES:
             path = UI_PKG / name
             self.assertTrue(path.is_file(), msg=name)
-            self.assertIn("fastapi", _imports(path), msg=name)
+            self.assertIn("fastapi", imports_of_file(path), msg=name)
 
     def test_no_homemade_http_clients_in_ui_pkg(self) -> None:
         for path in UI_PKG.glob("*.py"):
-            found = _imports(path) & FORBIDDEN_HOMEMADE
+            found = imports_of_file(path) & FORBIDDEN_HOMEMADE
             self.assertFalse(found, msg=f"{path.name}: {found}")
+
+    def test_imports_of_file_raises_for_missing_file(self) -> None:
+        """UT-DEC-R03 (review Architect R-3): arquivo inexistente propaga erro.
+
+        ``imports_of_file`` foi promovida a helper público (I-T27-002); antes
+        desta revisão nenhum teste chamava a função com um ``Path``
+        inexistente — todas as chamadas usavam arquivos reais do pacote
+        ``ui``. A função não deve engolir a ausência do arquivo.
+        """
+        with self.assertRaises((FileNotFoundError, OSError)):
+            imports_of_file(Path("/no/such/arquivo-t27-fixture.py"))
 
 
 if __name__ == "__main__":

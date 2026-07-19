@@ -16,11 +16,17 @@ from __future__ import annotations
 import json
 import re
 import tempfile
-import tomllib
 import unittest
 from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
+
+from tests.bdd.support.dec015_pins import (
+    DEC015_RUNTIME_PACKAGES,
+    DEC015_TREE_SITTER_GRAMMARS,
+    dependency_name,
+    read_pyproject_dependencies,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DOCKERFILE = REPO_ROOT / "Dockerfile"
@@ -40,35 +46,6 @@ _VENV_MOUNT_RE = re.compile(
     re.I,
 )
 
-DEC015_RUNTIME_PACKAGES = (
-    "sqlalchemy",
-    "alembic",
-    "psycopg",
-    "apscheduler",
-    "PyGithub",
-    "GitPython",
-    "pathspec",
-    "tree-sitter",
-    "qdrant-client",
-    "openai",
-    "mcp",
-    "fastapi",
-    "uvicorn",
-)
-
-# Grammars pinadas no pyproject (BDD-024 / DEC-015) — pelo menos este conjunto.
-DEC015_TREE_SITTER_GRAMMARS = (
-    "tree-sitter-python",
-    "tree-sitter-java",
-    "tree-sitter-javascript",
-    "tree-sitter-typescript",
-    "tree-sitter-markdown",
-    "tree-sitter-yaml",
-    "tree-sitter-json",
-    "tree-sitter-xml",
-    "tree-sitter-toml",
-)
-
 
 def _read(path: Path) -> str:
     if not path.is_file():
@@ -77,15 +54,13 @@ def _read(path: Path) -> str:
 
 
 def _pyproject_deps() -> list[str]:
-    data = tomllib.loads(_read(PYPROJECT))
-    deps = data.get("project", {}).get("dependencies", [])
-    if not isinstance(deps, list) or not deps:
-        raise AssertionError("[project].dependencies ausente ou vazio")
-    return [str(d) for d in deps]
+    """Alias de compatibilidade — delega a ``dec015_pins`` (I-T27-001)."""
+    return read_pyproject_dependencies(PYPROJECT)
 
 
 def _dep_name(spec: str) -> str:
-    return re.split(r"[<>=!~;\[]", spec, maxsplit=1)[0].strip()
+    """Alias de compatibilidade — delega a ``dec015_pins`` (I-T27-001)."""
+    return dependency_name(spec)
 
 
 def _import_delivery_surface() -> tuple[Any, Any, Any]:
