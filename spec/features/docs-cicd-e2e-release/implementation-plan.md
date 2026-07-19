@@ -4,13 +4,13 @@
 |---|---|
 | Feature ID | `docs-cicd-e2e-release` |
 | Versão do plano | `0.2.0` |
-| Estado | `PENDING_HUMAN_PLAN_APPROVAL` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Requisitos base | `requirements.md` v0.2.0 (aprovado 2026-07-18, commit candidato `37f7def`) |
 | Natureza | delta sobre v0.1.1 — remove ownership da suíte Robot (passa a `github-etl-mcp-rag` / T21); T04 vira consumo/integração; mantém CI, docs EN, release GHCR |
 | Dependência externa | `github-etl-mcp-rag` / `T19-container-delivery` **e** `T21-mvp-e2e-robot` |
 | Revisão humana (plano 0.1.1) | `aprovado` em 2026-07-18 por `camilocoelhogomes` (`HUMAN_PLAN_APPROVAL` v0.1.1 / `8d0f84b`); **obsoleto** para implementação sob 0.2.0 |
-| Revisão PO (plano 0.2.0) | `PO_PLAN_REVIEW` aprovado em 2026-07-18 por `product-owner` — aguarda `HUMAN_PLAN_APPROVAL` |
-| Revisão humana (plano 0.2.0) | pendente — não fabricar aprovação humana |
+| Revisão PO (plano 0.2.0) | `PO_PLAN_REVIEW` aprovado em 2026-07-18 por `product-owner` |
+| Revisão humana (plano 0.2.0) | `aprovo` em 2026-07-18 por `camilocoelhogomes` (commit candidato `bbf46d608ea75930577eae5362a82719a9b8cf6d`) |
 
 ## 1. Arquitetura
 
@@ -189,7 +189,7 @@ T07-docs-contributing-en         → T01, T04, T21   (soft T05 para nomes de job
 
 ## 10. Handoff
 
-Plano **v0.2.0** — `PENDING_HUMAN_PLAN_APPROVAL` (`PO_PLAN_REVIEW` ok).
+Plano **v0.2.0** — `READY_FOR_IMPLEMENTATION` (`HUMAN_PLAN_APPROVAL` em `bbf46d6`).
 
-- Tasks `T01`–`T07` neste delta: `PENDING_HUMAN_PLAN_APPROVAL` — **não** `READY_FOR_IMPLEMENTATION` até `HUMAN_PLAN_APPROVAL` do plano 0.2.0.
-- W0 pode iniciar sem T19/T21 após aprovação humana do plano; W1+ exige T19+T21 DONE.
+- Tasks `T01`–`T07` neste delta: `READY_FOR_IMPLEMENTATION`.
+- W0 pode iniciar sem T19/T21; W1+ continua bloqueado em T19+T21 DONE (dependências externas documentadas).

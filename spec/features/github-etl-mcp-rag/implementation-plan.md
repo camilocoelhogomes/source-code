@@ -4,12 +4,12 @@
 |---|---|
 | Feature ID | `github-etl-mcp-rag` |
 | Versão do plano | `0.1.7` |
-| Estado | `PENDING_HUMAN_PLAN_APPROVAL` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Requisitos base | `requirements.md` v0.5.0 (aprovado 2026-07-18, commit `37f7def`) |
 | Natureza | delta sobre v0.1.6 — T19 residual (3 composes + `.env.example`) + **T21-mvp-e2e-robot** (prova MVP); gate MVP = T19+T21 |
 | Revisão humana (plano 0.1.6) | `aprovo` em 2026-07-18 por `camilocoelhogomes` (commit candidato `f92e7d3`) |
-| Revisão PO (plano 0.1.7) | `PO_PLAN_REVIEW` aprovado em 2026-07-18 por `product-owner` — aguarda `HUMAN_PLAN_APPROVAL` |
-| Revisão humana (plano 0.1.7) | pendente — não fabricar aprovação humana |
+| Revisão PO (plano 0.1.7) | `PO_PLAN_REVIEW` aprovado em 2026-07-18 por `product-owner` |
+| Revisão humana (plano 0.1.7) | `aprovo` em 2026-07-18 por `camilocoelhogomes` (commit candidato `bbf46d608ea75930577eae5362a82719a9b8cf6d`) |
 
 ## 1. Arquitetura
 
@@ -310,11 +310,11 @@ Greenfield: sem migração de dados legados. Rollback = não promover imagem/tag
 
 ## 9. Handoff
 
-Plano **v0.1.7** — `PENDING_HUMAN_PLAN_APPROVAL` (delta requisitos 0.5.0; `PO_PLAN_REVIEW` ok). Delta sobre v0.1.6:
+Plano **v0.1.7** — `READY_FOR_IMPLEMENTATION` (delta requisitos 0.5.0; `HUMAN_PLAN_APPROVAL` em `bbf46d6`). Delta sobre v0.1.6:
 
 - ENG-017–020: ownership T19 (3 composes) vs T21 (Robot/Podman/GitHub real); MVP = T19+T21; consumidor `docs-cicd-e2e-release`.
 - DAG: `T21 → T19`; onda W9; critical path estendido até T21.
 - Task `T19-container-delivery` atualizada (escopo residual; fora Robot).
 - Nova task `T21-mvp-e2e-robot`.
 - Tasks `T01`–`T18`, `T20` permanecem conforme plano 0.1.6 aprovado (sem mudança de escopo neste delta).
-- Tasks **T19** e **T21** neste delta: `PENDING_HUMAN_PLAN_APPROVAL` — **não** `READY_FOR_IMPLEMENTATION` até `HUMAN_PLAN_APPROVAL` do plano 0.1.7.
+- Tasks **T19** e **T21** neste delta: `READY_FOR_IMPLEMENTATION`.

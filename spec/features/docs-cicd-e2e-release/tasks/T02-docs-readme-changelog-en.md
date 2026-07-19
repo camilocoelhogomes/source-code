@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T02-docs-readme-changelog-en` |
 | Feature | `docs-cicd-e2e-release` |
-| Estado | `PENDING_HUMAN_PLAN_APPROVAL` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Onda | W0 |
 | Plano | v0.2.0 |
 

@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T01-ci-pr-unit-bdd` |
 | Feature | `docs-cicd-e2e-release` |
-| Estado | `PENDING_HUMAN_PLAN_APPROVAL` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Onda | W0 |
 | Plano | v0.2.0 |
 

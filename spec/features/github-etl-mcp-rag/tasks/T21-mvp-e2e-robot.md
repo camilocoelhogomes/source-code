@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T21-mvp-e2e-robot` |
 | Feature | `github-etl-mcp-rag` |
-| Estado | `PENDING_HUMAN_PLAN_APPROVAL` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Onda | W9 |
 | Plano | v0.1.7 |
 

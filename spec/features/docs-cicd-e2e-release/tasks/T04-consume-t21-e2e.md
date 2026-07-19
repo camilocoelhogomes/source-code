@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T04-consume-t21-e2e` |
 | Feature | `docs-cicd-e2e-release` |
-| Estado | `PENDING_HUMAN_PLAN_APPROVAL` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Onda | W1 |
 | Plano | v0.2.0 |
 | Substitui | `T04-robot-e2e-suite` (plano 0.1.x — ownership de criação da suíte; **obsoleto**) |
