@@ -45,6 +45,7 @@ integration = [
 e2e = [
     "robotframework>=7",
     "robotframework-requests>=0.9",
+    "robotframework-browser>=18",
     "httpx>=0.27",
 ]
 

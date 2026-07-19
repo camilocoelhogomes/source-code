@@ -12,6 +12,7 @@ GREEN_PATH_SUITE_MARKERS = (
     "health",
     "catalog_indexing",
     "ui",
+    "ui_browser",
     "mcp",
     "negative",
 )

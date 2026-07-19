@@ -1,6 +1,6 @@
-# E2E — Robot MVP proof (T21)
+# E2E — Robot MVP proof (T21 / T23)
 
-Ownership: **T21-mvp-e2e-robot** (`github-etl-mcp-rag`).  
+Ownership: **T21-mvp-e2e-robot** + browser gap **T23-gap-ui-browser** (`github-etl-mcp-rag`).  
 Runtime: **Podman** + `docker-compose.e2e.yml` (T19).  
 Reference GitHub repo: `camilocoelhogomes/source-code` (this project).
 
@@ -41,14 +41,24 @@ cp .env.example .env
 # Opcional: E2E_GITHUB_TOKEN=... (preferido se ambos existirem)
 ```
 
-2. Instale deps e2e no `.venv`:
+2. Instale deps e2e no `.venv` (inclui Browser Library / Playwright):
 
 ```bash
 python -m pip install -e ".[e2e]"
 # ou: python -m pip install -r requirements-e2e.txt
 ```
 
-3. Rode a prova canônica:
+3. Inicialize os binários do browser (obrigatório para a suite `ui_browser.robot`):
+
+```bash
+rfbrowser init
+```
+
+Sem `rfbrowser init`, a suite Browser Library falha por falta do Chromium Playwright.
+O default da suite é **headless** (`${BROWSER_HEADLESS}=${True}` em `browser.resource`).
+Para debug headed: `robot -v BROWSER_HEADLESS:False e2e/robot/ui_browser.robot`.
+
+4. Rode a prova canônica:
 
 ```bash
 export $(grep -v '^#' .env | xargs)   # ou: set -a; source .env; set +a
@@ -63,6 +73,7 @@ robot --exclude bdd015 --outputdir e2e/results \
   e2e/robot/health.robot \
   e2e/robot/catalog_indexing.robot \
   e2e/robot/ui.robot \
+  e2e/robot/ui_browser.robot \
   e2e/robot/mcp.robot \
   e2e/robot/negative.robot
 podman compose -f docker-compose.e2e.yml down
@@ -72,15 +83,18 @@ podman compose -f docker-compose.e2e.yml down
 
 - Secret obrigatório: `E2E_GITHUB_TOKEN` (mapeado para `GITHUB_TOKEN` no container pelo compose T19).
 - **Não** usar o `GITHUB_TOKEN` default do GitHub Actions como substituto do token de produto.
+- Job e2e precisa de `pip install -e ".[e2e]"` **e** `rfbrowser init` antes de `python -m github_rag.e2e`.
 - Consumidor: `docs-cicd-e2e-release` invoca `DefaultRobotMvpSuite` / `python -m github_rag.e2e` (sem ownership da suíte).
 
 ## Layout
 
 | Path | Papel |
 |------|--------|
-| `e2e/robot/*.robot` | Suites green path (health, catalog_indexing, ui, mcp, negative) |
-| `e2e/robot/resources/` | Keywords HTTP/auth (nunca logam token) |
-| `e2e/fixtures/config.e2e.json` | Config sem secrets (`token.env=GITHUB_TOKEN`) |
+| `e2e/robot/*.robot` | Suites green path (health, catalog_indexing, ui, ui_browser, mcp, negative) |
+| `e2e/robot/ui_browser.robot` | Evidência browser (Browser Library / Playwright) — T23 |
+| `e2e/robot/resources/common.resource` | URLs, waits HTTP, redaction de token |
+| `e2e/robot/resources/browser.resource` | Lifecycle Browser (Open/Close/Wait) + helpers UI |
+| `e2e/fixtures/config.e2e.json` | Config sem secrets (`token.env=GITHUB_TOKEN`; inclusão wildcard) |
 | `e2e/fixtures/repos/` | Volume local (repo `sample-local` inicializado no `up`) |
 | `e2e/results/` | Artefatos Robot (gitignored) |
 
