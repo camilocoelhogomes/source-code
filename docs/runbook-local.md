@@ -3,6 +3,16 @@
 Primary platform: **linux/amd64** (ENG-006). On Apple Silicon, Docker may
 emulate amd64; expect slower SLM/Zoekt.
 
+## Which compose file?
+
+| File | Audience | Command |
+|------|----------|---------|
+| `docker-compose.yml` | End user / stable image | `docker compose up --build` |
+| `docker-compose.e2e.yml` | T21 Robot + CI (Podman) | `podman compose -f docker-compose.e2e.yml up --build` |
+| `docker-compose.dev.yml` | Local development (`./src` mount) | `docker compose -f docker-compose.dev.yml up --build` |
+
+Do **not** treat T19 as the MVP e2e gate: Robot/`compose up` proof belongs to **T21**.
+
 ## Services and ports
 
 | Service  | Host port | Role                          |
@@ -46,7 +56,7 @@ installs the package with `pip install .` during build.
 7. `DailyScheduler.start()`
 8. bind UI (8080) + MCP (8001); `/healthz` reports ready
 
-## Quick start
+## Quick start (end user)
 
 ```bash
 cp .env.example .env
@@ -55,6 +65,24 @@ mkdir -p repos
 docker compose up --build
 curl -s http://127.0.0.1:8080/healthz
 ```
+
+## Development compose
+
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
+
+Postgres is published on host `5432`. Source under `./src` and `./web` is
+mounted into the app container (still no host `.venv`).
+
+## E2E compose (consumed by T21)
+
+```bash
+# Prefer Podman in CI/T21. Credentials: GITHUB_TOKEN or E2E_GITHUB_TOKEN (never commit).
+podman compose -f docker-compose.e2e.yml up --build
+```
+
+Project name `github-rag-e2e` and `e2e_*` volumes isolate state from user/dev stacks.
 
 ## Cursor MCP (stdio)
 

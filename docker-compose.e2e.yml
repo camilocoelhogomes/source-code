@@ -1,7 +1,9 @@
-# End-user / public-image delivery stack (REQ-043, ENG-002).
+# E2E stack for T21 (Robot) and CI — Podman-compatible (REQ-043, DEC-018).
 # Primary platform: linux/amd64 (ENG-006).
+# Ownership of runtime proof: T21 — this file is manifesto/delivery only (REQ-044).
 # ENG-009: never mount a host virtualenv into the app service.
-# For e2e use docker-compose.e2e.yml; for local iteration use docker-compose.dev.yml.
+name: github-rag-e2e
+
 services:
   postgres:
     image: postgres:16
@@ -10,7 +12,7 @@ services:
       POSTGRES_PASSWORD: github_rag
       POSTGRES_DB: github_rag
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - e2e_pg_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U github_rag -d github_rag"]
       interval: 5s
@@ -20,14 +22,14 @@ services:
   qdrant:
     image: qdrant/qdrant:v1.13.2
     volumes:
-      - qdrant_data:/qdrant/storage
+      - e2e_qdrant_data:/qdrant/storage
     ports:
       - "6333:6333"
 
   zoekt:
     image: sourcegraph/zoekt:latest
     volumes:
-      - zoekt_index:/data/index
+      - e2e_zoekt_index:/data/index
     environment:
       ZOEKT_INDEX_DIR: /data/index
     ports:
@@ -36,7 +38,7 @@ services:
   slm:
     image: ollama/ollama:latest
     volumes:
-      - slm_data:/root/.ollama
+      - e2e_slm_data:/root/.ollama
     ports:
       - "11434:11434"
 
@@ -74,11 +76,12 @@ services:
       INDEX_WORKERS: "2"
       QUERY_WORKERS: "4"
       INDEX_CRON: "0 2 * * *"
-      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      # CI may set E2E_GITHUB_TOKEN; local HITL may set GITHUB_TOKEN (DEC-020).
+      GITHUB_TOKEN: ${E2E_GITHUB_TOKEN:-${GITHUB_TOKEN:-}}
     volumes:
       - ${HOST_CONFIG:-./examples/config.json}:/config/config.json:ro
       - ${HOST_REPOS:-./repos}:/repos:ro
-      - zoekt_index:/data/index
+      - e2e_zoekt_index:/data/index
     healthcheck:
       test:
         [
@@ -91,7 +94,7 @@ services:
       start_period: 60s
 
 volumes:
-  pg_data:
-  qdrant_data:
-  zoekt_index:
-  slm_data:
+  e2e_pg_data:
+  e2e_qdrant_data:
+  e2e_zoekt_index:
+  e2e_slm_data:

@@ -1,7 +1,7 @@
-# End-user / public-image delivery stack (REQ-043, ENG-002).
-# Primary platform: linux/amd64 (ENG-006).
-# ENG-009: never mount a host virtualenv into the app service.
-# For e2e use docker-compose.e2e.yml; for local iteration use docker-compose.dev.yml.
+# Local development stack (REQ-043). Primary platform: linux/amd64 (ENG-006).
+# Mounts ./src for iteration; never mount a host .venv (ENG-009).
+name: github-rag-dev
+
 services:
   postgres:
     image: postgres:16
@@ -9,8 +9,10 @@ services:
       POSTGRES_USER: github_rag
       POSTGRES_PASSWORD: github_rag
       POSTGRES_DB: github_rag
+    ports:
+      - "5432:5432"
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - dev_pg_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U github_rag -d github_rag"]
       interval: 5s
@@ -20,14 +22,14 @@ services:
   qdrant:
     image: qdrant/qdrant:v1.13.2
     volumes:
-      - qdrant_data:/qdrant/storage
+      - dev_qdrant_data:/qdrant/storage
     ports:
       - "6333:6333"
 
   zoekt:
     image: sourcegraph/zoekt:latest
     volumes:
-      - zoekt_index:/data/index
+      - dev_zoekt_index:/data/index
     environment:
       ZOEKT_INDEX_DIR: /data/index
     ports:
@@ -36,7 +38,7 @@ services:
   slm:
     image: ollama/ollama:latest
     volumes:
-      - slm_data:/root/.ollama
+      - dev_slm_data:/root/.ollama
     ports:
       - "11434:11434"
 
@@ -78,7 +80,9 @@ services:
     volumes:
       - ${HOST_CONFIG:-./examples/config.json}:/config/config.json:ro
       - ${HOST_REPOS:-./repos}:/repos:ro
-      - zoekt_index:/data/index
+      - ./src:/app/src
+      - ./web:/app/web
+      - dev_zoekt_index:/data/index
     healthcheck:
       test:
         [
@@ -91,7 +95,7 @@ services:
       start_period: 60s
 
 volumes:
-  pg_data:
-  qdrant_data:
-  zoekt_index:
-  slm_data:
+  dev_pg_data:
+  dev_qdrant_data:
+  dev_zoekt_index:
+  dev_slm_data:

@@ -359,10 +359,13 @@ Plataforma primária: **linux/amd64**.
 
 ```bash
 cp .env.example .env
-docker compose up --build
+docker compose up --build                 # usuário final
+# docker compose -f docker-compose.dev.yml up --build   # dev (./src)
+# podman compose -f docker-compose.e2e.yml up --build   # e2e (T21)
 curl -s http://127.0.0.1:8080/healthz   # UI + MCP ready
 ```
 
 Boot (`python -m github_rag.delivery`): settings → config → migrate →
 `run_catalog_sync` → `StartupIndexReconcile.run()` → scheduler → UI `:8080` +
-MCP `:8001`. Detalhes, volumes `/repos` e MCP stdio: [`docs/runbook-local.md`](docs/runbook-local.md).
+MCP `:8001`. Detalhes, volumes `/repos`, três composes e MCP stdio:
+[`docs/runbook-local.md`](docs/runbook-local.md).
