@@ -32,10 +32,19 @@
 
 **Decisão Architect:** `APPROVED_BY_ARCHITECT` (2026-07-18) — plano e testes red pela razão esperada.
 
-## Implementation
+## Implementation `0.1.0`
 
-_(preenchido na etapa seguinte)_
+| Severidade | Achado | Evidência | Correção | Resultado |
+|---|---|---|---|---|
+| MAJOR | StaticFiles em `/` respondia 405 em POST `/api/connections` | BDD UI-08 | Catch-all `/api/{path}` → 404 | Fechado |
+| SUGGESTION | `ports.py` com TYPE_CHECKING fastapi falhava AST forbid | UT-I01 | Retorno `Any` + docstring FastAPI | Fechado |
 
-## Blue refactoring
+**Decisão Architect:** `APPROVED_BY_ARCHITECT` (2026-07-18)
 
-_(preenchido na etapa seguinte)_
+## Blue refactoring `0.1.0`
+
+| Severidade | Achado | Evidência | Correção | Resultado |
+|---|---|---|---|---|
+| SUGGESTION | Duplicação payload hits + raise morto | `app.py` | `_hits_payload` / `raise _http` | Fechado |
+
+**Decisão Architect:** `BLUE_APPROVED_BY_ARCHITECT` (2026-07-18)

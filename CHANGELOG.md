@@ -6,6 +6,17 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- Management UI (T18): porta `ManagementUiApi` / `DefaultManagementUiApi` via
+  **FastAPI** (`fastapi>=0.115,<1`) + frontend estático em `web/`. Listagem de
+  repos (origem/estado REQ-020 com labels PT), indexação por checkbox,
+  progresso e flags por arquivo, histórico de falhas (mensagem/horário),
+  configuração de expressão cron (`DailyScheduler.set_cron`), buscas exact e
+  semantic via `QueryService`. Sem CRUD de conexões/token (BDD-023). Dependência
+  de dev `httpx` para TestClient.
+- Agendamento cron (T15): `DailyScheduler` / `DefaultDailyScheduler` via
+  APScheduler; preferência UI (`CronPreferenceStore`) prevalece sobre
+  `INDEX_CRON` (ENG-004/010).
+
 - Orquestrador de indexação (T14): `IndexingOrchestrator` + `StartupIndexReconcile`
   só via portas (ENG-013). Fila com `WorkerLimiter`; estados REQ-020; startup
   reconcile (ENG-011) com recover de `queued`/`indexing`; reindex arquivo inteiro
