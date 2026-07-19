@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T05-open-failure-tasks-parent` |
 | Feature | `mvp-e2e-audit-hardening` |
-| Estado | `PENDING_PO_REVIEW` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Onda | W3 |
 | Plano | v0.1.0 |
 

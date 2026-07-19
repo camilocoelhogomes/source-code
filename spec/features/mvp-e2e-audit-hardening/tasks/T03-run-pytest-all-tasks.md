@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T03-run-pytest-all-tasks` |
 | Feature | `mvp-e2e-audit-hardening` |
-| Estado | `PENDING_PO_REVIEW` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Onda | W1 |
 | Plano | v0.1.0 |
 
