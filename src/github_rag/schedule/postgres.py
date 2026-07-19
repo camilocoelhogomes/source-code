@@ -13,7 +13,7 @@ from collections.abc import Callable
 from contextlib import AbstractContextManager
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, MetaData, SmallInteger, Text
+from sqlalchemy import DateTime, MetaData, SmallInteger, Text, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
 from github_rag.schedule.cron_expr import validate_cron_expression
@@ -43,7 +43,7 @@ class SchedulerPreferenceRow(Base):
     id: Mapped[int] = mapped_column(SmallInteger, primary_key=True)
     cron_expression: Mapped[str] = mapped_column(Text, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
+        DateTime(timezone=True), nullable=False, server_default=text("now()")
     )
 
 

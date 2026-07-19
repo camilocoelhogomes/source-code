@@ -13,6 +13,7 @@ import logging
 from threading import Lock
 from zoneinfo import ZoneInfo
 
+from apscheduler.jobstores.base import JobLookupError
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
@@ -100,7 +101,7 @@ class DefaultDailyScheduler:
         trigger = CronTrigger.from_crontab(expression, timezone=_UTC)
         try:
             self._scheduler.reschedule_job(_JOB_ID, trigger=trigger)
-        except Exception:  # noqa: BLE001 — job ausente: recria
+        except JobLookupError:  # job ausente (nunca registrado/removido): recria
             self._scheduler.add_job(
                 self.run_tick_once,
                 trigger=trigger,
