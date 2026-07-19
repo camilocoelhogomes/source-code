@@ -118,3 +118,48 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — BDD `0.1.0` cobre F-T04-001/002/003, alinha D-T22-*, respeita escopo (sem Robot/compose up/secrets) e padrão T19. Prosseguir para interfaces.
+
+---
+
+## Review — Interfaces `0.1.0` — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `interfaces.md` |
+| Data | 2026-07-19 |
+| Pipeline | autonomous (aprovação Architect substitui HITL intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Gate manifesto (D-T22-006) — sem Protocols novos | OK | I-T22-001; §1 exclusões |
+| Contratos M-T22 shape zoekt nos 3 composes | OK | M-T22-001..007; §4 |
+| `command` preservando ENTRYPOINT `tini` | OK | I-T22-006; M-T22-002; shape §4.1 |
+| Paridade 3 composes (D-T22-002) | OK | M-T22-004 |
+| Docs pré-req provider (F-T04-001) | OK | M-T22-010..014; §5 |
+| Reuso T21 `E2eStackLauncher` / `RobotMvpSuite` sem mudança | OK | I-T22-002/003; §3 |
+| Helper parse só em testes (se existir) + responsabilidade/motivo | OK | I-T22-007; §6 |
+| Comentários ricos (responsabilidade + motivo da separação) | OK | §§3–6 |
+| Sem secrets / escopo tooling | OK | M-T22-006/014; §1 |
+| Mapeamento BDD → contratos | OK | §8 EZ-01..05 |
+| Idioma português | OK | artefato completo |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| `SUGGESTION` | Healthcheck zoekt permanece não-bloqueante (I-T22-008) | interfaces §2; design R-T22-02 | Developer escolhe probe disponível ou mantém `service_started` + wait T21 | Aberto residual — não bloqueia |
+| `SUGGESTION` | Extração opcional para `tests/support/compose_manifest.py` | interfaces §6 | Só se unitários duplicarem regex do BDD | Aberto residual — não bloqueia |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — interfaces.md `0.1.0` documenta M-T22-* / I-T22-* com responsabilidade e motivo da separação; sem Protocols novos; T21 reusado. Prosseguir para unit-test-plan (QA).
