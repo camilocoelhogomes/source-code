@@ -28,6 +28,7 @@ dependencies = [
     "tree-sitter-toml==0.7.0",
     "qdrant-client>=1.12",
     "openai>=1.40",
+    "mcp>=1.27,<2",
 ]
 
 [project.optional-dependencies]
