@@ -14,6 +14,21 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
   `e2e/robot/libraries/CatalogIndexingKeywords.py` + resource
   `catalog_indexing.resource`; seed fixture `sample-local` e
   `ensure_local_git_fixture` no launcher. Sem mudança de domínio ETL/UI.
+- Gaps negativos integrais (T25 / `github-etl-mcp-rag`): `GET /api/catalog/issues`
+  + `CatalogIssueStore` (BDD-018); probes `e2e/probes/negative_probes.py` para
+  BDD-008 (falha parcial + histórico + reindex) e BDD-022 (`CONFIG_PATH`
+  fail-fast sem leak); `negative.robot` e fixture `local-missing-volume`;
+  testes BDD/unitários; cobertura ≥95%. Asserts API autocontidos; browser
+  residual T23.
+- Evidência browser na suíte Robot e2e (T23 / `gap-ui-browser`): suite
+  `e2e/robot/ui_browser.robot` + resource `browser.resource` (Browser Library /
+  Playwright) cobrindo BDD-001, 002, 007, 009, 010, 016, 019, 023 na UI;
+  `robotframework-browser` em deps `[e2e]`; `ui_browser` no green path
+  (`GREEN_PATH_SUITES`); fixture `config.e2e.json` com wildcard de inclusão
+  `camilocoelhogomes/source-*`; docs `rfbrowser init` em `e2e/README.md` e
+  `docs/runbook-local.md`. Suites RequestsLibrary (T21) preservadas — API HTTP
+  sozinha não encerra a lacuna. Gate manifesto:
+  `tests/bdd/test_ui_browser_gap.py` + `tests/unit/e2e/test_ui_browser_manifest.py`.
 - Pacote de fechamento da auditoria (T07 / `mvp-e2e-audit-hardening`): contrato
   `AuditClosurePack` em
   `spec/features/mvp-e2e-audit-hardening/audit/closure-pack.md` — índice de
@@ -64,6 +79,20 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
   `assert-fraco`; sem duplicar T22; BDD
   `tests/bdd/test_mvp_e2e_audit_gap_fill_backlog.py`. Sem keywords/browser/
   produto nesta feature (`src/github_rag/**`, `e2e/robot/**`, composes).
+- Prova integral de conformidade DEC-015/BDD-024 (T27 /
+  `gap-sdk-dec015-conformity`): suíte consolidada
+  `tests/bdd/test_dec015_conformity.py` (DEC015-01..13) prova, por inspeção
+  estática (`ast`/`tomllib` + referência a suítes já existentes de
+  T05/T08/T10/T11/T13/T15/T17/T18/T20), que cada integração da tabela
+  DEC-015 (PyGithub, GitPython, pathspec, Tree-sitter, Qdrant/openai,
+  APScheduler, `mcp`, FastAPI, SQLAlchemy 2/Alembic/psycopg3, Zoekt real,
+  DT-001) usa o SDK/binding oficial, sem reimplementação caseira. `pyproject.toml`
+  fecha o único gap real encontrado: `alembic`/`psycopg[binary]` passam a
+  declarar faixa de versão (`alembic>=1.13`, `psycopg[binary]>=3`). DEC015-14
+  sincroniza `spec/features/mvp-e2e-audit-hardening/audit/coverage-inventory.md`
+  (linha `BDD-024` → `coberto-integral`) e as duas suítes de auditoria da
+  feature filha. Sem alteração de `src/github_rag/**`, `e2e/robot/**` ou
+  composes.
 - Prova e2e do MVP (T21): pacote `github_rag.e2e` com contratos
   `E2eStackLauncher` / `RobotMvpSuite` (`PodmanE2eStackLauncher`,
   `DefaultRobotMvpSuite`, `E2eCredentialResolver`), suíte Robot Framework em
@@ -105,6 +134,14 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Alterado
 
+- Gap-fill MCP parallel/SLO (T26 / BDD-013 integral): `SemaphoreWorkerLimiter`
+  expõe contadores `active`/`waiting`/`peak_active`; avaliador puro
+  `github_rag.concurrency.parallel_slo` (`min_waves` /
+  `evaluate_parallel_slo`); Robot `e2e/robot/mcp.robot` bdd013 dispara
+  `N=2*QUERY_WORKERS` calls MCP concorrentes + assert SLO (remove smoke
+  sequencial); keywords `Mcp Parallel Call Tools` /
+  `Mcp Measure Single Call Seconds` / `Mcp Assert Parallel Slo`; BDD-014
+  preservado nos payloads paralelos. Suite pytest + cobertura ≥95%.
 - Fix tooling e2e compose/zoekt (T22): serviço `zoekt` nos três composes
   (`docker-compose.yml`, `docker-compose.e2e.yml`, `docker-compose.dev.yml`)
   declara `command: ["zoekt-webserver", "-index", "/data/index", "-rpc"]`

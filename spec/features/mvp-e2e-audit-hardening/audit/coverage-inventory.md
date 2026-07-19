@@ -41,7 +41,7 @@
 | BDD-021 | catalog_indexing | coberto-integral | e2e/robot/catalog_indexing.robot — BDD-001/016 tags bdd021 (`origin`/`connection_name`) | tests/bdd/test_config_loader.py; tests/bdd/test_catalog_sync.py | n/a | — | — |
 | BDD-022 | negative | lacuna | e2e/robot/negative.robot — BDD-022 Empty Index Payload / Unknown Repository Id (bdd022) | tests/bdd/test_config_loader.py | n/a | T21 §3.5: fail-fast config; casos Robot rejeitam payload de index, não `CONFIG_PATH` inválido | Sem assert de CONFIG_PATH ausente/malformado sem aplicação parcial nem leak de segredos |
 | BDD-023 | ui | lacuna | e2e/robot/ui.robot — BDD-023 Connections Crud Not Available (bdd023) | tests/bdd/test_management_ui.py | nao | T21 §3.5: POST/PUT `/api/connections` → 404 | CRUD bloqueado via API; fluxo UI (estados/seleção/pesquisa) sem browser |
-| BDD-024 | sdk | lacuna | e2e/robot/mcp.robot — BDD-011 tags bdd024 (smoke tools); health + sync implícitos | tests/bdd/test_local_discovery_git_sdk.py; tests/bdd/test_treesitter_chunker.py; tests/bdd/test_qdrant_vector_store.py; tests/bdd/test_zoekt_adapter.py; tests/bdd/test_container_delivery.py | n/a | T21 §3.5 Sim (smoke): imagem sobe; pin DEC-015 permanece gate unitário | Smoke Robot ≠ conformidade integral DEC-015/BR-024 em todas as integrações |
+| BDD-024 | sdk | coberto-integral | e2e/robot/mcp.robot — BDD-011 tags bdd024 (smoke tools); health + sync implícitos | tests/bdd/test_dec015_conformity.py; tests/bdd/test_local_discovery_git_sdk.py; tests/bdd/test_treesitter_chunker.py; tests/bdd/test_qdrant_vector_store.py; tests/bdd/test_zoekt_adapter.py; tests/bdd/test_container_delivery.py | n/a | — | — |
 
 ## Handoff T06
 

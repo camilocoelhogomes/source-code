@@ -34,6 +34,7 @@ GREEN_PATH_SUITES: tuple[str, ...] = (
     "health",
     "catalog_indexing",
     "ui",
+    "ui_browser",
     "mcp",
     "negative",
 )

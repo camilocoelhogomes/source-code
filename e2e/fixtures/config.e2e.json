@@ -9,7 +9,7 @@
         "camilocoelhogomes"
       ],
       "repos": [
-        "camilocoelhogomes/source-code"
+        "camilocoelhogomes/source-*"
       ],
       "revisions": {
         "branches": [
@@ -20,6 +20,15 @@
     "local-e2e-fixture": {
       "type": "git",
       "url": "file:///repos/*",
+      "revisions": {
+        "branches": [
+          "main"
+        ]
+      }
+    },
+    "local-missing-volume": {
+      "type": "git",
+      "url": "file:///repos/__missing_e2e_volume__/*",
       "revisions": {
         "branches": [
           "main"

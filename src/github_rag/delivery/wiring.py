@@ -305,6 +305,7 @@ def wire_ui_app(
     orchestrator: Any,
     scheduler: Any,
     query: Any,
+    issue_store: Any | None = None,
 ) -> Any:
     """``DefaultManagementUiApi(...).build()`` → FastAPI."""
     from github_rag.ui import DefaultManagementUiApi
@@ -315,6 +316,7 @@ def wire_ui_app(
         scheduler=scheduler,
         query=query,
         drain_on_index=True,
+        issue_store=issue_store,
     ).build()
 
 

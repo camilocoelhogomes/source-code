@@ -82,7 +82,6 @@ EXPECTED_LACUNA_BDDS = {
     "BDD-019",
     "BDD-022",
     "BDD-023",
-    "BDD-024",
 }
 
 DENYLIST_PARTIAL = ("BDD-003", "BDD-006", "BDD-013", "BDD-024")
