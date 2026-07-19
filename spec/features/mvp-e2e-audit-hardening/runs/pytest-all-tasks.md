@@ -5,9 +5,9 @@
 | Feature | `mvp-e2e-audit-hardening` |
 | Task | `T03-run-pytest-all-tasks` |
 | Contrato | `ParentPytestRun` |
-| Data/hora (UTC) | `2026-07-19T02:28:23Z` |
+| Data/hora (UTC) | `2026-07-19T02:30:35Z` |
 | Branch | `feature/mvp-e2e-audit-hardening-T03-run-pytest-all-tasks` |
-| Commit SHA | `2c5f250425907f242d422bc57c3c0531631e7868` |
+| Commit SHA | `cb5e5c576add44402e84543f7419e518351f8c46` |
 | Python | `Python 3.14.6` |
 | OS | `Darwin 24.6.0 arm64` |
 | Comando canônico | `python -m pytest tests/ -q --tb=line` |
@@ -18,19 +18,19 @@ Declaração: sem mudança de produto nesta task. Não altera `src/github_rag/**
 
 ## Soft-dep T01
 
-Inventário T01 (`audit/` / coverage inventory) **não** estava disponível neste commit base (`main` @ `086f3b3` / tip da branch sem merge de T01). Soft-dep: o run **não depende** do artefato T01; superfícies abaixo usam heurística do design §3.3 (independente do inventário).
+Inventário T01 **disponível** neste tip da branch (pós-merge): `spec/features/mvp-e2e-audit-hardening/audit/coverage-inventory.md`. Soft-dep: o run **não depende** do artefato T01; superfícies abaixo usam heurística do design §3.3 (independente do inventário).
 
 ## Resultado agregado
 
 | Métrica | Valor |
 |---|---|
-| exit code | `1` |
-| passed | `1096` |
-| failed | `9` |
+| exit code | `0` |
+| passed | `1145` |
+| failed | `0` |
 | skipped | `2` |
 | errors | `0` |
-| total | `1107` |
-| duração | `11.67s` |
+| total | `1147` |
+| duração | `10.17s` |
 | subtests passed | `240` |
 | warnings | `142` |
 
@@ -41,12 +41,11 @@ Inventário T01 (`audit/` / coverage inventory) **não** estava disponível nest
 | coverage | `96.44%` (TOTAL term report; `Required test coverage of 95.0% reached`) |
 | coverage_gate | `false` |
 
-`coverage_gate: false` — o gate `fail_under=95` foi **atingido**; o exit code ≠ 0 **não** se deve ao coverage gate.
+`coverage_gate: false` — o gate `fail_under=95` foi **atingido**; exit code `0`.
 
-### Interpretação do exit code
+### Nota de ordem de implementação (D-T03-002)
 
-Exit `1` decorre exclusivamente de **9 falhas de contrato da feature filha** (`tests/bdd/test_mvp_e2e_audit_pytest_run.py`, nodeids `mvp_e2e_audit_*`) — artefato ainda ausente no momento do run (ordem D-T03-002: run → escrever artefato → asserts de contrato).  
-Essas falhas **não** entram na lista de falhas do pai para T05.
+Primeiro run (pré-artefato) falhou só nos 9 testes de contrato da feature filha (`mvp_e2e_audit_*`) por artefato ausente; essas falhas **não** alimentam T05. Após materializar este resumo, a suíte canônica acima ficou verde (exit `0`).
 
 ## Mapa de superfícies candidatas (ENG-006)
 
@@ -63,31 +62,9 @@ Heurística estável por path/nodeid (design §3.3):
 
 ## Lista de falhas do pai
 
-Lista vazia — **nenhuma** falha/erro de domínio do pai neste run.
+Lista vazia — **nenhuma** falha/erro de domínio do pai neste run (sem entradas de falha).
 
-Regra **D-T03-002**: excluir nodeids da feature filha (`mvp_e2e_audit_*` / contrato T03) desta lista. Os 9 `failed` agregados acima são só contrato da filha e foram excluídos.
-
-| nodeid | tipo | mensagem sanitizada | superfície candidata |
-|---|---|---|---|
-| — | — | (nenhuma falha do pai) | — |
-
-Regra **D-T03-002**: nodeids `mvp_e2e_audit_*` da feature filha são excluídos desta lista (ver seção seguinte).
-
-## Falhas excluídas (feature filha — não T05)
-
-Excluídas por D-T03-002 (`mvp_e2e_audit_*` / contrato T03). Mensagens sanitizadas: `artefato ausente: …/runs/pytest-all-tasks.md` — sem secrets.
-
-| nodeid | tipo | motivo exclusão |
-|---|---|---|
-| `tests/bdd/test_mvp_e2e_audit_pytest_run.py::TestPYTEST01ArtifactExists::test_artifact_file_exists` | failed | D-T03-002 / feature filha |
-| `tests/bdd/test_mvp_e2e_audit_pytest_run.py::TestPYTEST02Metadata::test_run_metadata_present` | failed | D-T03-002 / feature filha |
-| `tests/bdd/test_mvp_e2e_audit_pytest_run.py::TestPYTEST03AggregatedResult::test_aggregated_counts_present` | failed | D-T03-002 / feature filha |
-| `tests/bdd/test_mvp_e2e_audit_pytest_run.py::TestPYTEST04Coverage::test_coverage_or_na_and_gate_field` | failed | D-T03-002 / feature filha |
-| `tests/bdd/test_mvp_e2e_audit_pytest_run.py::TestPYTEST05ParentFailures::test_failure_list_contract` | failed | D-T03-002 / feature filha |
-| `tests/bdd/test_mvp_e2e_audit_pytest_run.py::TestPYTEST06SoftDepT01::test_t01_soft_dep_note` | failed | D-T03-002 / feature filha |
-| `tests/bdd/test_mvp_e2e_audit_pytest_run.py::TestPYTEST07NoSecrets::test_artifact_has_no_token_patterns` | failed | D-T03-002 / feature filha |
-| `tests/bdd/test_mvp_e2e_audit_pytest_run.py::TestPYTEST08ExcludesChildNodeids::test_parent_failure_list_excludes_child_contract_nodeids` | failed | D-T03-002 / feature filha |
-| `tests/bdd/test_mvp_e2e_audit_pytest_run.py::TestPYTEST09NoProductChange::test_no_product_change_declared` | failed | D-T03-002 / feature filha |
+Regra **D-T03-002**: testes de contrato da feature filha (`mvp_e2e_audit_*`) ficam fora desta lista e não alimentam T05. Neste run não há entradas do pai a mapear para superfície.
 
 ## Proibições / sanitização
 

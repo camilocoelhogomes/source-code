@@ -178,3 +178,82 @@ comando: python -m pytest tests/bdd/test_mvp_e2e_audit_pytest_run.py -q --no-cov
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — unit-test-plan `0.1.1` apto; implementação = materializar `runs/pytest-all-tasks.md` (sem `src/`).
+
+---
+
+## Review Implementação — Tech Lead Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `runs/pytest-all-tasks.md` + BDD + `CHANGELOG.md` + docs T03 |
+| Data | 2026-07-18 |
+| Branch | `feature/mvp-e2e-audit-hardening-T03-run-pytest-all-tasks` |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Checks executados
+
+| Check | Resultado |
+|---|---|
+| Path canônico / campos PYTEST-01..09 | OK |
+| Comando canônico + `coverage_gate` | OK |
+| D-T03-002 lista pai vazia / exclusão filha | OK |
+| Soft-dep T01 pós-rebase | OK após M-01 |
+| Sem mudanças `src/github_rag/**` / `e2e/robot/**` | OK — `git diff --name-only origin/main...HEAD` |
+| CHANGELOG menciona T03 / ParentPytestRun | OK |
+| BDD contrato pós-impl | OK — 9 passed |
+| Suíte canônica | OK — exit 0; 1145 passed / 2 skipped; cov 96.44% |
+
+### Achados
+
+| ID | Severidade | Evidência | Achado | Correção esperada | Status |
+|---|---|---|---|---|---|
+| M-01 | `MAJOR` | `runs/pytest-all-tasks.md` soft-dep T01 | Dizia inventário T01 ausente (`086f3b3`); tip pós-merge tem `audit/coverage-inventory.md` | Atualizar nota: T01 disponível; soft-dep permanece | Corrigido |
+| M-02 | `MAJOR` | `runs/pytest-all-tasks.md` resultado agregado | Resumo ficava no run pré-artefato (exit 1 / 9 failed filha); tip atual tem suíte verde pós-rebase | Atualizar SoT para run verificado exit 0 / 1145 passed / 96.44% | Corrigido |
+| M-03 | `MAJOR` | lista vazia com header `nodeid` / texto `nodeid` | PYTEST-05 tratava lista vazia como entradas (`has_entries`) | Remover tabela/header e a palavra `nodeid` na seção vazia | Corrigido |
+
+### Bloqueios abertos
+
+Nenhum.
+
+### Evidência (Architect)
+
+```text
+pytest tests/bdd/test_mvp_e2e_audit_pytest_run.py -q --no-cov → 9 passed
+python -m pytest tests/ -q --tb=line → exit 0; 1145 passed, 2 skipped; coverage 96.44%
+```
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — implementação documental `ParentPytestRun` apta para Blue.
+
+---
+
+## Review Blue — Tech Lead Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `refactoring.md` |
+| Versão | `0.1.1` |
+| Data | 2026-07-18 |
+| Resultado | `BLUE_APPROVED_BY_ARCHITECT` |
+
+### Checks executados
+
+| Check | Resultado |
+|---|---|
+| Natureza documental / sem runtime | OK — D-T03-001 |
+| Sem otimização especulativa | OK — Blue N/A |
+| Baseline com testes verdes + cobertura | OK — 1145 passed / 96.44% |
+| Sem alteração de comportamento/contratos | OK |
+
+### Achados
+
+| ID | Severidade | Evidência | Achado | Correção esperada | Status |
+|---|---|---|---|---|---|
+| — | — | — | Nenhum BLOCKING / MAJOR | — | — |
+
+### Decisão
+
+`BLUE_APPROVED_BY_ARCHITECT` — sem refatoração necessária; superfície já mínima.

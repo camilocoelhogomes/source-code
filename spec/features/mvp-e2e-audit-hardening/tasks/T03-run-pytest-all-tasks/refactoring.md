@@ -6,14 +6,15 @@
 | Task | `T03-run-pytest-all-tasks` |
 | Autor | Developer / Tech Lead Architect |
 | Data | 2026-07-18 |
-| Estado | `PENDING_BLUE_REVIEW` |
-| Versão | `0.1.0` |
+| Estado | `BLUE_APPROVED_BY_ARCHITECT` |
+| Versão | `0.1.1` |
 
 ## 0. Histórico
 
 | Data | Autor | Decisão | Observações |
 |---|---|---|---|
 | 2026-07-18 | Developer | `PENDING_BLUE_REVIEW` | Superfície documental; sem runtime novo. |
+| 2026-07-18 | Tech Lead Architect | `BLUE_APPROVED_BY_ARCHITECT` | Blue N/A confirmado; baseline pós-rebase (1145 passed / 96.44%). |
 
 ## 1. Baseline
 
@@ -21,7 +22,7 @@
 |---|---|---|
 | Natureza | Documental (D-T03-001) | Sem módulo novo em `src/` |
 | BDD contrato | 9 passed | `pytest tests/bdd/test_mvp_e2e_audit_pytest_run.py -q --no-cov` |
-| Suíte completa | 1105 passed, 2 skipped | `python -m pytest tests/ -q --tb=line` exit 0 |
+| Suíte completa | 1145 passed, 2 skipped | `python -m pytest tests/ -q --tb=line` exit 0 |
 | Cobertura | 96.44% (≥95%) | term report `fail_under` ok |
 | Runtime hot path | N/A | Nenhum código de produção alterado |
 
