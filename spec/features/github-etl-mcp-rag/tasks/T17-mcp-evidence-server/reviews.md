@@ -138,3 +138,68 @@ Revisar alinhamento design §4 / D-T17-* e aprovar ou devolver com achados. QA *
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — interfaces v0.1.0 + stubs. Prosseguir para unit-test plan / implementação.
+
+---
+
+## Review — Unit Test Plan + Unit Tests (v0.1.0) — QA → Architect
+
+| Campo | Valor |
+|---|---|
+| Autor | QA Engineer |
+| Artefato | `unit-test-plan.md` + `tests/unit/mcp/` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `READY_FOR_ARCHITECT_REVIEW` |
+
+### Entrega QA
+
+| Item | Detalhe |
+|---|---|
+| Plano | UT-S01..S17, UT-E01..E04, UT-T01..T10, UT-L01..L04, UT-V01..V02, UT-C01..C02, UT-B01..B04, UT-X01..X03, UT-F01 |
+| Cobertura de corners | DetailFields/omit-null; encoding UTF-8/base64; token redaction; acquire/capacity=1 wait; reformulate=False; list_repos sem local_path; map_query_error kinds; vazios/invalidos; concorrência/idempotência; import ban; SDK mcp |
+| Produção | **não** alterada — stubs `NotImplementedError` preservados |
+| Estado testes | **RED** — stubs levantam `NotImplementedError` / build incompleto |
+| Comando | `.venv/bin/python -m pytest tests/unit/mcp/ -q --no-cov` |
+
+### Pedido ao Architect
+
+Revisar alinhamento interfaces §3 / I-T17-* e aprovar ou devolver com achados. QA **não** auto-aprova.
+
+---
+
+## Review — Unit Test Plan + Unit Tests (v0.1.0) — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `unit-test-plan.md` + `tests/unit/mcp/` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Matriz cobre I-T17-001..015 / serialize / errors / tools / limiter | OK | UT-S*, UT-E*, UT-T*, UT-L*, UT-B*, UT-X* |
+| BDD-012 DetailFields + omit-null | OK | UT-S01..S11 |
+| BDD-013 acquire / capacity / list_repos | OK | UT-L01..L03, UT-C01 |
+| BDD-014 token / map_query_error | OK | UT-E03, UT-T09/T10 |
+| I-T17-009/010 reformulate + sem chunk_metadata | OK | UT-T04, UT-S10 |
+| I-T17-007 encoding | OK | UT-S12/S13, UT-T08 |
+| I-T17-001/013 SDK + import ban | OK | UT-X01..X03 |
+| Paridade T16 entradas (pattern/query/scope) | OK | UT-V01/V01b/V02 (após correção) |
+| Sem implementação de produção nesta etapa | OK | stubs intactos |
+
+### Achados (corrigidos nesta review)
+
+| Severidade | Achado | Evidência | Correção | Status |
+|---|---|---|---|---|
+| `MAJOR` | UT-V01 exigia erro tipado para pattern vazio — conflita com I-T16-009 (hits vazios) | `test_tools.py` UT-V01; T16 D-T16-012 | UT-V01 → `{"hits": []}`; UT-V01b semantic vazia → validation | Corrigido |
+| `MAJOR` | UT-L04 lia `SemaphoreWorkerLimiter.pool` (atributo inexistente) | `limiter.py` sem `.pool` público | `CountingLimiter(..., pool=)` + assert pool≠index | Corrigido |
+| `SUGGESTION` | UT-B04 usava `isinstance or hasattr` frouxo | `test_server.py` | `assertIsInstance(..., McpEvidenceServer)` | Corrigido |
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — unit-test-plan v0.1.0 + `tests/unit/mcp/` alinhados. Prosseguir para implementação Developer.
