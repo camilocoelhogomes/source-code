@@ -3,13 +3,14 @@
 | Campo | Valor |
 |---|---|
 | Feature ID | `docs-cicd-e2e-release` |
-| Versão do plano | `0.1.0` |
+| Versão do plano | `0.1.1` |
 | Estado | `PENDING_HUMAN_PLAN_APPROVAL` |
 | Requisitos base | `requirements.md` v0.1.0 (aprovado 2026-07-18, commit candidato `ae1941ebd43ca97ef6d77a55004847f4af4d72db`; registro `15555f02`) |
 | Natureza | qualidade, documentação e entrega contínua; não altera domínio do MVP |
 | Dependência externa | `github-etl-mcp-rag` / `T19-container-delivery` (Dockerfile + 3 composes com testes passando) |
-| Revisão PO | `aprovado` em 2026-07-18 por `product-owner` (`PO_PLAN_REVIEW`) |
+| Revisão PO | `aprovado` em 2026-07-18 por `product-owner` (`PO_PLAN_REVIEW` v0.1.1) |
 | Revisão humana (plano) | `NOT_STARTED` — aguarda `HUMAN_PLAN_APPROVAL` |
+| Delta v0.1.1 | Clarificação documental: unitários (e BDD) são **pré-condição obrigatória** do e2e no gate de PR (REQ-012); sem mudança de escopo |
 
 ## 1. Arquitetura
 
@@ -17,8 +18,8 @@
 
 Camada de **qualidade e entrega** sobre o MVP já empacotado por T19:
 
-1. **Gate de PR** — GitHub Actions em `ubuntu-latest`: unitários → BDD → stack e2e (Podman + `docker-compose.e2e.yml`) → Robot Framework; required checks bloqueiam merge; **sem** publish nem bump.
-2. **Suíte e2e Robot** — exercita fluxos observáveis do MVP (`github-etl-mcp-rag` BDD-001–024 automatizáveis) contra stack real e GitHub real (este repositório).
+1. **Gate de PR** — GitHub Actions em `ubuntu-latest`, ordem **obrigatória** (REQ-012): **testes unitários do projeto** → BDD → só então stack e2e (Podman + `docker-compose.e2e.yml`) → Robot Framework. Unitários e BDD são **pré-condição** do e2e (não opcionais); required checks bloqueiam merge; **sem** publish nem bump.
+2. **Suíte e2e Robot** — exercita fluxos observáveis do MVP (`github-etl-mcp-rag` BDD-001–024 automatizáveis) contra stack real e GitHub real (este repositório); **nunca** substitui unitários/BDD no gate.
 3. **Release pós-merge** — Conventional Commits → bump em `pyproject.toml` → build/push GHCR (`latest` + versão).
 4. **Docs em inglês** — README (usuário final), CHANGELOG, `docs/` (produto + contribuidores).
 
@@ -26,9 +27,10 @@ Camada de **qualidade e entrega** sobre o MVP já empacotado por T19:
 PR → main                         main (após merge)
 ┌────────────────────────────┐    ┌────────────────────────────┐
 │ ci-pr                      │    │ release                    │
-│  1. unitários              │    │  1. bump semver (pyproject)│
-│  2. BDD                    │    │  2. build imagem (T19)     │
-│  3. podman up e2e compose  │    │  3. push GHCR latest+ver   │
+│  1. unitários (obrigatório)│    │  1. bump semver (pyproject)│
+│  2. BDD (obrigatório)      │    │  2. build imagem (T19)     │
+│  ── gate: 1 e 2 verdes ──  │    │  3. push GHCR latest+ver   │
+│  3. podman up e2e compose  │    │                            │
 │  4. robot e2e              │    │                            │
 │  (não publica / não bump)  │    │                            │
 └────────────────────────────┘    └────────────────────────────┘
@@ -37,6 +39,8 @@ PR → main                         main (após merge)
    docker-compose.e2e.yml              docker-compose.yml
    (consumo T19)                       → ghcr.io/<owner>/<repo>
 ```
+
+**Pré-condição explícita do e2e:** o job/fase e2e **só** inicia depois que os **testes unitários do projeto** e os testes BDD estiverem verdes no mesmo workflow de PR. Falha em unitários ou BDD falha o required check correspondente e **impede** a execução do e2e (short-circuit) e o merge.
 
 ### 1.2 Ownership (DEC-007)
 
@@ -58,7 +62,7 @@ PR → main                         main (após merge)
 | ENG-004 | Bump: `fix:*` → patch; `feat:*` → minor; `BREAKING CHANGE` / `type!:` → major; sem prefixo aplicável no intervalo desde a última tag → **patch** | REQ-016; BDD-008 |
 | ENG-005 | Suíte Robot em `e2e/robot/`, suítes por superfície (`health`, `catalog_indexing`, `ui`, `mcp`), resources compartilhados (URLs, auth via env) | Evita monolito; alinha a BDD-001–024 observáveis |
 | ENG-006 | BDD-015 (narrativa Discovery no Cursor) **fora** do Robot; Robot cobre capacidade das tools MCP / fluxos observáveis | Premissa dos requisitos; reduz flakiness |
-| ENG-007 | Job e2e no PR só roda se unitários e BDD passaram (short-circuit); falha em qualquer job required bloqueia merge | Aceito em requisitos; economiza minutos de runner |
+| ENG-007 | Job e2e no PR **só** roda se os **testes unitários do projeto** e os testes BDD passaram (pré-condição obrigatória + short-circuit); unitários e BDD são required checks do gate (REQ-012); falha em qualquer job required bloqueia merge | Feedback humano (clarificação v0.1.1): deixar inequívoco na pipeline que unitários precedem e2e; economiza minutos de runner |
 | ENG-008 | Runner `ubuntu-latest` + Podman (pacote do runner / instalação no job); compose via `podman compose` ou `podman-compose` compatível com os YAML T19 | DEC-005; BR-006 |
 | ENG-009 | Imagem GHCR: `ghcr.io/<owner>/<repo>` (owner/repo do GitHub deste projeto); `docker-compose.yml` (T19) já deve referenciar essa imagem pública — release só garante tags publicadas | REQ-015; BDD-006 |
 | ENG-010 | Timeout e2e configurável (default sugerido 45–60 min job); retry limitado (ex.: 1 retry) só em erros classificados como rate-limit GitHub | Mitiga flakiness sem mascarar regressão |
@@ -82,7 +86,7 @@ Detalhamento de steps fica no pipeline por task. Contratos estáveis:
 
 | Contrato | Responsabilidade | Separação |
 |---|---|---|
-| `PrQualityGate` | Orquestrar unit → BDD → (condicional) e2e; falhar o check sem side-effects de release | Isola validação de publicação |
+| `PrQualityGate` | Orquestrar **unitários do projeto** → BDD → e2e **somente se** unit e BDD verdes; falhar o check sem side-effects de release | Isola validação de publicação; e2e nunca roda sem unitários |
 | `E2eStackLauncher` | Subir/derrubar stack via Podman + `docker-compose.e2e.yml`; expor base URLs | Runtime ≠ suíte Robot |
 | `RobotE2eSuite` | Validar fluxos MVP observáveis com GitHub real (`E2E_GITHUB_TOKEN`, repo = este) | Não conhece bump/GHCR |
 | `SemverBumper` | Ler commits desde última tag; aplicar ENG-004; escrever `pyproject.toml` | SoT de versão fora do Docker |
@@ -143,7 +147,7 @@ T07-docs-contributing-en         → T01, T04   (alinha comandos CI/e2e; soft T0
 5. **Docs em camadas** — README/produto em W0; contributing após comandos e2e reais (T04).
 6. **BDD-015 fora do Robot** — evita automação impossível/frágil.
 7. **Bump com commit na SoT** — evita divergência pyproject ↔ GHCR ↔ tags.
-8. **Short-circuit unit/BDD** — não sobe stack cara se qualidade básica já falhou.
+8. **Short-circuit unit/BDD** — e2e **exige** unitários + BDD verdes; não sobe stack cara se qualidade básica já falhou (pré-condição obrigatória do gate, não otimização opcional).
 
 ## 6. Rastreabilidade requisito → task
 
@@ -176,10 +180,16 @@ T07-docs-contributing-en         → T01, T04   (alinha comandos CI/e2e; soft T0
 - Rollback de release: não retagear `latest` manualmente sem processo; falha de push não marca sucesso; revert do commit de bump se necessário.
 - Robot: desabilitar job e2e só como emergência (quebra BR-001) — preferir fix da suíte.
 
-## 9. Handoff
+## 9. Critérios de aceite do plano (gate de PR)
 
-Plano **v0.1.0** — `PENDING_HUMAN_PLAN_APPROVAL` (PO_PLAN_REVIEW aprovado).
+- A esteira de PR documenta e implementa a ordem REQ-012: unitários → BDD → e2e.
+- Antes do e2e, a esteira **deve** executar os **testes unitários do projeto** (e BDD); ambos verdes são pré-condição do job e2e (ENG-007; T01 + T05).
+- Required checks incluem `unit`, `bdd` e `e2e`; falha em unitários bloqueia merge e impede e2e.
 
-- Tasks `T01`–`T07` criadas em `tasks/`.
+## 10. Handoff
+
+Plano **v0.1.1** — `PENDING_HUMAN_PLAN_APPROVAL` (PO_PLAN_REVIEW v0.1.1 aprovado).
+
+- Tasks `T01`–`T07` em `tasks/`; T01/T05 atualizadas para pré-condição unit→e2e.
 - Próximo gate: **HUMAN_PLAN_APPROVAL**.
 - Implementação: uma task por pipeline; W0 pode iniciar sem T19; W1+ exige T19 DONE com 3 composes.
