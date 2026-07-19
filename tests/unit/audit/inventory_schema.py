@@ -46,7 +46,7 @@ ALLOWED_SUPERFICIES = frozenset(
 ALLOWED_STATUS = frozenset({"coberto-integral", "lacuna"})
 ALLOWED_BROWSER = frozenset({"sim", "nao", "n/a"})
 T21_KNOWN_PARTIAL_OR_SMOKE = frozenset(
-    {"BDD-003", "BDD-006", "BDD-013", "BDD-024"}
+    {"BDD-003", "BDD-006", "BDD-013"}
 )
 ABSENT_EVIDENCE = frozenset({"ausente", "n/a", "—", "-", ""})
 
