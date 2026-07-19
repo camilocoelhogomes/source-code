@@ -65,13 +65,13 @@ Camada A (obrigatória, pytest/BDD): stack in-process UI TestClient + orquestrad
 2. `GET /api/repos/{id}/executions` → execução `failed` com `error_message` + `error_at`; histórico retém falha;
 3. nova indexação após remoção da falha → `up_to_date` e evidência de restart total (`delete_repository` / wipe vetorial).
 
-Camada B (Robot green path): keyword/Process invoca `python -m github_rag.e2e.negative_probes bdd008` (mesma indução controlada, exit 0/1, stdout sem secrets). Não depende de fault injection no stack Podman ao vivo.
+Camada B (Robot green path): keyword/Process invoca `python e2e/probes/negative_probes.py bdd008` (mesma indução controlada, exit 0/1, stdout sem secrets). Probes ficam fora de `github_rag.e2e` (UT-X04). Não depende de fault injection no stack Podman ao vivo.
 
 ### 3.4 CONFIG_PATH fail-fast (BDD-022)
 
 Camada A: manter/estender asserts delivery (CD-03) — ausente/blank/arquivo inexistente/JSON inválido → `SystemExit(1)`, sync/reconcile/bind = 0, logs sem valor de token.
 
-Camada B (Robot): `python -m github_rag.e2e.negative_probes bdd022` exercita boot com `CONFIG_PATH` inválido + token env presente; assert exit 1, sem parcial, stdout/stderr sem token.
+Camada B (Robot): `python e2e/probes/negative_probes.py bdd022` exercita boot com `CONFIG_PATH` inválido + token env presente; assert exit 1, sem parcial, stdout/stderr sem token.
 
 Casos atuais de payload index vazio/unknown id **permanecem** (regressão), mas deixam de ser a única evidência BDD-022.
 
@@ -88,7 +88,7 @@ Casos atuais de payload index vazio/unknown id **permanecem** (regressão), mas 
 | `CatalogIssueStore` / `InMemoryCatalogIssueStore` | Handoff observável issues locais pós-sync |
 | `GET /api/catalog/issues` | Superfície UI API BDD-018 |
 | `DefaultContainerRuntime` + wiring UI | Popular store após sync |
-| `github_rag.e2e.negative_probes` | Probes Process para Robot (008/022) |
+| `e2e/probes/negative_probes.py` | Probes Process para Robot (008/022); fora de `github_rag.e2e` |
 | `e2e/robot/negative.robot` | Cenários integrais green path |
 | `tests/bdd/test_negative_integral.py` | BDD executável 008/018/022 |
 | `tests/unit/**` | Contratos extremos/corner |

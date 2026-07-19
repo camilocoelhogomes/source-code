@@ -24,7 +24,7 @@
 | I-T25-004 | `create_app` / `DefaultManagementUiApi` aceitam `issue_store` opcional | Extensão backward-compatible T18 | NEG-02 |
 | I-T25-005 | `wire_ui_app(..., issue_store=)` | Composition delivery passa store | NEG-02 |
 | I-T25-006 | Runtime popula store após `run_catalog_sync` | Ordem wire-antes-sync | NEG-02 |
-| I-T25-007 | `NegativeIntegralProbes` (módulo e2e) `run_bdd008` / `run_bdd022` | Indução Robot sem Podman fault-inject | NEG-01/03 |
+| I-T25-007 | `e2e/probes/negative_probes.py` `run_bdd008` / `run_bdd022` | Indução Robot fora de `github_rag.e2e` (UT-X04) | NEG-01/03 |
 | I-T25-008 | Probes e APIs nunca ecoam token | BR-008 / BDD-014 | todos |
 
 ## 2. `CatalogIssueStore`
@@ -116,10 +116,10 @@ def wire_ui_app(
 2. `result = run_catalog_sync(config, self._sync)`.
 3. `self._issue_store.replace(result.local_issues)`.
 
-## 5. `NegativeIntegralProbes` (e2e)
+## 5. `NegativeIntegralProbes` (`e2e/probes/`)
 
 ```python
-# github_rag/e2e/negative_probes.py
+# e2e/probes/negative_probes.py  (fora de src/github_rag/e2e — UT-X04)
 
 def run_bdd008_partial_failure_probe() -> int:
     """Indução controlada BDD-008 via UI TestClient + orquestrador.
@@ -131,7 +131,7 @@ def run_bdd008_partial_failure_probe() -> int:
     Motivo da separação
         Robot green path precisa de evidência integral sem fault-inject
         no compose vivo (D-T25-002); o probe isola indução determinística
-        do launcher Podman.
+        do launcher Podman e não polui o pacote ``github_rag.e2e``.
     """
 
 def run_bdd022_config_path_probe() -> int:
@@ -148,7 +148,7 @@ def run_bdd022_config_path_probe() -> int:
     """
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """CLI ``python -m github_rag.e2e.negative_probes <bdd008|bdd022>``."""
+    """CLI ``python e2e/probes/negative_probes.py <bdd008|bdd022>``."""
 ```
 
 ## 6. Dependências e não-objetivos

@@ -18,6 +18,7 @@ from github_rag.indexing.ports import IndexingOrchestrator
 from github_rag.query.ports import QueryService
 from github_rag.schedule.ports import DailyScheduler
 from github_rag.ui.app import create_app
+from github_rag.ui.issues import CatalogIssueStore
 
 
 def default_web_root() -> Path:
@@ -49,6 +50,7 @@ class DefaultManagementUiApi:
         query: QueryService,
         drain_on_index: bool = True,
         web_root: Path | None = None,
+        issue_store: CatalogIssueStore | None = None,
     ) -> None:
         self._catalog = catalog
         self._orchestrator = orchestrator
@@ -56,6 +58,7 @@ class DefaultManagementUiApi:
         self._query = query
         self._drain_on_index = drain_on_index
         self._web_root = web_root if web_root is not None else default_web_root()
+        self._issue_store = issue_store
 
     def build(self) -> FastAPI:
         """Monta a aplicação ASGI (I-T18-001).
@@ -70,4 +73,5 @@ class DefaultManagementUiApi:
             query=self._query,
             drain_on_index=self._drain_on_index,
             web_root=self._web_root,
+            issue_store=self._issue_store,
         )
