@@ -26,3 +26,28 @@
 ### Resultado
 
 `CHANGES_REQUIRED` na v0.1.0 (M-T15-01, M-T15-02) → correções aplicadas pelo próprio Architect no `design.md` (§3.1 D-T15-011/012, §3.6, §4.2, §5, §10, §12) → **`APPROVED_BY_ARCHITECT`** na v0.2.0. Sem achados BLOCKING ou MAJOR abertos.
+
+## Revisão 2 — Tech Lead Architect — `bdd.md` v0.1.0 → v0.2.0
+
+- **Revisor:** Tech Lead Architect
+- **Artefato:** `spec/features/github-etl-mcp-rag/tasks/T15-daily-scheduler/bdd.md`
+- **Data:** 2026-07-18
+
+### Achados
+
+| ID | Severidade | Evidência | Descrição | Correção esperada |
+|---|---|---|---|---|
+| M-BDD-T15-01 | MAJOR | `bdd.md` v0.1.0, cenários SCH-01..SCH-12 (sem cenário de confinamento de SDK) | `design.md` §3.1 D-T15-010 exige que APScheduler fique confinado ao adaptador de scheduling (ENG-013), e BDD-024 exige conformidade de integrações com SDK oficial só nos adaptadores. As tasks-irmãs já estabelecem esse cenário como parte do gate BDD-024: T14 `bdd.md` `IO-14` ("Sem SDKs no pacote indexing") e T16 `bdd.md` `QS-05` ("nenhum client paralelo ad-hoc em `github_rag.query`"). O candidato de T15 cobria o **uso** de APScheduler/SQLAlchemy (SCH-10, SCH-12) mas não a **ausência** de import desses SDKs fora dos módulos adaptadores (`ports.py`, `errors.py`, `memory.py`), deixando D-T15-010 sem verificação behavioral/AST equivalente à dos pares. | Adicionar cenário de inspeção de imports (AST) confirmando que `ports.py`/`errors.py`/`memory.py` não importam `apscheduler`/`sqlalchemy`, e que esses SDKs só aparecem nos módulos adaptadores (`cron_expr.py`/`scheduler.py` para APScheduler; `postgres.py` para SQLAlchemy). |
+| M-BDD-T15-02 | MAJOR | `bdd.md` v0.1.0, cenário SCH-03 ("`AppSettings.index_cron == "0 2 * * *"`" ... "`active_cron()` == default de settings") | O valor de entrada (`AppSettings.index_cron`) e o valor esperado de saída eram o mesmo literal do default de produto (`0 2 * * *`) definido em `design.md` §4.2/D-T15-001. Um teste derivado desse cenário passaria mesmo se a implementação ignorasse `AppSettings.index_cron` e apenas retornasse uma constante hardcoded local igual ao default — não distingue "lido de `AppSettings`" de "hardcoded coincidente". Isso reabre, no nível de BDD, o risco já registrado como MAJOR M-T15-02 no `design.md` (leitura ad-hoc de env), sem uma verificação que de fato force a dependência em `AppSettings.index_cron`. | Reescrever SCH-03 usando um valor de `AppSettings.index_cron` distinto do literal default de produto (ex.: `"0 3 * * *"`) como caso principal, comprovando que `active_cron()` reflete exatamente o campo de settings; manter o caso do default literal (`0 2 * * *`, ausência de env) como segundo caso, agora não ambíguo por já haver o caso discriminante. |
+
+### Verificação dos demais critérios (sem achados)
+
+- Cobertura dos critérios de aceite da task (T15-daily-scheduler.md): cron UI/env (SCH-03/04), tick elegíveis (SCH-01/06), sem reprocessar `up_to_date` (SCH-05), inválido tipado (SCH-07), APScheduler (SCH-10), BR-017 (SCH-09) — todos presentes e rastreados.
+- Alinhamento ao `design.md` 0.2.0: `AppSettings.index_cron` (SCH-03, corrigido), `run_tick_once` com lock (SCH-11, D-T15-011), tick = `StartupIndexReconcile` + `run_until_idle` (SCH-01/05/06, §3.3).
+- Sem antecipação de UI T18: cenários exercitam `DailyScheduler`/`CronPreferenceStore` diretamente (fakes/contratos), sem simular telas ou rotas FastAPI; seção "Fora de escopo" explicita UI/FastAPI como T18.
+- BR-024 (SQLAlchemy/Alembic) e BR-017 (sem CRUD de conexões): SCH-12 e SCH-09 conformes.
+- Rastreabilidade e escopo/exclusões coerentes com `T15-daily-scheduler.md` e `design.md` §11.
+
+### Resultado
+
+`CHANGES_REQUIRED` na v0.1.0 (M-BDD-T15-01, M-BDD-T15-02) → correções aplicadas pelo próprio Architect no `bdd.md` (SCH-03 reescrito; novo SCH-13; tabela de rastreabilidade e histórico atualizados) → **`APPROVED_BY_ARCHITECT`** na v0.2.0. Sem achados BLOCKING ou MAJOR abertos.
