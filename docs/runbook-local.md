@@ -101,11 +101,13 @@ Canonical MVP proof (after `cp .env.example .env` and setting a real token):
 
 ```bash
 python -m pip install -e ".[e2e]"
+rfbrowser init   # Chromium Playwright — obrigatório para ui_browser.robot (T23)
 python -m github_rag.e2e
 ```
 
-See `e2e/README.md` for suite layout, timeouts, and CI secret `E2E_GITHUB_TOKEN`.
-BDD-015 (Cursor Discovery narrative) is excluded from Robot.
+See `e2e/README.md` for suite layout (incl. Browser Library / `ui_browser.robot`),
+timeouts, and CI secret `E2E_GITHUB_TOKEN`. Jobs e2e precisam de `rfbrowser init`
+antes da prova canônica. BDD-015 (Cursor Discovery narrative) is excluded from Robot.
 
 ## Cursor MCP (stdio)
 

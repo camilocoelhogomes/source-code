@@ -12,6 +12,15 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
   fail-fast sem leak); `negative.robot` e fixture `local-missing-volume`;
   testes BDD/unitários; cobertura ≥95%. Asserts API autocontidos; browser
   residual T23.
+- Evidência browser na suíte Robot e2e (T23 / `gap-ui-browser`): suite
+  `e2e/robot/ui_browser.robot` + resource `browser.resource` (Browser Library /
+  Playwright) cobrindo BDD-001, 002, 007, 009, 010, 016, 019, 023 na UI;
+  `robotframework-browser` em deps `[e2e]`; `ui_browser` no green path
+  (`GREEN_PATH_SUITES`); fixture `config.e2e.json` com wildcard de inclusão
+  `camilocoelhogomes/source-*`; docs `rfbrowser init` em `e2e/README.md` e
+  `docs/runbook-local.md`. Suites RequestsLibrary (T21) preservadas — API HTTP
+  sozinha não encerra a lacuna. Gate manifesto:
+  `tests/bdd/test_ui_browser_gap.py` + `tests/unit/e2e/test_ui_browser_manifest.py`.
 - Pacote de fechamento da auditoria (T07 / `mvp-e2e-audit-hardening`): contrato
   `AuditClosurePack` em
   `spec/features/mvp-e2e-audit-hardening/audit/closure-pack.md` — índice de

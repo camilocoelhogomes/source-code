@@ -1,4 +1,5 @@
-# Mirror of pyproject optional-deps [e2e] (T21). Install: pip install -r requirements-e2e.txt
+# Mirror of pyproject optional-deps [e2e] (T21/T23). Install: pip install -r requirements-e2e.txt
 robotframework>=7
 robotframework-requests>=0.9
+robotframework-browser>=18
 httpx>=0.27
