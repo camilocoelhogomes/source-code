@@ -110,3 +110,45 @@ Nenhum.
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — BDD v0.1.1 apto para gate de interfaces (artefato documental) / aprovação humana do BDD. Sem implementação da matriz nesta etapa.
+
+---
+
+## Review Interfaces — Tech Lead Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `interfaces.md` v0.1.0 |
+| Data | 2026-07-18 |
+| Branch | `feature/mvp-e2e-audit-hardening-T01-coverage-inventory` |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Checks executados
+
+| Check | Resultado |
+|---|---|
+| Interface lógica `CoverageInventory` com responsabilidade + motivo da separação | OK — §2 |
+| Sem Protocol/ABC Python / sem runtime (D-T01-006) | OK — §1 exclusões; I-T01-003 |
+| Schema §6: 8 colunas + domínios | OK — §3.3 |
+| Regras `coberto-integral` vs `lacuna` + evidência real | OK — §3.4; alinhado INV-06 |
+| Denylist T21 parcial/smoke 003/006/013/024 | OK — §3.4; alinhado INV-07 |
+| D-T01-005 UI sem browser | OK — §3.4 regra 2 |
+| Exclusão BDD-015 (nota + sem linha) | OK — §3.1–3.2; INV-03/04 |
+| Contrato de consumo T06 | OK — §4; INV-08 |
+| Path canônico `audit/coverage-inventory.md` | OK — D-T01-002 |
+| Alinhamento design 0.1.0 / BDD 0.1.1 | OK |
+| Sem alteração e2e/produto neste artefato | OK |
+
+### Achados
+
+| ID | Severidade | Evidência | Achado | Correção esperada |
+|---|---|---|---|---|
+| — | — | — | Nenhum BLOCKING / MAJOR / SUGGESTION | — |
+
+### Bloqueios abertos
+
+Nenhum.
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — `interfaces.md` v0.1.0 apto para unit plan / implementação documental da matriz. Gate humano intermediário substituído pela aprovação Architect (modo autonomous).
