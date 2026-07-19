@@ -87,3 +87,45 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — bdd.md `0.1.0` adequado para interfaces/unitários e implementação. Prosseguir para `interfaces.md`.
+
+---
+
+## Review — Interfaces `0.1.0` — Architect (self-review)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `interfaces.md` |
+| Data | 2026-07-19 |
+| Pipeline | autonomous (aprovação Architect substitui HITL intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Comentário responsabilidade + motivo da separação em cada interface/contrato | OK | §§3–6 (resource, suite, GREEN_PATH, helper, M-T23-*) |
+| Keywords `browser.resource` (Open/Close/Wait) | OK | §3; I-T23-001..003 |
+| Superfície `ui_browser.robot` (Settings, tags, cases, seletores) | OK | §4; I-T23-002/004/005 |
+| Extensão `GREEN_PATH_SUITES` após `ui`; Protocols T21 intactos | OK | §5; I-T23-006..008 |
+| Helper wildcard opcional documentado | OK | §5.2; I-T23-013 |
+| M-T23-* deps / Robot / fixture / README / testid | OK | §6; M-T23-001..021 |
+| Alinhamento design 0.1.0 + BDD 0.1.0 | OK | §9 rastreabilidade |
+| Sem BLOCKING/MAJOR | OK | self-review |
+| Idioma português | OK | artefato completo |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| — | Nenhum | — | — | — |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — interfaces.md `0.1.0` adequado para unitários QA e implementação Developer.
