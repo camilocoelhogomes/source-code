@@ -88,3 +88,83 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — interfaces.md v0.1.0 sólidas e alinhadas a design 0.1.0 + BDD 0.1.1. Prosseguir para unit plan / stubs.
+
+---
+
+## Review — Unit test plan `0.1.0` — QA (pendente Architect)
+
+| Campo | Valor |
+|---|---|
+| Autor | QA Engineer |
+| Artefato | `unit-test-plan.md` + `tests/unit/delivery/` |
+| Data | 2026-07-18 |
+| Resultado | `TESTS_READY_FOR_REVIEW` |
+
+### Suíte
+
+| Path | IDs |
+|---|---|
+| `tests/unit/delivery/test_runtime_boot.py` | UT-B01..B14 |
+| `tests/unit/delivery/test_health.py` | UT-H01..H05 |
+| `tests/unit/delivery/test_wiring.py` | UT-W01..W04 |
+| `tests/unit/delivery/test_manifest.py` | UT-M01..M06 |
+| `tests/unit/delivery/test_imports.py` | UT-X01..X04 |
+
+### Demonstração RED
+
+```bash
+cd /private/tmp/github_rag_T19
+PYTHONPATH=src /Users/camilocoelhogomes/projects/github_rag/.venv/bin/python -m pytest tests/unit/delivery/ -q --no-cov
+```
+
+Resultado QA: **33 failed**, 0 passed — `ImportError`/`ModuleNotFoundError` (`delivery` sem superfície) e `AssertionError` (Dockerfile/compose/`.env.example`/`uvicorn` ausentes). Sem commits nesta etapa.
+
+---
+
+## Review — Unit tests `0.1.1` — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `unit-test-plan.md` `0.1.1` + `tests/unit/delivery/**` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (aprovação Architect substitui HITL) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Contratos I-T19-* / ordem boot | OK | UT-B01 ordem D-T19-003; UT-B08/B12 |
+| BDD-022 fail-fast sem parcial | OK | UT-B02..B07, B11, B14, B15, B17; scheduler assertado |
+| Extremos / corners / inválidos / vazio | OK | blank/missing/invalid JSON; INDEX_WORKERS; secret ausente; idle não bloqueia |
+| Health / segredos | OK | UT-H01..H05; UT-B13 URL+token; pré-boot sem ASGI |
+| Wiring env incompleto | OK | UT-W01..W04 |
+| Manifesto M-T19-* | OK | UT-M01..M06 (+ UI/MCP env) |
+| ENG-013 / entries | OK | UT-X01..X05 (`mcp_stdio`) |
+| Sem domínio fora do escopo | OK | doubles; sem tip×estado |
+
+### Achados (v0.1.0) — corrigidos em v0.1.1
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| `MAJOR` | Sem fail-fast de `wait_for_postgres` no caminho de `boot()` | plan UT-B* vs design §7 / I-T19-006 | UT-B15 | Corrigido |
+| `MAJOR` | Sem cobertura de `skip_infra=True` omitindo wait/alembic | I-T19-011 ausente na matriz | UT-B16 | Corrigido |
+| `MAJOR` | Sem fail-fast de secret ausente (`GITHUB_TOKEN`) | design §7 ConfigLoadError; BDD-022 | UT-B17 | Corrigido |
+| `MAJOR` | Patches só em `wiring.*` — frágeis ao estilo de import do runtime | `test_runtime_boot.py` UT-B01/B06 | `helpers.patch_infra` dual-site | Corrigido |
+| `MAJOR` | Fail-fast não assertava `scheduler.started == 0` | UT-B06/B07 / `_assert_exit_no_partial` | scheduler em todos os fail-fast | Corrigido |
+| `MAJOR` | UT-B13 só checava token/`ghp_`, não URL completa | I-T19-019 | assert `secret_pass` + `DATABASE_URL` | Corrigido |
+| `MAJOR` | Entry `mcp_stdio` (I-T19-010/015) sem unit | só UT-X04 `__main__` | UT-X05 | Corrigido |
+| `MAJOR` | UT-H03 não garantia ausência de app pré-boot | plan “só após boot” | assert `ui_app`/`asgi_app` is None pré-boot | Corrigido |
+| `SUGGESTION` | UT-W03 só checava `callable` | I-T19-012 | signature com `environ` | Corrigido |
+| `SUGGESTION` | `.env.example` sem UI/MCP na matriz unit | I-T19-009 §10 | UT-M06 + `UI_PORT`/`MCP_*` | Corrigido |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — unit-test-plan v0.1.1 + `tests/unit/delivery/**` suficientes vs I-T19-* / design / BDD-022. Prosseguir para implementação (Developer).
