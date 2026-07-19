@@ -6,3 +6,7 @@ __pycache__/
 .coverage
 htmlcov/
 .env
+e2e/results/*
+!e2e/results/.gitkeep
+e2e/fixtures/repos/sample-local/.git/
+*.secret

@@ -1,0 +1,30 @@
+{
+  "connections": {
+    "github-this-repo": {
+      "type": "github",
+      "token": {
+        "env": "GITHUB_TOKEN"
+      },
+      "orgs": [
+        "camilocoelhogomes"
+      ],
+      "repos": [
+        "camilocoelhogomes/source-code"
+      ],
+      "revisions": {
+        "branches": [
+          "main"
+        ]
+      }
+    },
+    "local-e2e-fixture": {
+      "type": "git",
+      "url": "file:///repos/*",
+      "revisions": {
+        "branches": [
+          "main"
+        ]
+      }
+    }
+  }
+}

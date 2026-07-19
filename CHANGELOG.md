@@ -6,6 +6,14 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- Prova e2e do MVP (T21): pacote `github_rag.e2e` com contratos
+  `E2eStackLauncher` / `RobotMvpSuite` (`PodmanE2eStackLauncher`,
+  `DefaultRobotMvpSuite`, `E2eCredentialResolver`), suíte Robot Framework em
+  `e2e/robot/` (health, catalog_indexing, ui, mcp, negative; `--exclude bdd015`),
+  fixtures sem secrets, `e2e/README.md`, optional-deps `[e2e]` +
+  `requirements-e2e.txt`. Runtime Podman + `docker-compose.e2e.yml`; CI exige
+  `E2E_GITHUB_TOKEN`; local HITL via `.env` não versionado / `GITHUB_TOKEN`.
+  Entry: `python -m github_rag.e2e`.
 - Entrega local por container (T19): pacote `github_rag.delivery`
   (`ContainerRuntime` / `DefaultContainerRuntime` / `run_container_boot`),
   `Dockerfile` + **três** composes (`docker-compose.yml` usuário,
