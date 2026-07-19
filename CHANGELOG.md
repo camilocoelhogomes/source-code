@@ -6,6 +6,14 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- Asserts e2e integrais de catalog_indexing (T24 / `gap-catalog-indexing-integral`):
+  cenários Robot BDD-003/005/006/017 em `e2e/robot/catalog_indexing.robot`
+  (tags `bdd003`/`bdd005`/`bdd006`/`bdd017`) — cron+tick sem POST index,
+  tip→`last_processed_commit` via MCP, exclusões CSV/imagem/gitignore,
+  indexação só main / sem uncommitted; library
+  `e2e/robot/libraries/CatalogIndexingKeywords.py` + resource
+  `catalog_indexing.resource`; seed fixture `sample-local` e
+  `ensure_local_git_fixture` no launcher. Sem mudança de domínio ETL/UI.
 - Pacote de fechamento da auditoria (T07 / `mvp-e2e-audit-hardening`): contrato
   `AuditClosurePack` em
   `spec/features/mvp-e2e-audit-hardening/audit/closure-pack.md` — índice de

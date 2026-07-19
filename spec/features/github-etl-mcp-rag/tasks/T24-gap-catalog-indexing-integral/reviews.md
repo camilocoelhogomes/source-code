@@ -311,3 +311,35 @@ Revisar `unit-test-plan.md` `0.1.0` e unitários RED; aprovar (`APPROVED_BY_ARCH
 ### Decisão
 
 `BLUE_APPROVED_BY_ARCHITECT` — Blue concluído; pronto para QA suites/cobertura e docs/changelog.
+
+---
+
+## Review — Docs / changelog — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `CHANGELOG.md` + `e2e/README.md` |
+| Data | 2026-07-19 |
+| Pipeline | autonomous (aprovação Architect substitui HITL intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| CHANGELOG `[Unreleased]` entrada T24 | OK | seção Adicionado: asserts e2e integrais BDD-003/005/006/017; `CatalogIndexingKeywords` + resource; seed `sample-local` / `ensure_local_git_fixture` |
+| README keywords/cenários T24 | OK | `e2e/README.md`: layout library + tabela tags `bdd003`/`bdd005`/`bdd006`/`bdd017` |
+| Sem secrets em docs/changelog | OK | só paths/tags/nomes de variáveis |
+| Spec T24 completo | OK | design, bdd, interfaces, unit-test-plan, refactoring, reviews, approvals |
+| Sem alteração de domínio nesta etapa | OK | só docs |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| — | Nenhum `BLOCKING` / `MAJOR` | — | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — docs/changelog T24; gate `ARCHITECT_DOCS` aprovado.

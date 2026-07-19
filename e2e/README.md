@@ -80,9 +80,23 @@ podman compose -f docker-compose.e2e.yml down
 |------|--------|
 | `e2e/robot/*.robot` | Suites green path (health, catalog_indexing, ui, mcp, negative) |
 | `e2e/robot/resources/` | Keywords HTTP/auth (nunca logam token) |
+| `e2e/robot/libraries/CatalogIndexingKeywords.py` | Helpers T24 (cron UTC, MCP parse, tip host, eligibility, main-only) |
 | `e2e/fixtures/config.e2e.json` | Config sem secrets (`token.env=GITHUB_TOKEN`) |
-| `e2e/fixtures/repos/` | Volume local (repo `sample-local` inicializado no `up`) |
+| `e2e/fixtures/repos/` | Volume local (repo `sample-local` inicializado no `up`; seed BDD-006/017) |
 | `e2e/results/` | Artefatos Robot (gitignored) |
+
+## catalog_indexing (T24)
+
+Suíte `e2e/robot/catalog_indexing.robot` — asserts integrais vs inventário gap-fill:
+
+| Tag | Cenário (resumo) |
+|-----|------------------|
+| `bdd003` | Cron dispara tick; indexa sem POST `/api/repos/index` pós-tip |
+| `bdd005` | Mudança de tip na main → `last_processed_commit` via MCP |
+| `bdd006` | Include Java/MD; exclude CSV, imagem e paths `.gitignore` |
+| `bdd017` | Somente main; branch `other` e uncommitted ausentes nos hits |
+
+Resource: `e2e/robot/resources/catalog_indexing.resource`.
 
 ## Timeouts / rate limit
 
