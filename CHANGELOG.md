@@ -4,6 +4,10 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ## [Unreleased]
 
+### Corrigido
+
+- Discovery GitHub (T28): fallback org→user em HTTP 404.
+
 ### Adicionado
 
 - E2e env loader seguro e fail-fast launcher (T29): `env_loader`, entrypoint

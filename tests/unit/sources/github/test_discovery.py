@@ -138,6 +138,18 @@ class TestGitHubRepoDiscovery(unittest.TestCase):
         flags = {item.full_name: item.private for item in result}
         self.assertEqual(flags, {"my-org/pub": False, "my-org/priv": True})
 
+    def test_user_login_discovery_via_fake_client(self) -> None:
+        client = FakeGitHubClient(
+            {"camilocoelhogomes": [GitHubRepoRaw("camilocoelhogomes/source-x", "source-x", False)]}
+        )
+        discovery = GitHubRepoDiscovery(client=client)
+        connection = load_github_connection(
+            orgs=["camilocoelhogomes"], repos=["camilocoelhogomes/source-*"]
+        )
+        result = discovery.discover("conn", connection)
+        self.assertEqual([item.full_name for item in result], ["camilocoelhogomes/source-x"])
+
+
 
 if __name__ == "__main__":
     unittest.main()
