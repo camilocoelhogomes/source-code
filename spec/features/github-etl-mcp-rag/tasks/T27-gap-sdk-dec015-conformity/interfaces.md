@@ -423,7 +423,7 @@ class TestBDD024FullTextCoverage(unittest.TestCase):
 | `TestDEC07ApSchedulerBinding` | DEC015-07 | `SourceConformityRule`/`assert_source_conforms` |
 | `TestDEC08McpSdkBinding` | DEC015-08 | `tests.unit.mcp.helpers` (`MCP_PKG`, `FORBIDDEN_IMPORTS`, `collect_imports`) |
 | `TestDEC09FastApiBinding` | DEC015-09 | `tests.unit.ui.helpers` (`UI_PKG`, `FASTAPI_MODULES`, `imports_of_file`) |
-| `TestDEC10Br024Postgres` | DEC015-10 | `SourceConformityRule`/`assert_source_conforms` + regex de URL |
+| `TestDEC10Br024Postgres` | DEC015-10 | `Path.read_text` + `assertRegex`/`assertNotRegex` direto (exceção deliberada — ver nota) |
 | `TestDEC11Dec016ZoektRealAdapter` | DEC015-11 | `SourceConformityRule`/`assert_source_conforms` |
 | `TestDEC12Dt001Elimination` | DEC015-12 | `SourceConformityRule`/`assert_source_conforms` |
 | `TestBDD024FullTextCoverage` | DEC015-13 | `BDD024_CLAUSE_MODULE_MAP` + `assert_module_importable` |
@@ -432,6 +432,17 @@ DEC015-14 (consistência de auditoria) não gera classe nova — é o efeito esp
 sobre `tests/bdd/test_mvp_e2e_audit_coverage_inventory.py` e
 `tests/bdd/test_mvp_e2e_audit_gap_fill_backlog.py` após a edição pontual
 (design §2.5, bdd §DEC015-14).
+
+> **Nota (Blue T27, R-4/B-1):** `TestDEC10Br024Postgres` não usa
+> `SourceConformityRule`/`assert_source_conforms` como as demais classes
+> `SourceConformityRule`-based (DEC015-02/07/11/12) — implementação real
+> confirmada em review (`tests/bdd/test_dec015_conformity.py:576-620+`).
+> BR-024 toca 4 arquivos com regras heterogêneas (2 delas fora do contrato
+> 1-arquivo-1-regra do helper: loop sobre 2 arquivos e regex condicional
+> sobre arquivo de teste opcional); manter `Path.read_text` direto é menor
+> risco que forçar a abstração. Divergência doc↔código original registrada
+> como `SUGGESTION` não bloqueante em `reviews.md` R-4, resolvida aqui
+> documentando a implementação real em vez de migrar o código.
 
 ## 6. Fora de escopo desta camada
 

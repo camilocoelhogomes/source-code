@@ -574,7 +574,15 @@ _TEST_PG_REPO_PATH = (
 
 
 class TestDEC10Br024Postgres(unittest.TestCase):
-    """DEC015-10 / BR-024 — PostgreSQL via SQLAlchemy 2.x + Alembic + psycopg3."""
+    """DEC015-10 / BR-024 — PostgreSQL via SQLAlchemy 2.x + Alembic + psycopg3.
+
+    Exceção deliberada a `SourceConformityRule`/`assert_source_conforms`
+    (Blue T27, R-4/B-1): a cláusula toca 4 arquivos com regras heterogêneas
+    (1 arquivo por regra em 2 métodos; 2 arquivos em loop num terceiro;
+    regex condicional sobre arquivo de teste opcional no quarto) — forçar o
+    contrato 1-arquivo-1-regra do helper aumentaria a complexidade sem
+    ganho de legibilidade. `interfaces.md` §5 documenta esta exceção.
+    """
 
     def test_models_use_sqlalchemy_2x_declarative_api(self) -> None:
         source = _MODELS_PATH.read_text(encoding="utf-8")

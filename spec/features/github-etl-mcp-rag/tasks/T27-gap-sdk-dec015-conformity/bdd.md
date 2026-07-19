@@ -6,8 +6,8 @@
 | Task | `T27-gap-sdk-dec015-conformity` |
 | Autor | Tech Lead Architect |
 | Data | 2026-07-19 |
-| Estado | `APPROVED_BY_ARCHITECT` |
-| Versão | `0.1.0` |
+| Estado | `BLUE_READY_FOR_REVIEW` (base `0.1.0` permanece `APPROVED_BY_ARCHITECT`) |
+| Versão | `0.1.1` |
 | Design base | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
 | Execução | `tests/bdd/test_dec015_conformity.py` (novo) + suítes referenciadas; sem Robot/e2e/GitHub real/Docker |
 
@@ -16,6 +16,7 @@
 | Data | Autor | Decisão | Versão | Observações |
 |---|---|---|---|---|
 | 2026-07-19 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.0` | Escrito e aprovado pelo próprio Architect por instrução explícita do orquestrador (modo autônomo, pipeline T27); cobre texto integral BDD-024 conforme design §2–§4. |
+| 2026-07-19 | Developer (Blue) | `BLUE_READY_FOR_REVIEW` | `0.1.1` | R-6/B-2 (`reviews.md` §4/§5): corrige `DEC015-14` — `nota_parcial_t21=n/a` → `—`, alinhando à convenção real do artefato (todas as demais linhas `coberto-integral` de `coverage-inventory.md` usam `—`, não `n/a`). Edição documental pura; nenhum cenário/asserção alterado. Pendente de `BLUE_APPROVED_BY_ARCHITECT`. |
 
 ## Convenções
 
@@ -336,7 +337,7 @@ deixar de importar (proteção contra lacuna silenciosa por rename/remoção)
 **Quando** DEC015-01..13 passarem (prova integral de BDD-024 registrada)
 **Então** a linha `BDD-024` da matriz passa a `status=coberto-integral`,
 `evidencia_pytest` referencia `tests/bdd/test_dec015_conformity.py` (+ suítes
-coordenadas), `nota_parcial_t21=n/a`, `motivo_lacuna=—`
+coordenadas), `nota_parcial_t21=—`, `motivo_lacuna=—`
 **E** `T21_KNOWN_PARTIAL_OR_SMOKE` (em `test_mvp_e2e_audit_coverage_inventory.py`)
 não contém mais `"BDD-024"`, preservando `BDD-003`/`BDD-006`/`BDD-013` intocados
 **E** `EXPECTED_LACUNA_BDDS` (em `test_mvp_e2e_audit_gap_fill_backlog.py`) não
