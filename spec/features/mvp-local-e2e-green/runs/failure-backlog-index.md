@@ -21,7 +21,8 @@
 | T30-container-delivery-compose-local-image | container-delivery | REQ-006/007 | READY_FOR_IMPLEMENTATION |
 | T31-fix-healthz-static-mount-order | health + container-delivery | run W1 F-W1-001 | **MERGED** |
 | T32-fix-e2e-robot-venv-executable | tooling-e2e | W1 pós-T31 F-W1-robot | **MERGED** |
-| T33-fix-e2e-zoekt-index-host-bin | tooling-e2e + catalog wiring | run r3 F-W1-007 | READY_FOR_IMPLEMENTATION |
+| T33-fix-e2e-zoekt-index-host-bin | tooling-e2e + catalog wiring | run r3 F-W1-007 | **MERGED** |
+| T34-fix-host-local-repos-path-resolution | catalog_indexing | run r5 F-W1-008 | READY_FOR_IMPLEMENTATION |
 
 ## Ordem de merge sugerida
 
