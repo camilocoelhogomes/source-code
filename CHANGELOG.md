@@ -6,6 +6,12 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- Gaps negativos integrais (T25 / `github-etl-mcp-rag`): `GET /api/catalog/issues`
+  + `CatalogIssueStore` (BDD-018); probes `e2e/probes/negative_probes.py` para
+  BDD-008 (falha parcial + histórico + reindex) e BDD-022 (`CONFIG_PATH`
+  fail-fast sem leak); `negative.robot` e fixture `local-missing-volume`;
+  testes BDD/unitários; cobertura ≥95%. Asserts API autocontidos; browser
+  residual T23.
 - Evidência browser na suíte Robot e2e (T23 / `gap-ui-browser`): suite
   `e2e/robot/ui_browser.robot` + resource `browser.resource` (Browser Library /
   Playwright) cobrindo BDD-001, 002, 007, 009, 010, 016, 019, 023 na UI;
@@ -106,6 +112,14 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Alterado
 
+- Gap-fill MCP parallel/SLO (T26 / BDD-013 integral): `SemaphoreWorkerLimiter`
+  expõe contadores `active`/`waiting`/`peak_active`; avaliador puro
+  `github_rag.concurrency.parallel_slo` (`min_waves` /
+  `evaluate_parallel_slo`); Robot `e2e/robot/mcp.robot` bdd013 dispara
+  `N=2*QUERY_WORKERS` calls MCP concorrentes + assert SLO (remove smoke
+  sequencial); keywords `Mcp Parallel Call Tools` /
+  `Mcp Measure Single Call Seconds` / `Mcp Assert Parallel Slo`; BDD-014
+  preservado nos payloads paralelos. Suite pytest + cobertura ≥95%.
 - Fix tooling e2e compose/zoekt (T22): serviço `zoekt` nos três composes
   (`docker-compose.yml`, `docker-compose.e2e.yml`, `docker-compose.dev.yml`)
   declara `command: ["zoekt-webserver", "-index", "/data/index", "-rpc"]`

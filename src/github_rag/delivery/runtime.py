@@ -35,6 +35,7 @@ from github_rag.delivery.wiring import (
     wire_ui_app,
 )
 from github_rag.settings import load_settings
+from github_rag.ui.issues import InMemoryCatalogIssueStore
 
 _LOG = logging.getLogger(__name__)
 
@@ -68,6 +69,7 @@ class DefaultContainerRuntime:
         bind_ui: Callable[..., None] | None = None,
         bind_mcp: Callable[..., None] | None = None,
         skip_infra: bool = False,
+        issue_store: Any | None = None,
     ) -> None:
         self._environ: Mapping[str, str] = os.environ if environ is None else environ
         self._settings = settings
@@ -83,6 +85,9 @@ class DefaultContainerRuntime:
         self._bind_ui = bind_ui
         self._bind_mcp = bind_mcp
         self._skip_infra = skip_infra
+        self._issue_store = (
+            issue_store if issue_store is not None else InMemoryCatalogIssueStore()
+        )
         self._booted = False
         self._ui_ready = False
         self._mcp_ready = False
@@ -133,8 +138,12 @@ class DefaultContainerRuntime:
 
             stage = "sync"
             assert self._sync is not None
-            run_catalog_sync(config, self._sync)
-            _LOG.info("delivery_catalog_sync_ok")
+            sync_result = run_catalog_sync(config, self._sync)
+            local_issues = tuple(getattr(sync_result, "local_issues", ()) or ())
+            self._issue_store.replace(local_issues)
+            _LOG.info(
+                "delivery_catalog_sync_ok local_issues=%s", len(local_issues)
+            )
 
             stage = "reconcile"
             assert self._reconcile is not None
@@ -249,6 +258,7 @@ class DefaultContainerRuntime:
                     orchestrator=self._orchestrator,
                     scheduler=self._scheduler,
                     query=query,
+                    issue_store=self._issue_store,
                 )
             if self._mcp is None:
                 self._mcp = wire_mcp_server(

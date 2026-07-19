@@ -111,6 +111,7 @@ def build_client(
     query: FakeQueryService | None = None,
     drain_on_index: bool = True,
     default_cron: str = "0 2 * * *",
+    issue_store: Any | None = None,
 ) -> tuple[
     TestClient,
     InMemoryCatalogRepository,
@@ -162,6 +163,7 @@ def build_client(
         query=query,
         drain_on_index=drain_on_index,
         web_root=WEB_ROOT,
+        issue_store=issue_store,
     )
     client = TestClient(api.build())
     return client, catalog, orch, scheduler, query

@@ -94,7 +94,9 @@ podman compose -f docker-compose.e2e.yml down
 | `e2e/robot/ui_browser.robot` | Evidência browser (Browser Library / Playwright) — T23 |
 | `e2e/robot/resources/common.resource` | URLs, waits HTTP, redaction de token |
 | `e2e/robot/resources/browser.resource` | Lifecycle Browser (Open/Close/Wait) + helpers UI |
-| `e2e/fixtures/config.e2e.json` | Config sem secrets (`token.env=GITHUB_TOKEN`; inclusão wildcard) |
+| `e2e/robot/resources/` | Keywords HTTP/auth (nunca logam token) |
+| `e2e/probes/negative_probes.py` | Indução controlada BDD-008/022 (T25; fora de `github_rag.e2e`) |
+| `e2e/fixtures/config.e2e.json` | Config sem secrets (`token.env=GITHUB_TOKEN`; inclusão wildcard; volume ausente BDD-018) |
 | `e2e/fixtures/repos/` | Volume local (repo `sample-local` inicializado no `up`) |
 | `e2e/results/` | Artefatos Robot (gitignored) |
 

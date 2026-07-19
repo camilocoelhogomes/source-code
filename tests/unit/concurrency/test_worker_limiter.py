@@ -226,5 +226,71 @@ class TestFactories(unittest.TestCase):
             create_query_limiter(_settings(query_workers=-1))
 
 
+class TestObservabilityCounters(unittest.TestCase):
+    """T26 / UT-L01..L04 — active/waiting/peak_active."""
+
+    def test_ut_l01_peak_active_under_saturation(self) -> None:
+        limiter = SemaphoreWorkerLimiter(capacity=2, pool="query")
+        release = threading.Event()
+
+        def work() -> None:
+            with limiter.acquire():
+                release.wait(timeout=5.0)
+
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            futures = [pool.submit(work) for _ in range(4)]
+            time.sleep(0.1)
+            self.assertLessEqual(limiter.peak_active, 2)
+            release.set()
+            wait(futures)
+            for future in futures:
+                future.result()
+        self.assertLessEqual(limiter.peak_active, 2)
+        self.assertGreaterEqual(limiter.peak_active, 1)
+
+    def test_ut_l02_waiting_under_saturation(self) -> None:
+        limiter = SemaphoreWorkerLimiter(capacity=1, pool="query")
+        release = threading.Event()
+        entered = threading.Event()
+
+        def holder() -> None:
+            with limiter.acquire():
+                entered.set()
+                release.wait(timeout=5.0)
+
+        def waiter() -> None:
+            with limiter.acquire():
+                pass
+
+        t1 = threading.Thread(target=holder)
+        t2 = threading.Thread(target=waiter)
+        t1.start()
+        self.assertTrue(entered.wait(timeout=2.0))
+        t2.start()
+        time.sleep(0.05)
+        self.assertGreaterEqual(limiter.waiting, 1)
+        release.set()
+        t1.join(timeout=2.0)
+        t2.join(timeout=2.0)
+
+    def test_ut_l03_active_and_waiting_zero_after_release(self) -> None:
+        limiter = SemaphoreWorkerLimiter(capacity=2, pool="query")
+        with limiter.acquire():
+            self.assertEqual(limiter.active, 1)
+        self.assertEqual(limiter.active, 0)
+        self.assertEqual(limiter.waiting, 0)
+
+    def test_ut_l04_exception_resets_counters(self) -> None:
+        limiter = SemaphoreWorkerLimiter(capacity=1, pool="query")
+        with self.assertRaises(RuntimeError):
+            with limiter.acquire():
+                self.assertEqual(limiter.active, 1)
+                raise RuntimeError("boom")
+        self.assertEqual(limiter.active, 0)
+        self.assertEqual(limiter.waiting, 0)
+        with limiter.acquire():
+            self.assertEqual(limiter.active, 1)
+
+
 if __name__ == "__main__":
     unittest.main()
