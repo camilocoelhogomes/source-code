@@ -39,3 +39,54 @@ Nenhum `BLOCKING` / `MAJOR` aberto após `0.1.1`.
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — design `0.1.1` apto para BDD/interfaces (contrato documental `ParentPytestRun`). Gate humano intermediário substituído pela aprovação Architect (modo autonomous-implementation-orchestrator).
+
+---
+
+## Review BDD — Tech Lead Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `bdd.md` + `tests/bdd/test_mvp_e2e_audit_pytest_run.py` |
+| Versão revisada | `0.1.0` → `0.1.1` |
+| Data | 2026-07-18 |
+| Branch | `feature/mvp-e2e-audit-hardening-T03-run-pytest-all-tasks` |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Checks executados
+
+| Check | Resultado |
+|---|---|
+| PYTEST-01 path canônico `runs/pytest-all-tasks.md` | OK |
+| PYTEST-02 metadados + comando canônico §3.4 | OK |
+| PYTEST-03 exit + contagens | OK |
+| PYTEST-04 cobertura / `coverage_gate` (D-T03 / M-02) | OK — campo sempre no contrato |
+| PYTEST-05 falhas pai: nodeid, tipo, mensagem, superfície ENG-006 | OK após M-01 |
+| PYTEST-06 soft-dep T01 | OK |
+| PYTEST-07 sem secrets (BR-004) | OK |
+| PYTEST-08 D-T03-002 exclui `mvp_e2e_audit_*` | OK |
+| PYTEST-09 D-T03-001 sem mudança produto/src/robot | OK |
+| Sem exigir fix de produto | OK |
+| RED pré-artefato | OK — 9 failed / 0 passed (`artefato ausente`) |
+
+### Achados
+
+| ID | Severidade | Evidência | Achado | Correção esperada | Status |
+|---|---|---|---|---|---|
+| M-01 | `MAJOR` | `test_mvp_e2e_audit_pytest_run.py` PYTEST-05; `bdd.md` PYTEST-05 | BDD exige mensagem sanitizada nas entradas; teste não assertava | Assert `mensagem`/`message`/`msg` quando há entradas | Corrigido no teste |
+| S-01 | `SUGGESTION` | `bdd.md` PYTEST-04 vs teste | “quando aplicável” vs campo sempre exigido no teste | Alinhar BDD: `coverage_gate` sempre `true\|false\|N/A` | Corrigido em `bdd.md` 0.1.1 |
+
+### Bloqueios abertos
+
+Nenhum.
+
+### Evidência RED (Architect)
+
+```text
+9 failed in 0.06s — artefato ausente (razão esperada)
+comando: python -m pytest tests/bdd/test_mvp_e2e_audit_pytest_run.py -q --no-cov
+```
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — BDD v0.1.1 apto para gate de interfaces (contrato documental `ParentPytestRun`). Gate humano intermediário substituído pela aprovação Architect (modo autonomous).

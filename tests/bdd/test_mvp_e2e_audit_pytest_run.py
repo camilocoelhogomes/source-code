@@ -180,7 +180,6 @@ class TestPYTEST04Coverage(unittest.TestCase):
         text = _read_artifact()
         lower = text.lower()
         has_pct = bool(re.search(r"\b\d{1,3}(?:\.\d+)?\s*%", text))
-        has_na = "n/a" in lower or "na" in lower.split() or "não disponível" in lower or "nao disponivel" in lower
         self.assertTrue(
             has_pct or "n/a" in lower or "cobertura" in lower,
             "artefato deve registrar cobertura % ou N/A (com motivo)",
@@ -190,13 +189,11 @@ class TestPYTEST04Coverage(unittest.TestCase):
                 "n/a" in lower or "motivo" in lower or "indispon" in lower,
                 "quando sem %, deve declarar N/A com motivo",
             )
-        # Campo coverage_gate deve existir no contrato (valor true/false/N/A)
+        # Campo sempre presente no contrato (true|false|N/A) — design §3.3 / M-02
         self.assertTrue(
             "coverage_gate" in lower or "coverage gate" in lower,
-            "artefato deve documentar campo coverage_gate (D-T03 / design §3.3)",
+            "artefato deve documentar campo coverage_gate (true|false|N/A)",
         )
-        # evita unused em linters locais
-        _ = has_na
 
 
 # ---------------------------------------------------------------------------
@@ -235,6 +232,12 @@ class TestPYTEST05ParentFailures(unittest.TestCase):
             self.assertTrue(
                 "failed" in section_lower or "error" in section_lower,
                 "entradas devem declarar tipo failed/error",
+            )
+            self.assertTrue(
+                "mensagem" in section_lower
+                or "message" in section_lower
+                or "msg" in section_lower,
+                "entradas devem incluir mensagem sanitizada",
             )
             self.assertTrue(
                 any(s in section_lower for s in SURFACES)

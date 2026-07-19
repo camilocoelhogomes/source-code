@@ -6,8 +6,8 @@
 | Task | `T03-run-pytest-all-tasks` |
 | Autor | QA Engineer |
 | Data | 2026-07-18 |
-| Estado | `TESTS_READY_FOR_REVIEW` |
-| Versão | `0.1.0` |
+| Estado | `APPROVED_BY_ARCHITECT` |
+| Versão | `0.1.1` |
 | Design base | `0.1.1` (`APPROVED_BY_ARCHITECT`) |
 | Execução | `tests/bdd/test_mvp_e2e_audit_pytest_run.py` — valida artefato documental `ParentPytestRun` (sem Robot/e2e; sem correção de produto) |
 
@@ -16,6 +16,7 @@
 | Data | Autor | Decisão | Versão | Observações |
 |---|---|---|---|---|
 | 2026-07-18 | QA Engineer | `TESTS_READY_FOR_REVIEW` | `0.1.0` | PYTEST-01..PYTEST-09; contrato documental BDD-004 / design §3.3 `ParentPytestRun`; RED até existir `runs/pytest-all-tasks.md`. |
+| 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.1` | Review ARCHITECT_BDD: M-01 mensagem em PYTEST-05; PYTEST-04 `coverage_gate` sempre no contrato; RED 9 failed confirmado. |
 
 ## Convenções
 
@@ -101,7 +102,7 @@ Comando:
 **Dado** o artefato `pytest-all-tasks.md`  
 **Quando** a seção de cobertura for lida  
 **Então** registra percentual de cobertura **ou** `N/A` com motivo  
-**E** quando aplicável (exit ≠ 0 só por `fail_under` sem nodeids falhos do pai), declara `coverage_gate` (ou equivalente documentado no design)
+**E** documenta o campo `coverage_gate` sempre (`true` \| `false` \| `N/A`): `true` quando exit ≠ 0 só por `fail_under` sem nodeids falhos do pai (design §3.3 / M-02)
 
 ## PYTEST-05 — Lista de falhas do pai acionável para T05
 
