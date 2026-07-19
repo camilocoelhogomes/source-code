@@ -56,3 +56,30 @@
 | — | NEG-01..03 BDD executáveis presentes | test_negative_integral.py | — | OK |
 
 **Gate:** avançar para implementação TDD.
+
+## Review IMPLEMENTAÇÃO — Tech Lead Architect
+
+| Data | Autor | Decisão |
+|---|---|---|
+| 2026-07-19 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` |
+
+| Severidade | Achado | Evidência | Correção | Resultado |
+|---|---|---|---|---|
+| BLOCKING | Probes em `github_rag.e2e` violavam UT-X04 | test_exports | Movidos para `e2e/probes/` | Corrigido |
+| — | Store mutável pós-sync | runtime.py | — | OK |
+| — | Sem secrets em probes/API | UT-P04 / NEG-* | — | OK |
+| — | Suíte 1232 passed; cov 96.64% | pytest | — | OK |
+
+**Gate:** Blue + docs.
+
+## Review BLUE — Tech Lead Architect
+
+| Data | Autor | Decisão |
+|---|---|---|
+| 2026-07-19 | Tech Lead Architect | `BLUE_APPROVED_BY_ARCHITECT` |
+
+| Severidade | Achado | Resultado |
+|---|---|---|
+| — | Sem gargalo mensurável; `${CURDIR}` estável | OK |
+
+**Gate:** changelog + PR.
