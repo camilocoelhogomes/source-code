@@ -44,7 +44,40 @@ PYTHONPATH=src python -m pytest -q --cov=github_rag --cov-report=term-missing:sk
 
 **Conclusão:** nenhuma refatoração Blue adicional — o pacote já é composition root sem domínio; a única mudança pós-implementação foi correção funcional (não cosméticas).
 
-## 4. Gate Blue
+## 4. Gate Blue (0.1.x — código delivery)
+
+| Decisão | Autor | Data |
+|---|---|---|
+| `BLUE_APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-18 |
+
+## 5. Baseline pós-delta 0.2.0 (três composes)
+
+| Campo | Valor |
+|---|---|
+| Escopo Blue | Manifestos `docker-compose.yml` / `.e2e.yml` / `.dev.yml` + `.env.example` / docs |
+| Código Python `delivery` | Inalterado neste delta |
+| Suites | **1021 passed**, 2 skipped |
+| Cobertura global | **96.59%** (≥95%) |
+| Gargalo / complexidade | Nenhum comprovado — YAML declarativo; papéis D-T19-020 já mínimos |
+| Refatoração aplicada | **N/A** — nada a simplificar sem alterar contratos de manifesto |
+
+### Comando baseline (pós-delta)
+
+```bash
+cd /private/tmp/github_rag_T19
+PYTHONPATH=src python -m pytest -q --cov=github_rag --cov-report=term-missing:skip-covered
+# → 1021 passed, 2 skipped; Total coverage: 96.59%
+```
+
+### Metas Blue 0.2.0
+
+| Meta | Critério | Resultado |
+|---|---|---|
+| Sem mudança de comportamento / contratos | CD-11 + UT-M07/08/09 + regressão | OK |
+| Simplificação manifesto | Só com evidência de complexidade desnecessária | **N/A** |
+| Performance | Só com baseline reproduzível | **N/A** — sem I/O runtime no gate T19 |
+
+### Gate Blue 0.2.0
 
 | Decisão | Autor | Data |
 |---|---|---|

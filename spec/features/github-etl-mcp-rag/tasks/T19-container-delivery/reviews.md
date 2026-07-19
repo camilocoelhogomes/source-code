@@ -502,3 +502,69 @@ Resultado QA: **33 failed**, 0 passed — `ImportError`/`ModuleNotFoundError` (`
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — unit 0.2.0 suficiente. Developer materializa `docker-compose.e2e.yml` / `.dev.yml` + `.env.example` com `E2E_GITHUB_TOKEN`.
+
+---
+
+## Review — Implementation `0.2.0` (delta 3 composes) — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `docker-compose.yml`, `docker-compose.e2e.yml`, `docker-compose.dev.yml`, `.env.example`, `docs/runbook-local.md`, README, CHANGELOG |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (aprovação Architect substitui HITL) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| D-T19-020 / M-T19-009 — user sem `./src` | OK | `docker-compose.yml` volumes só `HOST_CONFIG`/`HOST_REPOS`/zoekt |
+| M-T19-007 — e2e name + `e2e_*` + alias token + sem `./src` | OK | `name: github-rag-e2e`; volumes `e2e_*`; `GITHUB_TOKEN: ${E2E_GITHUB_TOKEN:-${GITHUB_TOKEN:-}}` |
+| M-T19-008 — dev name + `./src` + `5432:5432` + sem `.venv` | OK | `name: github-rag-dev`; `./src` + `./web`; postgres `5432:5432` |
+| M-T19-002/003 — ENG-002 serviços + CONFIG_PATH + `/repos` nos 3 | OK | app/postgres/qdrant/zoekt/slm + health `/healthz` + mounts |
+| ENG-009 — sem `.venv` | OK | comentários + ausência de mount `.venv` nos 3 |
+| ENG-006 — amd64 | OK | `platform`/`platforms` + runbook |
+| `.env.example` — `E2E_GITHUB_TOKEN` sem segredo | OK | `E2E_GITHUB_TOKEN=` vazio; sem `ghp_` |
+| Docs — qual compose usar | OK | `docs/runbook-local.md` tabela; README; CHANGELOG |
+| Código Python delivery inalterado neste delta | OK | só manifesto/docs |
+| BDD CD-11 + UT-M07/08/09 | OK | 29 passed (BDD+manifest); full suite abaixo |
+| Cobertura global ≥95% | OK | **1021 passed**, 2 skipped; **96.59%** |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| `SUGGESTION` | Mount `./src:/app/src` no dev pode não hot-reload: imagem usa `pip install .` (site-packages), sem `PYTHONPATH=/app/src` nem editable | `Dockerfile` L27–28; `docker-compose.dev.yml` L83 | Aceito: contrato M-T19-008 exige só a montagem; documentar rebuild ou `-e` em follow-up se doer | Aceito (não bloqueia) |
+| `SUGGESTION` | Stacks user/e2e/dev publicam as mesmas host ports (8080/6333/…) — conflito se subirem em paralelo | três composes `ports:` | Aceito: `name` + volumes isolam estado; T21/runbook usam um stack por vez | Aceito (risco residual T21) |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — delta 0.2.0 de manifesto alinhado a design/interfaces/BDD 0.2.0. Prosseguir Blue (N/A esperado no manifesto).
+
+---
+
+## Review — Blue `0.2.0` (pós-delta 3 composes) — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `refactoring.md` + manifests pós-delta |
+| Data | 2026-07-18 |
+| Resultado | `BLUE_APPROVED_BY_ARCHITECT` |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum | Três composes declarativos; sem complexidade Python nova; sem gargalo medido | N/A |
+
+### Decisão
+
+`BLUE_APPROVED_BY_ARCHITECT` — ver `refactoring.md` §5. Baseline pós-delta: 1021 passed / 96.59% cov; refatoração manifesto N/A.
