@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>github-rag</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>github-rag</h1>
+    <p>Gestão de indexação e busca — configuração só via CONFIG_PATH.</p>
+  </header>
+
+  <main>
+    <section id="repos-section">
+      <h2>Repositórios</h2>
+      <div class="toolbar">
+        <button id="btn-refresh" type="button">Atualizar</button>
+        <button id="btn-index" type="button">Indexar selecionados</button>
+      </div>
+      <table id="repos-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Repositório</th>
+            <th>Origem</th>
+            <th>Estado</th>
+            <th>Progresso</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div id="repo-detail"></div>
+    </section>
+
+    <section id="cron-section">
+      <h2>Agendamento (cron)</h2>
+      <form id="cron-form">
+        <label for="cron-input">Expressão cron (UTC)</label>
+        <input id="cron-input" name="cron" type="text" autocomplete="off" />
+        <button type="submit">Salvar cron</button>
+      </form>
+      <p id="cron-status"></p>
+    </section>
+
+    <section id="search-section">
+      <h2>Busca</h2>
+      <form id="exact-form">
+        <label for="exact-pattern">Busca exata</label>
+        <input id="exact-pattern" type="text" />
+        <button type="submit">Buscar</button>
+      </form>
+      <form id="semantic-form">
+        <label for="semantic-query">Busca semântica</label>
+        <input id="semantic-query" type="text" />
+        <label class="inline">
+          <input id="semantic-reformulate" type="checkbox" />
+          Apoiar com modelo local (reformulate)
+        </label>
+        <button type="submit">Buscar</button>
+      </form>
+      <pre id="search-results"></pre>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

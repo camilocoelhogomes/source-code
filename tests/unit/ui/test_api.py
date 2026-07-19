@@ -97,6 +97,26 @@ class TestManagementUiApi(unittest.TestCase):
         self.assertEqual(resp.status_code, 404)
         self.assertNotIn("ghp_", resp.text)
 
+    def test_search_query_error_maps_http(self) -> None:
+        from github_rag.query.errors import QueryExactIndexError
+
+        class Failing(FakeQueryService):
+            def search_exact(self, request):  # type: ignore[no-untyped-def]
+                raise QueryExactIndexError("zoekt down ghp_should_not_leak")
+
+        client, *_ = build_client(query=Failing())
+        resp = client.post("/api/search/exact", json={"pattern": "x"})
+        self.assertEqual(resp.status_code, 400)
+        self.assertNotIn("ghp_", resp.text)
+
+    def test_default_web_root_points_to_web(self) -> None:
+        from github_rag.ui.api import default_web_root
+
+        root = default_web_root()
+        self.assertEqual(root.name, "web")
+        self.assertTrue((root / "index.html").is_file())
+
 
 if __name__ == "__main__":
     unittest.main()
+
