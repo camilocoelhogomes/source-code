@@ -11,7 +11,7 @@ from unittest import mock
 from git import Repo
 
 from github_rag.sources.local import git_fs
-from github_rag.sources.local.git_fs import GitFilesystemInspector
+from github_rag.sources.local.git_fs import GitFilesystemInspector, remap_repos_mount_path
 
 
 def _init_git_repo(path: Path, *, with_main: bool = True) -> Repo:
@@ -176,6 +176,33 @@ class TestGitFilesystemInspector(unittest.TestCase):
     def test_to_native_path_windows_drive_without_leading_slash(self) -> None:
         with mock.patch.object(git_fs.os, "name", "nt"):
             self.assertEqual(git_fs._to_native_path("C:/repos"), Path("C:/repos"))
+
+    # --- T34: remap HOST_REPOS ---
+
+    def test_t34_remap_without_host_repos_unchanged(self) -> None:
+        self.assertEqual(remap_repos_mount_path(Path("/repos"), None), Path("/repos"))
+        self.assertEqual(
+            remap_repos_mount_path(Path("/repos/foo"), ""),
+            Path("/repos/foo"),
+        )
+
+    def test_t34_remap_root_and_subpath(self) -> None:
+        host = self.root / "host-repos"
+        host.mkdir()
+        self.assertEqual(
+            remap_repos_mount_path(Path("/repos"), str(host)),
+            host.resolve(),
+        )
+        self.assertEqual(
+            remap_repos_mount_path(Path("/repos/sample-local"), str(host)),
+            (host / "sample-local").resolve(),
+        )
+
+    def test_t34_remap_non_repos_path_unchanged(self) -> None:
+        host = self.root / "host-repos"
+        host.mkdir()
+        other = Path("/mnt/data")
+        self.assertEqual(remap_repos_mount_path(other, str(host)), other)
 
     # --- T20: conformidade GitPython / DT-001 ---
 

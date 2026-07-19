@@ -6,6 +6,9 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Corrigido
 
+- Host local repos path (T34): `LocalRepoDiscovery` remapeia `file:///repos/*`
+  para `HOST_REPOS` quando app roda no host (e2e T21); corrige issue
+  `local volume path is inaccessible: /repos` (F-W1-008 / BDD-016).
 - E2e zoekt-index no host (T33): launcher materializa wrapper `ZOEKT_INDEX_BIN`
   via `podman exec` no container zoekt; elimina `FileNotFoundError` no fluxo
   host+compose (F-W1-007).

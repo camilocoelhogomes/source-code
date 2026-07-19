@@ -34,6 +34,33 @@ class RepoInspection:
         return self.is_git_repo and self.has_main_branch
 
 
+_ENV_CONTAINER_REPOS_ROOT = "/repos"
+
+
+def remap_repos_mount_path(path: Path, host_repos: str | None) -> Path:
+    """Remapeia paths da convenção container ``/repos`` para ``HOST_REPOS`` no host.
+
+    Responsabilidade
+        Traduzir URLs ``file:///repos/...`` quando o app roda fora do container
+        (e2e host) e ``HOST_REPOS`` aponta para o bind mount real.
+
+    Motivo da separação
+        Função pura testável; ``LocalRepoDiscovery`` não acopla parsing de URL
+        à política de remap operacional (ENG-005 / T34).
+    """
+    if not host_repos or not host_repos.strip():
+        return path
+
+    host_root = Path(host_repos.strip()).resolve()
+    posix = path.as_posix()
+    if posix == _ENV_CONTAINER_REPOS_ROOT:
+        return host_root
+    prefix = f"{_ENV_CONTAINER_REPOS_ROOT}/"
+    if posix.startswith(prefix):
+        return host_root / posix[len(prefix) :]
+    return path
+
+
 class GitFilesystemInspector:
     """Parse de URL ``file://``, glob e validação Git sem mutar working tree.
 
