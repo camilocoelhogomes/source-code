@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from github_rag.e2e import timeouts
 from github_rag.e2e.credentials import E2eCredentialResolver, ResolvedE2eCredential
+from github_rag.e2e.env_loader import load_dotenv_file, parse_dotenv_text
 from github_rag.e2e.errors import E2eCredentialError, E2eStackError
 from github_rag.e2e.launcher import PodmanE2eStackLauncher
 from github_rag.e2e.paths import (
@@ -33,6 +34,8 @@ __all__ = [
     "ResolvedE2eCredential",
     "E2eCredentialError",
     "E2eStackError",
+    "load_dotenv_file",
+    "parse_dotenv_text",
     "run_mvp_e2e",
     "COMPOSE_DEV",
     "COMPOSE_E2E",

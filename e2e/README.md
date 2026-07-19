@@ -58,10 +58,16 @@ Sem `rfbrowser init`, a suite Browser Library falha por falta do Chromium Playwr
 O default da suite é **headless** (`${BROWSER_HEADLESS}=${True}` em `browser.resource`).
 Para debug headed: `robot -v BROWSER_HEADLESS:False e2e/robot/ui_browser.robot`.
 
-4. Rode a prova canônica:
+4. Rode a prova canônica (loader Python seguro — evita `source .env` com `INDEX_CRON`):
 
 ```bash
-export $(grep -v '^#' .env | xargs)   # ou: set -a; source .env; set +a
+python -m github_rag.e2e
+```
+
+O entrypoint carrega `.env` automaticamente via parser Python (valores com espaços, ex. cron, não quebram o shell). Alternativa manual:
+
+```bash
+python -c "from github_rag.e2e.env_loader import load_dotenv_file; load_dotenv_file('.env')"
 python -m github_rag.e2e
 ```
 
@@ -69,7 +75,7 @@ Equivalente manual (infra + app no host, **sem** `--build`):
 
 ```bash
 podman compose -f docker-compose.dev.yml up -d
-export $(grep -v '^#' .env | xargs)
+python -c "from github_rag.e2e.env_loader import load_dotenv_file; load_dotenv_file('.env')"
 python -m github_rag.delivery   # outro terminal, ou deixe o launcher subir
 robot --exclude bdd015 --outputdir e2e/results \
   e2e/robot/health.robot \

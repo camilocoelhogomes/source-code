@@ -6,6 +6,8 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- E2e env loader seguro e fail-fast launcher (T29): `env_loader`, entrypoint
+  carrega `.env`, `INDEX_CRON` com aspas, fail-fast no poll de healthz.
 - Asserts e2e integrais de catalog_indexing (T24 / `gap-catalog-indexing-integral`):
   cenários Robot BDD-003/005/006/017 em `e2e/robot/catalog_indexing.robot`
   (tags `bdd003`/`bdd005`/`bdd006`/`bdd017`) — cron+tick sem POST index,

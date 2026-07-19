@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import io
+import os
 import unittest
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -42,6 +44,7 @@ class TestPodmanE2eStackLauncher(unittest.TestCase):
         self,
         *,
         run_command: RecordingCommand | None = None,
+        host_app: bool = False,
         **kwargs: Any,
     ) -> Any:
         e2e = import_e2e()
@@ -49,7 +52,7 @@ class TestPodmanE2eStackLauncher(unittest.TestCase):
         return e2e.PodmanE2eStackLauncher(
             repo_root=REPO_ROOT,
             run_command=runner,
-            host_app=False,
+            host_app=host_app,
             **kwargs,
         ), runner, e2e
 
@@ -72,7 +75,9 @@ class TestPodmanE2eStackLauncher(unittest.TestCase):
 
     def test_ut_l02_up_injects_host_config_and_repos(self) -> None:
         launcher, runner, _e2e = self._make_launcher()
-        launcher.up(env={})
+        clean = {k: v for k, v in os.environ.items() if k not in ("HOST_CONFIG", "HOST_REPOS")}
+        with mock.patch.dict(os.environ, clean, clear=True):
+            launcher.up(env={})
         env = runner.calls[0][1]
         host_config = env.get("HOST_CONFIG", "")
         host_repos = env.get("HOST_REPOS", "")
@@ -179,6 +184,24 @@ class TestPodmanE2eStackLauncher(unittest.TestCase):
         launcher, _runner, e2e = self._make_launcher()
         compose = getattr(launcher, "compose_file", None) or e2e.COMPOSE_DEV
         self.assertTrue(str(compose).endswith("docker-compose.dev.yml"))
+
+    def test_t29_host_exit_before_poll(self) -> None:
+        launcher, _r, e2e = self._make_launcher(host_app=True)
+        proc = mock.Mock(poll=mock.Mock(return_value=1), stderr=io.StringIO(f"x {SECRET_TOKEN}"))
+        launcher._app_process = proc
+        with self.assertRaises(e2e.E2eStackError) as ctx:
+            launcher.wait_healthy(timeout_seconds=0.05)
+        self.assertIn("code=1", str(ctx.exception))
+        self.assertNotIn(SECRET_TOKEN, str(ctx.exception))
+
+    def test_t29_host_exit_during_poll(self) -> None:
+        launcher, _r, e2e = self._make_launcher(host_app=True, healthy_timeout_seconds=5.0)
+        proc = mock.Mock(poll=mock.Mock(side_effect=[None, None, 1]), stderr=io.StringIO("fail"))
+        launcher._app_process = proc
+        with mock.patch("urllib.request.urlopen", mock.Mock(side_effect=OSError("down"))):
+            with self.assertRaises(e2e.E2eStackError) as ctx:
+                launcher.wait_healthy(timeout_seconds=5.0)
+        self.assertIn("code=1", str(ctx.exception))
 
 
 if __name__ == "__main__":
