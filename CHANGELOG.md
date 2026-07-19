@@ -97,6 +97,14 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Alterado
 
+- Gap-fill MCP parallel/SLO (T26 / BDD-013 integral): `SemaphoreWorkerLimiter`
+  expõe contadores `active`/`waiting`/`peak_active`; avaliador puro
+  `github_rag.concurrency.parallel_slo` (`min_waves` /
+  `evaluate_parallel_slo`); Robot `e2e/robot/mcp.robot` bdd013 dispara
+  `N=2*QUERY_WORKERS` calls MCP concorrentes + assert SLO (remove smoke
+  sequencial); keywords `Mcp Parallel Call Tools` /
+  `Mcp Measure Single Call Seconds` / `Mcp Assert Parallel Slo`; BDD-014
+  preservado nos payloads paralelos. Suite pytest + cobertura ≥95%.
 - Fix tooling e2e compose/zoekt (T22): serviço `zoekt` nos três composes
   (`docker-compose.yml`, `docker-compose.e2e.yml`, `docker-compose.dev.yml`)
   declara `command: ["zoekt-webserver", "-index", "/data/index", "-rpc"]`

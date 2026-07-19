@@ -81,6 +81,40 @@ class TestEvaluateParallelSlo(unittest.TestCase):
         )
         self.assertTrue(result.ok, msg=result.reason)
 
+    def test_ut_s10_rejects_serial_when_n_equals_capacity(self) -> None:
+        result = evaluate_parallel_slo(
+            capacity=2,
+            n_calls=2,
+            wall_seconds=2.0,
+            single_seconds=1.0,
+        )
+        self.assertFalse(result.ok)
+
+    def test_ut_s11_invalid_n_calls_and_wall(self) -> None:
+        bad_n = evaluate_parallel_slo(
+            capacity=2,
+            n_calls=0,
+            wall_seconds=1.0,
+            single_seconds=1.0,
+        )
+        self.assertFalse(bad_n.ok)
+        bad_wall = evaluate_parallel_slo(
+            capacity=2,
+            n_calls=2,
+            wall_seconds=-0.1,
+            single_seconds=1.0,
+        )
+        self.assertFalse(bad_wall.ok)
+
+    def test_ut_s12_single_call_accepted(self) -> None:
+        result = evaluate_parallel_slo(
+            capacity=4,
+            n_calls=1,
+            wall_seconds=1.0,
+            single_seconds=1.0,
+        )
+        self.assertTrue(result.ok, msg=result.reason)
+
 
 if __name__ == "__main__":
     unittest.main()

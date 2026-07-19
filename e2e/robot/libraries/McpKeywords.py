@@ -1,10 +1,12 @@
-"""Robot keywords for MCP SSE evidence tools (T21 / BDD-011–014).
+"""Robot keywords for MCP SSE evidence tools (T21 / BDD-011–014; T26 / BDD-013).
 
 Responsabilidade
     Invocar tools MCP aprovadas via transporte SSE sem logar tokens.
+    Disparar calls concorrentes e avaliar SLO de paralelismo sob limite.
 
 Motivo da separação
     Protocolo MCP não cabe em RequestsLibrary puro; Robot só orquestra.
+    Aritmética SLO fica em ``github_rag.concurrency.parallel_slo``.
 """
 
 from __future__ import annotations
@@ -12,7 +14,12 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import statistics
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
+
+from github_rag.concurrency.parallel_slo import evaluate_parallel_slo
 
 
 def _token_values() -> list[str]:
@@ -48,6 +55,71 @@ def mcp_call_tool(
     text = json.dumps(payload, default=str)
     _assert_no_token(text)
     return text
+
+
+def mcp_measure_single_call_seconds(
+    name: str,
+    arguments_json: str = "{}",
+    base_url: str = "http://127.0.0.1:8001",
+    samples: int = 2,
+) -> float:
+    """Mediana de ``samples`` chamadas sequenciais (baseline single_seconds)."""
+    if samples < 1:
+        raise AssertionError(f"samples must be >= 1, got {samples}")
+    durations: list[float] = []
+    for _ in range(int(samples)):
+        started = time.perf_counter()
+        mcp_call_tool(name, arguments_json, base_url)
+        durations.append(time.perf_counter() - started)
+    median = float(statistics.median(durations))
+    if median <= 0:
+        raise AssertionError("single_seconds baseline measured as non-positive")
+    return median
+
+
+def mcp_parallel_call_tools(
+    name: str,
+    arguments_json: str,
+    n_calls: int,
+    base_url: str = "http://127.0.0.1:8001",
+) -> dict[str, Any]:
+    """Dispara ``n_calls`` sessões MCP em paralelo; retorna results/wall/n_calls."""
+    n = int(n_calls)
+    if n < 1:
+        raise AssertionError(f"n_calls must be >= 1, got {n}")
+
+    def _one(_: int) -> str:
+        return mcp_call_tool(name, arguments_json, base_url)
+
+    started = time.perf_counter()
+    results: list[str] = []
+    with ThreadPoolExecutor(max_workers=n) as pool:
+        futures = [pool.submit(_one, i) for i in range(n)]
+        for future in as_completed(futures):
+            results.append(future.result())
+    wall_seconds = time.perf_counter() - started
+    return {
+        "results": results,
+        "wall_seconds": wall_seconds,
+        "n_calls": n,
+    }
+
+
+def mcp_assert_parallel_slo(
+    capacity: int,
+    n_calls: int,
+    wall_seconds: float,
+    single_seconds: float,
+) -> None:
+    """Delega ``evaluate_parallel_slo``; falha com AssertionError se ok=False."""
+    result = evaluate_parallel_slo(
+        capacity=int(capacity),
+        n_calls=int(n_calls),
+        wall_seconds=float(wall_seconds),
+        single_seconds=float(single_seconds),
+    )
+    if not result.ok:
+        raise AssertionError(result.reason or "parallel SLO failed")
 
 
 async def _list_tool_names(base_url: str) -> list[str]:

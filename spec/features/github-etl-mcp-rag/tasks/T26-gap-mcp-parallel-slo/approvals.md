@@ -6,3 +6,6 @@
 | ARCHITECT_BDD | bdd.md `0.1.0` + `tests/bdd/test_mcp_parallel_slo.py` | `APPROVED_BY_ARCHITECT` | tech-lead-architect | 2026-07-19 | PS-01..PS-07; RED ModuleNotFoundError parallel_slo; modo autônomo. |
 | ARCHITECT_INTERFACES | interfaces.md `0.1.0` | `APPROVED_BY_ARCHITECT` | tech-lead-architect | 2026-07-19 | I-T26-001..007; Protocol intacto; modo autônomo. |
 | ARCHITECT_UNIT_TESTS | unit-test-plan.md `0.1.0` + unit tests | `APPROVED_BY_ARCHITECT` | tech-lead-architect | 2026-07-19 | UT-S*/UT-L*/UT-K*; RED confirmado; modo autônomo. |
+| ARCHITECT_IMPLEMENTATION | limiter + parallel_slo + McpKeywords + mcp.robot | `APPROVED_BY_ARCHITECT` | tech-lead-architect | 2026-07-19 | BDD-013 integral; Protocol intacto; BDD-014 ok; modo autônomo. |
+| ARCHITECT_BLUE | refactoring.md | `BLUE_APPROVED_BY_ARCHITECT` | tech-lead-architect | 2026-07-19 | Ramos SLO cobertos; sem mudança de contrato; modo autônomo. |
+| ARCHITECT_DOCS | CHANGELOG + artefatos T26 | `APPROVED_BY_ARCHITECT` | tech-lead-architect | 2026-07-19 | Entrada T26 em [Unreleased]/Alterado; cov ≥95%; modo autônomo. |

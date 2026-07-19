@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T26-gap-mcp-parallel-slo` |
 | Feature | `github-etl-mcp-rag` |
-| Estado | `READY_FOR_IMPLEMENTATION` (candidata; aberta por auditoria filha) |
+| Estado | `PR_OPENED` (pipeline autônomo T26; aguarda merge humano) |
 | Superfície | `mcp` |
 | Origem | feature filha `mvp-e2e-audit-hardening` / T06 (`ParentGapFillBacklog`) |
 | Evidência | `spec/features/mvp-e2e-audit-hardening/audit/coverage-inventory.md` |
