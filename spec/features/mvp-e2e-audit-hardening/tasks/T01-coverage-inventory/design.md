@@ -6,7 +6,7 @@
 | Task | `T01-coverage-inventory` |
 | Autor | Tech Lead Architect |
 | Data | 2026-07-18 |
-| Estado | `PENDING_ARCHITECT_REVIEW` |
+| Estado | `HUMAN_DESIGN_APPROVED` |
 | Versão | `0.1.0` |
 | Branch | `feature/mvp-e2e-audit-hardening-T01-coverage-inventory` |
 | Natureza | **Puramente documental** — sem código de produção, sem alteração de `e2e/`, sem execução de testes |
