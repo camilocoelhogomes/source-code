@@ -212,11 +212,7 @@ class PodmanE2eStackLauncher:
             zoekt_index_bin=str(zoekt_bin),
             extra={
                 **token_extra,
-                **(
-                    {"E2E_DEFER_STARTUP_INDEX": "1"}
-                    if self.compose_file.name == COMPOSE_E2E.name
-                    else {}
-                ),
+                "E2E_DEFER_STARTUP_INDEX": "1",
             },
         )
         self._app_process = subprocess.Popen(
