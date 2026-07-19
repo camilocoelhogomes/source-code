@@ -1,0 +1,273 @@
+# Reviews — T21-mvp-e2e-robot
+
+## Review — Design `0.1.0` → `0.1.1` — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `design.md` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (aprovação Architect substitui HITL intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` (após correções em `0.1.1`) |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Completude (contexto, solução, componentes, fluxo, dados, erros, segurança, compat., obs., riscos, rollback) | OK | §§1–15 |
+| Rastreabilidade REQ-045–052 / BR-025–030 / DEC-017–021 / ENG-018–020 / BDD-026–028 | OK | cabeçalho; §§2–3; D-T21-* |
+| Contratos plano `E2eStackLauncher` + `RobotMvpSuite` | OK | §3.3; handoff docs-cicd |
+| Exclusão BDD-015 | OK | §3.5; D-T21-005; §5.2 |
+| Podman + `docker-compose.e2e.yml` (T19) | OK | §3.1; D-T21-002/003; consumo sem ownership |
+| Credenciais HITL/CI sem commit (REQ-048–049, BDD-027) | OK (após fix) | §3.6; D-T21-006 |
+| Consumo `docs-cicd-e2e-release` sem ownership transferida | OK | §3.8; D-T21-009; fora de escopo §14 |
+| Separação responsabilidades runtime × asserções | OK | §3.1; C-T21-01..05 |
+| Green path vs BDD-026 / BR-026 | OK (após fix) | §3.5 política; D-T21-010 |
+
+### Achados (v0.1.0) — corrigidos em v0.1.1
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| `MAJOR` | Política de credencial permitia fallback genérico a `GITHUB_TOKEN` também em CI, contradizendo REQ-049 / task (“não usar o `GITHUB_TOKEN` default do Actions”) | design `0.1.0` §3.6; D-T21-006 | Em CI (`GITHUB_ACTIONS=true`) exigir `E2E_GITHUB_TOKEN`; HITL aceita `GITHUB_TOKEN` \| `E2E_GITHUB_TOKEN` | Corrigido §3.6 / D-T21-006 |
+| `MAJOR` | Tag `manual_or_partial` “não bloqueia green path” se núcleo passar — enfraquece BDD-026 / BR-026 (“falha em qualquer fluxo observável impede MVP”) | design `0.1.0` §3.5 L129–130; skips 008/016–018/022 | `manual_or_partial` só documenta fatia; falha de cenário incluído → exit ≠ 0; fixture local + `negative.robot` no green path; só BDD-015 fora | Corrigido §3.5 / D-T21-010/012 |
+| `SUGGESTION` | MCP descrito como “HTTP/SSE ou JSON-RPC” sem pin ao transporte T19 | design `0.1.0` §3.2 `mcp.resource` | Pin SSE `:8001` (`MCP_TRANSPORT=sse`) | Aceito/corrigido D-T21-011 |
+| `SUGGESTION` | Notação `token.env` informal vs contrato `{ "env": "GITHUB_TOKEN" }` | design `0.1.0` §3.4 | Alinhar ao schema REQ-041 | Aceito/corrigido §3.4 |
+| `SUGGESTION` | REQ-049 (DATABASE_URL/ZOEKT/…) pouco explícito vs compose T19 | design `0.1.0` §6 | Documentar injeção pelo compose; operador só token | Aceito/corrigido §3.4 / §6 |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — design.md `0.1.1` alinhado a REQ-045–052, BDD-026–028, ENG-018–020 e handoff `E2eStackLauncher` / `RobotMvpSuite`. Prosseguir para BDD.
+
+---
+
+## Review — BDD `0.1.0` → `0.1.1` — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `bdd.md` + `tests/bdd/test_mvp_e2e_robot.py` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (aprovação Architect substitui HITL intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` (após correções em `0.1.1`) |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Cobre BDD-026–028 e critérios da task | OK | bdd.md §§E2E-01..10, ROBOT-01..06; tabela aceite; mapeamento BDD-001–024 |
+| Exclui BDD-015 | OK | E2E-07; ROBOT-06; mapeamento 015 = Não |
+| CI exige `E2E_GITHUB_TOKEN` | OK | E2E-02; design D-T21-006 |
+| Doubles; sem compose up real no pytest | OK | docstring + RecordingLauncher/RobotRunner; D-T21-008 |
+| Green path não skipa BDD observáveis | OK | política Camada B; `manual_or_partial` ≠ skip; negative + fixture local no path |
+| Contratos alinhados ao design 0.1.1 | OK | ordem resolve→up→healthy→robot→down; HOST_*; handoff E2E-09 |
+
+### Achados (v0.1.0) — corrigidos em v0.1.1
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| `MAJOR` | E2E-02 podia passar se `E2eCredentialResolver.resolve` retornasse sucesso sem `E2E_GITHUB_TOKEN` (falha não obrigatória) | `test_mvp_e2e_robot.py` `test_ci_with_only_actions_github_token_fails` (v0.1.0) | Exigir falha explícita (`fail` se resolve OK; `assertTrue(failed)`) | Corrigido no teste |
+| `MAJOR` | Assert de exclusão `bdd015` aceitava mera substring `bdd015` (falso positivo sem `--exclude`) | regex E2E-07 v0.1.0 | Exigir `--exclude` / `exclude=` / lista `excludes`; negar Discovery Cursor | Corrigido teste + bdd E2E-07 |
+| `MAJOR` | E2E-03 usava `assertNotIn(SECRET_TOKEN, "compose failed")` (tautologia); E2E-10 podia passar só com `exit=N` sem inspecionar mensagem | E2E-03/10 v0.1.0 | Redaction via `E2eCredentialError` + `str(E2eStackError)` + argv robot | Corrigido teste + bdd E2E-10 |
+| `SUGGESTION` | E2E-01 com `assertRaises` + ramo `pass` em exit ≠ 0 era inconsistente | E2E-01 v0.1.0 | Unificar: falha obrigatória + `up` não chamado | Corrigido |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — BDD contratos E2E-01..10 + documentação Robot green path alinhados ao design `0.1.1`, BDD-026–028, exclusão BDD-015, CI `E2E_GITHUB_TOKEN`, doubles sem Podman real. Prosseguir para interfaces.
+
+---
+
+## Review — Interfaces `0.1.0` — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `interfaces.md` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (aprovação Architect substitui HITL intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Protocols plano `E2eStackLauncher` + `RobotMvpSuite` | OK | interfaces §8; I-T21-002 |
+| Defaults `PodmanE2eStackLauncher` + `DefaultRobotMvpSuite` | OK | §§9–10; I-T21-003 |
+| `E2eCredentialResolver` + HITL/CI (D-T21-006) | OK | §7; I-T21-006/007 |
+| Erros `E2eCredentialError` / `E2eStackError.from_stderr` | OK | §6; I-T21-008; E2E-10 |
+| Timeouts design §3.7 | OK | §5; I-T21-016 |
+| Paths `COMPOSE_E2E` / `ROBOT_ROOT` / HOST_* fixtures | OK | §§4/9; I-T21-004/005 |
+| Ordem resolve→up→healthy→robot→down + finally | OK | I-T21-009; §10 |
+| Exclude `bdd015` explícito + green path suites | OK | I-T21-010/011 |
+| Superfície pública E2E-09 + uso estável docs-cicd | OK | §11; I-T21-017/018 |
+| RESPONSABILIDADE + MOTIVO DA SEPARAÇÃO em cada contrato | OK | §§4–10 |
+| Assinaturas alinhadas a `test_mvp_e2e_robot.py` | OK | `environ`, `robot_runner`, `.token`, exports |
+| Sem `src/` nesta etapa | OK | I-T21-020 |
+| Sem reabrir ownership T19 / domínio | OK | §1 fora de escopo; I-T21-001 |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` na self-review | — | — | — |
+| `SUGGESTION` | Alias transitório `COMPOSE_E2E_PATH` / `run_robot=` mencionados só como não-contrato | interfaces §4; I-T21-014 | Developer usa só nomes canônicos | Aceito (documentado) |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — interfaces.md `0.1.0` congelam `github_rag.e2e` (I-T21-001..020) alinhados ao design `0.1.1` e BDD E2E-01..10. Prosseguir para unit-test-plan (QA).
+
+---
+
+## Review — Unit test plan `0.1.0` — QA (submissão)
+
+| Campo | Valor |
+|---|---|
+| Autor | QA Engineer |
+| Artefato | `unit-test-plan.md` + `tests/unit/e2e/` |
+| Data | 2026-07-18 |
+| Resultado | `TESTS_READY_FOR_REVIEW` / Estado plano `PENDING_ARCHITECT_REVIEW` |
+
+### Entrega
+
+| Item | Evidência |
+|---|---|
+| Plano | UT-C/E/P/L/S/X — credenciais HITL/CI, redaction, paths/timeouts, launcher, suite (exclude bdd015, HOST_*, down idempotente), exports |
+| Suíte | `tests/unit/e2e/` — 50 testes |
+| RED | `ImportError` de `github_rag.e2e` (pacote ainda inexistente) |
+
+### Decisão
+
+Aguardando review Architect do unit-test-plan / suíte RED. Sem implementação `src/`.
+
+---
+
+## Review — Unit test plan `0.1.0` → `0.1.1` — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `unit-test-plan.md` + `tests/unit/e2e/` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (aprovação Architect substitui HITL intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` (após correções em `0.1.1`) |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Contratos I-T21-* / E2E-01..10 | OK | matriz UT-C/E/P/L/S/X alinhada a interfaces 0.1.0 |
+| Extremos / empty / inválidos | OK (após fix) | blank HITL/CI; orphan repo_root; raw stderr vazio |
+| Falhas + finally `down` | OK | UT-S04..S06/S14; UT-L04/L05/L08 |
+| Idempotência `down` | OK | UT-L07; UT-S15 |
+| Redaction (sem tautologia) | OK (após fix) | UT-C08b/C10, UT-E01/E02, UT-L04, UT-S09 |
+| CI vs HITL | OK (após fix) | UT-C06..C08b; UT-S02/S03 |
+| Exclude `bdd015` explícito | OK | UT-S07 regex (não substring) |
+| Sem compose/Robot real | OK (após fix) | doubles + mocks UT-S12/X03/L05/L06 |
+| BDD-015 fora; E2E-08 no BDD | OK | plano §3/§5 |
+
+### Achados (v0.1.0) — corrigidos em v0.1.1
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| `MAJOR` | UT-S12 chamava `run_mvp_e2e` sem double de robot → risco de Robot CLI real pós-impl | `test_suite.py` UT-S12 v0.1.0 | Mock `DefaultRobotMvpSuite` no módulo `suite`; TypeError posicional | Corrigido |
+| `MAJOR` | UT-X03 não exercitava `SystemExit(run_mvp_e2e)` | `test_exports.py` UT-X03 v0.1.0 | `main()` com mock `run_mvp_e2e` → `SystemExit(code)` | Corrigido |
+| `MAJOR` | CI com `E2E_GITHUB_TOKEN` blank + `GITHUB_TOKEN` ausente da matriz | plano / credentials v0.1.0 | UT-C08b | Corrigido |
+| `MAJOR` | UT-C01 assert redaction com token fora do env (tautologia) | `test_credentials.py` UT-C01 | Remover assert inútil; redaction em C08b/C10 | Corrigido |
+| `MAJOR` | UT-L05/L06 frágeis (dead `pass`, try/except AssertionError, sucesso sem assert) | `test_launcher.py` | HTTP mock urllib+httpx determinístico | Corrigido |
+| `SUGGESTION` | HITL `E2E_GITHUB_TOKEN` blank + `GITHUB_TOKEN` válido | corner preferência | UT-C05b | Aceito/corrigido |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — unit-test-plan.md `0.1.1` + suíte `tests/unit/e2e/` cobrem contratos, extremos, CI/HITL, redaction, exclude bdd015, idempotência `down`, sem compose/Robot real. Prosseguir para implementação Developer (TDD GREEN + cobertura ≥95%).
+
+---
+
+## Review — Implementação — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `src/github_rag/e2e/` + `e2e/robot/` + fixtures + optional-deps |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (aprovação Architect substitui HITL intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` (após correções BLOCKING/MAJOR) |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Aderência interfaces I-T21-001..020 | OK (após fix) | Protocols, Podman/Default, resolver, erros, paths/timeouts, exports E2E-09, `__main__` |
+| Ordem resolve→up→healthy→robot→down + finally | OK | `suite.py` `DefaultRobotMvpSuite.run` |
+| CI vs HITL credencial (D-T21-006) | OK | `credentials.py` |
+| Exclude `bdd015` + green path suites | OK (após fix) | kwargs explícitos; CLI sem paths bare duplicados |
+| HOST_CONFIG / HOST_REPOS / compose e2e | OK | launcher + suite |
+| Redaction secrets | OK | `E2eStackError.from_stderr`; robot sem token em argv |
+| Robot green path (health/catalog/ui/mcp/negative) | OK | `e2e/robot/*.robot` + resources/McpKeywords |
+| Fixtures sem secrets + `.gitignore` | OK (após fix) | `config.e2e.json`; gitlink removido; `sample-local/.git/` ignorado |
+| T19 intacto | OK | sem edição compose/Dockerfile |
+| Cobertura ≥95% | OK | pytest total **96.53%** (1096 passed, 2 skipped) |
+
+### Achados — corrigidos nesta review
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| `BLOCKING` | `_default_robot_runner` anexava `*args` bare (`health`, …) após `*.robot`, quebrando o CLI Robot na prova real | `suite.py` (pré-fix); chamada `run()` com `*GREEN_PATH_SUITES` | Não duplicar markers como paths; só kwargs `suites=` / flags `-*` | Corrigido `suite.py` + assert em `test_coverage_gaps.py` |
+| `MAJOR` | `e2e/fixtures/repos/sample-local` versionado como gitlink `160000` sem `.gitmodules` (submodule quebrado; contradiz D-T21-012 / `ensure_local_git_fixture`) | `git ls-files -s` mode 160000; `fatal: no submodule mapping` | Remover gitlink; versionar só `README.md`; `.git/` via runtime + gitignore | Corrigido index + README |
+| `SUGGESTION` | design §3.2 lista `http.resource`/`mcp.resource`; implementação consolidou em `common.resource` + `McpKeywords.py` | layout `e2e/robot/` | Aceitável — mesma responsabilidade | Aceito |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — implementação alinhada a design 0.1.1 / interfaces 0.1.0 / BDD E2E-01..10 + ROBOT-01..06; correções BLOCKING/MAJOR aplicadas; cobertura 96.53%. Prosseguir Blue.
+
+---
+
+## Review — Blue refactoring — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `refactoring.md` + pacote `github_rag.e2e` |
+| Data | 2026-07-18 |
+| Resultado | `BLUE_APPROVED_BY_ARCHITECT` |
+
+### Critérios
+
+| Critério | Resultado |
+|---|---|
+| Complexidade desnecessária | Nenhuma estrutural — Blue N/A |
+| Gargalo performance com evidência | Nenhum — sem otimização especulativa |
+| Testes verdes + cov ≥95% | OK — baseline 1096 passed / 96.53% |
+| Sem mudança de contrato/comportamento | OK |
+
+### Decisão
+
+`BLUE_APPROVED_BY_ARCHITECT` — ver `refactoring.md`.

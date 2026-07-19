@@ -75,7 +75,7 @@ docker compose -f docker-compose.dev.yml up --build
 Postgres is published on host `5432`. Source under `./src` and `./web` is
 mounted into the app container (still no host `.venv`).
 
-## E2E compose (consumed by T21)
+## E2E compose + Robot MVP proof (T21)
 
 ```bash
 # Prefer Podman in CI/T21. Credentials: GITHUB_TOKEN or E2E_GITHUB_TOKEN (never commit).
@@ -83,6 +83,16 @@ podman compose -f docker-compose.e2e.yml up --build
 ```
 
 Project name `github-rag-e2e` and `e2e_*` volumes isolate state from user/dev stacks.
+
+Canonical MVP proof (after `cp .env.example .env` and setting a real token):
+
+```bash
+python -m pip install -e ".[e2e]"
+python -m github_rag.e2e
+```
+
+See `e2e/README.md` for suite layout, timeouts, and CI secret `E2E_GITHUB_TOKEN`.
+BDD-015 (Cursor Discovery narrative) is excluded from Robot.
 
 ## Cursor MCP (stdio)
 

@@ -42,6 +42,11 @@ dev = [
 integration = [
     "testcontainers[postgres]",
 ]
+e2e = [
+    "robotframework>=7",
+    "robotframework-requests>=0.9",
+    "httpx>=0.27",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -67,6 +72,7 @@ omit = [
     # Entrypoints de processo (CMD / stdio) — exercidos via manifesto AST + smoke operacional.
     "*/delivery/__main__.py",
     "*/delivery/mcp_stdio.py",
+    "*/e2e/__main__.py",
 ]
 
 [tool.coverage.report]
