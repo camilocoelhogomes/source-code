@@ -4,6 +4,10 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ## [Unreleased]
 
+### Corrigido
+
+- Discovery GitHub (T28): fallback org→user em HTTP 404.
+
 ### Adicionado
 
 - Asserts e2e integrais de catalog_indexing (T24 / `gap-catalog-indexing-integral`):

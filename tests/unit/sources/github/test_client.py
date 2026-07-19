@@ -161,6 +161,41 @@ class TestPyGithubApiClient(unittest.TestCase):
         client.list_org_repos("my-org", token=SECRET)
         self.assertEqual(seen, [SECRET])
 
+    def test_user_fallback_when_org_returns_404(self) -> None:
+        user = mock.Mock()
+        user.get_repos.return_value = [
+            _repo(full_name="camilocoelhogomes/source-a", name="source-a", private=False)
+        ]
+        github = mock.Mock()
+        github.get_organization.side_effect = GithubException(
+            404, {"message": "Not Found"}, None
+        )
+        github.get_user.return_value = user
+        client = PyGithubApiClient(github_factory=lambda token: github)
+        repos = client.list_org_repos("camilocoelhogomes", token=SECRET)
+        self.assertEqual(len(repos), 1)
+        self.assertEqual(repos[0].full_name, "camilocoelhogomes/source-a")
+        github.get_user.assert_called_once_with("camilocoelhogomes")
+
+    def test_both_org_and_user_404_raises(self) -> None:
+        github = mock.Mock()
+        github.get_organization.side_effect = GithubException(404, {}, None)
+        github.get_user.side_effect = GithubException(404, {}, None)
+        client = PyGithubApiClient(github_factory=lambda token: github)
+        with self.assertRaises(GitHubDiscoveryError) as ctx:
+            client.list_org_repos("missing-account", token=SECRET)
+        self.assertIn("404", str(ctx.exception))
+        self.assertNotIn(SECRET, str(ctx.exception))
+
+    def test_org_403_does_not_fallback_to_user(self) -> None:
+        github = mock.Mock()
+        github.get_organization.side_effect = GithubException(403, {}, None)
+        client = PyGithubApiClient(github_factory=lambda token: github)
+        with self.assertRaises(GitHubDiscoveryError):
+            client.list_org_repos("private-org", token=SECRET)
+        github.get_user.assert_not_called()
+
+
 
 if __name__ == "__main__":
     unittest.main()
