@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 from collections.abc import Callable, Mapping
 from typing import Any
 
@@ -152,13 +153,30 @@ class DefaultContainerRuntime:
             bind_mcp = (
                 self._bind_mcp if self._bind_mcp is not None else default_bind_mcp
             )
-            bind_ui(self.ui_app, self._environ)
-            bind_mcp(self._mcp_app, self._environ)
+            # Ready antes dos loops bloqueantes para /healthz (compose) responder
+            # 200 enquanto UI/MCP escutam (I-T19-007 / D-T19-008).
             self._ui_ready = True
             self._mcp_ready = True
             _LOG.info("delivery_surfaces_up")
 
-            self._booted = True
+            # Produção: defaults bloqueiam (uvicorn.run / mcp.run). MCP em
+            # thread daemon + UI no main; doubles de teste permanecem
+            # sequenciais e não-bloqueantes (CD-04 / UT-B10).
+            production_binds = self._bind_ui is None and self._bind_mcp is None
+            if production_binds:
+                self._start_background_index_drain()
+                threading.Thread(
+                    target=bind_mcp,
+                    args=(self._mcp_app, self._environ),
+                    name="delivery-mcp",
+                    daemon=True,
+                ).start()
+                self._booted = True
+                bind_ui(self.ui_app, self._environ)
+            else:
+                bind_ui(self.ui_app, self._environ)
+                bind_mcp(self._mcp_app, self._environ)
+                self._booted = True
         except SystemExit:
             raise
         except BaseException as exc:
@@ -168,6 +186,24 @@ class DefaultContainerRuntime:
                 type(exc).__name__,
             )
             raise SystemExit(1) from exc
+
+    def _start_background_index_drain(self) -> None:
+        """Drena a fila pós-reconcile sem bloquear bind (design §4.3 / §5[10])."""
+        orchestrator = self._orchestrator
+        if orchestrator is None or not hasattr(orchestrator, "run_until_idle"):
+            return
+
+        def _drain() -> None:
+            try:
+                orchestrator.run_until_idle()
+            except Exception:  # noqa: BLE001 — falha de índice pós-bind não derruba processo
+                _LOG.exception(
+                    "delivery_background_drain_failed error_type=Exception"
+                )
+
+        threading.Thread(
+            target=_drain, name="delivery-index-drain", daemon=True
+        ).start()
 
     def _ensure_wired(self, settings: Any) -> None:
         """Materializa deps de produção apenas quando não injetadas."""

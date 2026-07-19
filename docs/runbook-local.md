@@ -59,7 +59,9 @@ curl -s http://127.0.0.1:8080/healthz
 ## Cursor MCP (stdio)
 
 Compose default uses MCP over HTTP/SSE on port 8001 (healthcheck-friendly).
-For stdio (e.g. Cursor):
+For stdio (e.g. Cursor), use a process attached to the same infra/config; this
+entry does **not** re-run full ENG-011 sync/reconcile (the main `app` process
+owns that). It wires catalog + query and runs MCP `transport=stdio` only:
 
 ```bash
 docker compose run --rm -i app python -m github_rag.delivery.mcp_stdio

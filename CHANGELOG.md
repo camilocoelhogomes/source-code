@@ -6,6 +6,14 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- Entrega local por container (T19): pacote `github_rag.delivery`
+  (`ContainerRuntime` / `DefaultContainerRuntime` / `run_container_boot`),
+  `Dockerfile` + `docker-compose.yml` (app, postgres, qdrant, zoekt, slm),
+  `.env.example` e `docs/runbook-local.md`. Boot ordenado ENG-011
+  (settings → config → migrate → sync → `StartupIndexReconcile` → scheduler →
+  UI/MCP); fail-fast BDD-022; `/healthz`; plataforma `linux/amd64`; deps
+  DEC-015 + `uvicorn` + `git` na imagem; sem `.venv` do host. MCP compose via
+  SSE/HTTP; stdio em `python -m github_rag.delivery.mcp_stdio`.
 - Management UI (T18): porta `ManagementUiApi` / `DefaultManagementUiApi` via
   **FastAPI** (`fastapi>=0.115,<1`) + frontend estático em `web/`. Listagem de
   repos (origem/estado REQ-020 com labels PT), indexação por checkbox,

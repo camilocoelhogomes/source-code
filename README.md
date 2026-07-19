@@ -354,5 +354,15 @@ app = api.build()  # FastAPI; T19 sobe com uvicorn
 
 O venv é exclusivo do desenvolvimento local. Docker/T19 é a entrega
 padronizada: a imagem/container não monta nem usa o `.venv` do host. As
-dependências são instaladas diretamente no runtime da imagem. O processo MCP
-(T17) e a UI (T18) são expostos na imagem pelo delivery (T19).
+dependências são instaladas via `pip install .` no build (`Dockerfile`).
+Plataforma primária: **linux/amd64**.
+
+```bash
+cp .env.example .env
+docker compose up --build
+curl -s http://127.0.0.1:8080/healthz   # UI + MCP ready
+```
+
+Boot (`python -m github_rag.delivery`): settings → config → migrate →
+`run_catalog_sync` → `StartupIndexReconcile.run()` → scheduler → UI `:8080` +
+MCP `:8001`. Detalhes, volumes `/repos` e MCP stdio: [`docs/runbook-local.md`](docs/runbook-local.md).

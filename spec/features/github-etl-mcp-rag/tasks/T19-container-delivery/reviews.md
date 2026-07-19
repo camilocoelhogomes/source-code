@@ -168,3 +168,65 @@ Resultado QA: **33 failed**, 0 passed — `ImportError`/`ModuleNotFoundError` (`
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — unit-test-plan v0.1.1 + `tests/unit/delivery/**` suficientes vs I-T19-* / design / BDD-022. Prosseguir para implementação (Developer).
+
+---
+
+## Review — Implementation — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `src/github_rag/delivery/**`, `Dockerfile`, `docker-compose.yml`, `.env.example`, `docs/runbook-local.md`, diffs `tests/unit/delivery/test_health.py` / `test_wiring.py` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (aprovação Architect substitui HITL) |
+| Resultado | `APPROVED_BY_ARCHITECT` (após correção BLOCKING/MAJOR) |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Ordem boot ENG-011 / D-T19-003 | OK | `runtime.py` sync → `reconcile.run()` → `scheduler.start()` → surfaces |
+| Fail-fast BDD-022 | OK | `SystemExit(1)` pré-bind; CD-03 / UT-B02..B17 |
+| SDKs na imagem BDD-024 | OK | `Dockerfile` `pip install .` + `git`; `pyproject` DEC-015 + uvicorn |
+| Sem `.venv` host / amd64 / healthz | OK | Dockerfile/compose/runbook; `GET /healthz` |
+| Sem domínio novo; reconcile só T14 | OK | só `StartupIndexReconcile.run()`; sem tip×estado |
+| Diff testes cobertura | OK | `test_health.py` / `test_wiring.py`: só cenários adicionais (503, factories, binds); sem enfraquecimento |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| `BLOCKING` | `default_bind_ui` usa `uvicorn.run` (bloqueante) e `boot()` chamava `bind_ui` → `bind_mcp` em sequência; MCP nunca subia e `_ui_ready`/`_mcp_ready` só eram setados **depois** dos binds — `/healthz` nunca 200 em produção | `wiring.py` L337–348; `runtime.py` (pré-fix) L155–158 | Ready antes dos listeners; MCP em thread daemon no path de produção; UI bloqueia no main | **Corrigido** em `runtime.py` |
+| `MAJOR` | Design §4.3/§5[10] exige drain da fila pós-reconcile em background; implementação não drenava (só cron T15) | design §4.3; `runtime.py` ausente `run_until_idle` pós-bind | Thread daemon `run_until_idle` **somente** com binds default (não quebra UT-B10) | **Corrigido** (`_start_background_index_drain`) |
+| `SUGGESTION` | `mcp_stdio` sem ENG-011 completo | `mcp_stdio.py`; I-T19 permite path acoplado | Documentar no runbook | **Corrigido** em `docs/runbook-local.md` |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — implementação alinhada a design/interfaces/BDD após correção dos binds produção e drain background. Prosseguir Blue.
+
+---
+
+## Review — Blue — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `refactoring.md` + working tree pós-correção |
+| Data | 2026-07-18 |
+| Resultado | `BLUE_APPROVED_BY_ARCHITECT` |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum | Estrutura já mínima (ports/runtime/wiring/health); sem gargalo de performance medido | N/A |
+
+### Decisão
+
+`BLUE_APPROVED_BY_ARCHITECT` — ver `refactoring.md`. Baseline: 1010 passed, cobertura global 96.38%.
