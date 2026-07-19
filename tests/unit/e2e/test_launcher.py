@@ -234,6 +234,24 @@ class TestPodmanE2eStackLauncher(unittest.TestCase):
         host_env = popen.call_args.kwargs["env"]
         self.assertEqual(host_env.get("E2E_DEFER_STARTUP_INDEX"), "1")
 
+    def test_t35_dev_compose_sets_defer_startup_index(self) -> None:
+        e2e = import_e2e()
+        launcher, _runner, _e2e = self._make_launcher(host_app=True)
+        wrapper = REPO_ROOT / ".data/test-up-zoekt-bin/zoekt-index"
+        proc = mock.Mock(poll=mock.Mock(return_value=None))
+        with mock.patch("github_rag.e2e.launcher.ensure_local_git_fixture"):
+            with mock.patch(
+                "github_rag.e2e.launcher.resolve_zoekt_index_bin",
+                return_value=wrapper,
+            ):
+                with mock.patch(
+                    "github_rag.e2e.launcher.subprocess.Popen",
+                    return_value=proc,
+                ) as popen:
+                    launcher.up(env={})
+        host_env = popen.call_args.kwargs["env"]
+        self.assertEqual(host_env.get("E2E_DEFER_STARTUP_INDEX"), "1")
+
     def test_t33_resolve_failure_surfaces_stack_error(self) -> None:
         from github_rag.e2e.errors import E2eStackError
 
