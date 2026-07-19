@@ -28,6 +28,7 @@ services:
 
   zoekt:
     image: sourcegraph/zoekt:latest
+    command: ["zoekt-webserver", "-index", "/data/index", "-rpc"]
     volumes:
       - e2e_zoekt_index:/data/index
     environment:

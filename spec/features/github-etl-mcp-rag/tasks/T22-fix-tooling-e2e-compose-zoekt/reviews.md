@@ -248,3 +248,52 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — unit-test-plan + suíte cobrem M-T22-*/extremos/secrets; helper só em tests/; RED canônico F-T04-002 + docs. Prosseguir para implementação Developer (sem alterar testes para obter verde).
+
+---
+
+## Review — Implementation — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `docker-compose.yml`, `docker-compose.e2e.yml`, `docker-compose.dev.yml`, `e2e/README.md`, `docs/runbook-local.md` |
+| Data | 2026-07-19 |
+| Pipeline | autonomous (aprovação Architect substitui HITL intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| D-T22-001 `command` webserver preservando ENTRYPOINT `tini` | OK | `command: ["zoekt-webserver", "-index", "/data/index", "-rpc"]` nos 3 YAML; sem `entrypoint:` |
+| D-T22-002 paridade nos 3 composes | OK | mesmo argv em user / e2e / dev |
+| F-T04-001 docs (M-T22-010..013) | OK | `e2e/README.md` + `docs/runbook-local.md`: `podman-compose`, `command -v`, `podman compose version`, `brew install` |
+| Sem secrets (M-T22-006/014) | OK | diff só argv + markdown; sem PAT/`ghp_` |
+| Sem expansão Robot / domínio | OK | working tree: só 5 arquivos compose/docs; sem `src/` nem `e2e/robot/**` |
+| Testes intactos e verdes (subset T22) | OK | `35 passed, 16 subtests` — BDD + unit zoekt + `test_manifest` |
+| Alinhamento M-T22-001..007 | OK | tokens/ordem/volume `/data/index`/porta 6070 herdados; forma JSON inline |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| — | Nenhum | — | — | — |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Evidência de testes
+
+```text
+.venv/bin/python -m pytest tests/bdd/test_e2e_compose_zoekt_fix.py \
+  tests/unit/delivery/test_zoekt_compose_manifest.py \
+  tests/unit/delivery/test_manifest.py -q --tb=line --no-cov
+# 35 passed, 16 subtests passed in 0.04s
+```
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — implementação materializa D-T22-001/002/004 e contratos M-T22-*; escopo tooling-only; subset T22 verde. Prosseguir para Blue/docs se aplicável no pipeline.
