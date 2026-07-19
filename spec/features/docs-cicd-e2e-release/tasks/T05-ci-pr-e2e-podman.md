@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T05-ci-pr-e2e-podman` |
 | Feature | `docs-cicd-e2e-release` |
-| Estado | `PENDING_PO_REVIEW` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Onda | W2 |
 
 ## Objetivo

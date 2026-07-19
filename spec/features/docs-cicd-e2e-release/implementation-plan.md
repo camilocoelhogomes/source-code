@@ -4,12 +4,12 @@
 |---|---|
 | Feature ID | `docs-cicd-e2e-release` |
 | Versão do plano | `0.1.1` |
-| Estado | `PENDING_HUMAN_PLAN_APPROVAL` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Requisitos base | `requirements.md` v0.1.0 (aprovado 2026-07-18, commit candidato `ae1941ebd43ca97ef6d77a55004847f4af4d72db`; registro `15555f02`) |
 | Natureza | qualidade, documentação e entrega contínua; não altera domínio do MVP |
 | Dependência externa | `github-etl-mcp-rag` / `T19-container-delivery` (Dockerfile + 3 composes com testes passando) |
 | Revisão PO | `aprovado` em 2026-07-18 por `product-owner` (`PO_PLAN_REVIEW` v0.1.1) |
-| Revisão humana (plano) | `NOT_STARTED` — aguarda `HUMAN_PLAN_APPROVAL` |
+| Revisão humana (plano) | `aprovado` em 2026-07-18 por `camilocoelhogomes` (`HUMAN_PLAN_APPROVAL` v0.1.1 / `8d0f84b64a6a03fab361b072ac02e456dd7e92ca`) |
 | Delta v0.1.1 | Clarificação documental: unitários (e BDD) são **pré-condição obrigatória** do e2e no gate de PR (REQ-012); sem mudança de escopo |
 
 ## 1. Arquitetura
@@ -188,8 +188,7 @@ T07-docs-contributing-en         → T01, T04   (alinha comandos CI/e2e; soft T0
 
 ## 10. Handoff
 
-Plano **v0.1.1** — `PENDING_HUMAN_PLAN_APPROVAL` (PO_PLAN_REVIEW v0.1.1 aprovado).
+Plano **v0.1.1** — `READY_FOR_IMPLEMENTATION` (aprovação humana `aprovo` em 2026-07-18).
 
-- Tasks `T01`–`T07` em `tasks/`; T01/T05 atualizadas para pré-condição unit→e2e.
-- Próximo gate: **HUMAN_PLAN_APPROVAL**.
+- Tasks `T01`–`T07` em `READY_FOR_IMPLEMENTATION`.
 - Implementação: uma task por pipeline; W0 pode iniciar sem T19; W1+ exige T19 DONE com 3 composes.

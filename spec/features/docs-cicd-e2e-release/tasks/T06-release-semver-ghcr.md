@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T06-release-semver-ghcr` |
 | Feature | `docs-cicd-e2e-release` |
-| Estado | `PENDING_PO_REVIEW` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Onda | W1 |
 
 ## Objetivo

@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T07-docs-contributing-en` |
 | Feature | `docs-cicd-e2e-release` |
-| Estado | `PENDING_PO_REVIEW` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Onda | W2 |
 
 ## Objetivo

@@ -4,11 +4,12 @@
 
 - **Feature ID:** `docs-cicd-e2e-release`
 - **Versão:** 0.1.0
-- **Estado:** `PENDING_HUMAN_PLAN_APPROVAL`
+- **Estado:** `READY_FOR_IMPLEMENTATION`
 - **Natureza:** feature nova de qualidade, documentação e entrega contínua; não altera o domínio do MVP.
 - **Dependência obrigatória:** task `T19-container-delivery` da feature `github-etl-mcp-rag` (Dockerfile, imagens base e os 3 composes com testes passando).
 - **Rastreabilidade:** requisitos `REQ-*`, regras `BR-*`, decisões `DEC-*` e cenários `BDD-*` deste documento.
 - **Aprovação humana (requisitos 0.1.0):** `aprovado` em 2026-07-18 por `camilocoelhogomes` (commit candidato `ae1941ebd43ca97ef6d77a55004847f4af4d72db`).
+- **Aprovação humana (plano 0.1.1):** `aprovo` em 2026-07-18 por `camilocoelhogomes` (commit candidato `8d0f84b64a6a03fab361b072ac02e456dd7e92ca`); tasks T01–T07 em `READY_FOR_IMPLEMENTATION`.
 
 ## Problema
 
