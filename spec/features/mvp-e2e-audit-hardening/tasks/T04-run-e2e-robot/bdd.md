@@ -17,6 +17,7 @@
 |---|---|---|---|---|
 | 2026-07-18 | QA Engineer | `TESTS_READY_FOR_REVIEW` | `0.1.0` | E2E-01..E2E-10; contrato documental BDD-003 / design §3.3; RED até existir `runs/e2e-robot-green-path.md`. |
 | 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.0` | Review BDD OK; cenários cobrem metadados, fases, suítes, falhas T05, soft T03, secrets, sem expansão Robot. |
+| 2026-07-19 | QA / Runner | `GREEN` pós-artefato | `0.1.0` | `10 passed` em `test_mvp_e2e_audit_e2e_robot_run.py` após materializar `runs/e2e-robot-green-path.md`. |
 
 ## Convenções
 

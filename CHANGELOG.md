@@ -16,6 +16,14 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
   (PAT operador, `cp .env.example .env`, `GITHUB_TOKEN`/`E2E_GITHUB_TOKEN`,
   gate T04 READY/BLOCKED sem secrets); link em `e2e/README.md`; testes BDD
   `tests/bdd/test_mvp_e2e_audit_hitl_env_prep.py`. `.env` permanece gitignored.
+- Auditoria run-first Robot green path (T04 / `mvp-e2e-audit-hardening`):
+  evidência versionável `RobotGreenPathRun` em
+  `spec/features/mvp-e2e-audit-hardening/runs/e2e-robot-green-path.md`
+  (comando canônico `python -m github_rag.e2e`, Podman + compose e2e, exit/
+  fases/suítes, falhas F-T04-* com superfície, soft-dep T03 independente, sem
+  secrets) + contrato BDD `tests/bdd/test_mvp_e2e_audit_e2e_robot_run.py`.
+  Sem expansão Robot/browser e sem alteração de produto (`src/github_rag/**`,
+  `e2e/robot/**`).
 - Prova e2e do MVP (T21): pacote `github_rag.e2e` com contratos
   `E2eStackLauncher` / `RobotMvpSuite` (`PodmanE2eStackLauncher`,
   `DefaultRobotMvpSuite`, `E2eCredentialResolver`), suíte Robot Framework em
