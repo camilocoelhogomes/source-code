@@ -227,6 +227,21 @@ class PodmanE2eStackLauncher:
             proc.kill()
             proc.wait(timeout=5)
 
+    def _check_host_app_exited(self) -> None:
+        if not self._host_app or self._app_process is None:
+            return
+        exit_code = self._app_process.poll()
+        if exit_code is None:
+            return
+        stderr = ""
+        if self._app_process.stderr is not None:
+            stderr = self._app_process.stderr.read() or ""
+        effective = self._merge_env(None)
+        raise E2eStackError.from_stderr(
+            f"host app exited before healthy (code={exit_code}): {stderr[:500]}",
+            secrets=self._secrets_from(effective),
+        )
+
     def up(self, env: Mapping[str, str] | None = None, **_kwargs: Any) -> None:
         effective = self._merge_env(env)
         host_repos = Path(effective["HOST_REPOS"])
@@ -249,14 +264,7 @@ class PodmanE2eStackLauncher:
             self._start_host_app(effective)
 
     def wait_healthy(self, *, timeout_seconds: float | None = None) -> None:
-        if self._host_app and self._app_process is not None:
-            exit_code = self._app_process.poll()
-            if exit_code is not None:
-                stderr = (self._app_process.stderr.read() or "") if self._app_process.stderr else ""
-                raise E2eStackError.from_stderr(
-                    f"host app exited before healthy (code={exit_code}): {stderr[:500]}"
-                )
-
+        self._check_host_app_exited()
         deadline = time.monotonic() + (
             self._healthy_timeout
             if timeout_seconds is None
@@ -264,6 +272,7 @@ class PodmanE2eStackLauncher:
         )
         last_error = "healthz not ready"
         while time.monotonic() < deadline:
+            self._check_host_app_exited()
             try:
                 with urllib.request.urlopen(self._health_url, timeout=2.0) as resp:
                     body = resp.read()
