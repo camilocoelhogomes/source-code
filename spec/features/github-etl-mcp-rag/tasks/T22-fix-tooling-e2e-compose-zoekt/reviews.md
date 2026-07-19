@@ -297,3 +297,50 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — implementação materializa D-T22-001/002/004 e contratos M-T22-*; escopo tooling-only; subset T22 verde. Prosseguir para Blue/docs se aplicável no pipeline.
+
+---
+
+## Review — Blue / refactoring — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `refactoring.md` + `tests/support/compose_manifest.py` |
+| Data | 2026-07-19 |
+| Pipeline | autonomous (aprovação Architect substitui HITL intermediário) |
+| Resultado | `BLUE_APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Baseline subset T22 registrado | OK | 35 passed, 16 subtests, 0.04s (pré e pós) |
+| Sem otimização especulativa | OK | sem hot path; performance N/A |
+| Simplificação só com evidência | OK | produção composes/docs N/A; helper: API morta removida |
+| Sem mudança de comportamento/contratos | OK | asserts intactos; composes/docs não tocados nesta etapa |
+| Cobertura de contratos preservada | OK | mesmo subset verde pós-remoção |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| — | Nenhum `BLOCKING` / `MAJOR` | — | — | — |
+
+### Mudança Blue
+
+| Arquivo | Delta | Motivo |
+|---|---|---|
+| `tests/support/compose_manifest.py` | remove `canonical_argv_present` + `typing.Sequence` | código morto (SUGGESTION residual unit review) |
+
+### Evidência pós-Blue
+
+```text
+.venv/bin/python -m pytest tests/bdd/test_e2e_compose_zoekt_fix.py \
+  tests/unit/delivery/test_zoekt_compose_manifest.py \
+  tests/unit/delivery/test_manifest.py -q --tb=line --no-cov
+# 35 passed, 16 subtests passed in 0.04s
+```
+
+### Decisão
+
+`BLUE_APPROVED_BY_ARCHITECT` — baseline **35 passed / 16 subtests / 0.04s**; simplificação estrutural de produção N/A; Blue mínima no helper de teste aprovada.

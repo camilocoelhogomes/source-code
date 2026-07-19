@@ -7,7 +7,6 @@ para extrair o bloco ``zoekt`` e validar M-T22-001 sem ``compose up``.
 from __future__ import annotations
 
 import re
-from typing import Sequence
 
 # Argv mínimo do filho do tini (D-T22-001 / M-T22-001).
 ZOEKT_COMMAND_TOKENS: tuple[str, ...] = (
@@ -200,8 +199,3 @@ def assert_no_embedded_secrets(text: str, *, artifact_name: str) -> None:
         text,
     ):
         raise AssertionError(f"{artifact_name}: não deve embutir valor de token")
-
-
-def canonical_argv_present(argv: Sequence[str]) -> bool:
-    """True se argv contém todos os tokens M-T22-001."""
-    return all(token in argv for token in ZOEKT_COMMAND_TOKENS)
