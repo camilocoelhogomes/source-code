@@ -240,3 +240,74 @@ Revisar `unit-test-plan.md` `0.1.0` e unitários RED; aprovar (`APPROVED_BY_ARCH
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — unitários `0.1.1` suficientes e aderentes a `interfaces.md` (extremos/corners). Prosseguir para implementação Developer de `CatalogIndexingKeywords.py` + seed `ensure_local_git_fixture` (modo autônomo).
+---
+
+## Review — Implementação Developer — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefatos | `CatalogIndexingKeywords.py`, `catalog_indexing.resource`, `catalog_indexing.robot`, `launcher.py` `ensure_local_git_fixture`, fixture `sample-local` |
+| Data | 2026-07-19 |
+| Pipeline | autonomous (aprovação Architect substitui HITL intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Checklist (orquestrador)
+
+| # | Critério | Resultado | Evidência |
+|---|---|---|---|
+| 1 | BDD-003: cron soon + tick effect **sem** POST index pós-mutação tip | OK | `catalog_indexing.robot` BDD-003: prep index → `Host Commit On Main` → PUT cron → `Wait Repo Indexed By Scheduler Tick` → MCP; keyword documenta proibição POST |
+| 2 | BDD-005: caso próprio + MCP `last_processed_commit` | OK | caso `BDD-005 Tip Change Updates Last Processed Commit` tag `bdd005`; `bdd005` removido de BDD-002 |
+| 3 | BDD-006: exclude CSV/imagem/gitignore + includes | OK | CI-T24-006: hits Java/MD; empty CSV/gitignore; `files[]` excludes csv/png/ignored_dir |
+| 4 | BDD-017: other branch + uncommitted ausentes | OK | `Prepare MainOnly Fixture Branches` + asserts ausência OTHER/UNCOMMITTED |
+| 5 | Sem mudança domínio ETL/UI (exceto e2e launcher) | OK | diff `src/` só `github_rag/e2e/launcher.py` |
+| 6 | Sem secrets | OK | markers sintéticos; e-mails git `e2e@example.com`; sem tokens |
+| 7 | Unitários verdes | OK | `PYTHONPATH=…/wt-T24/src` → 40 passed (`test_catalog_indexing_keywords` + `test_coverage_gaps`) |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| `SUGGESTION` | CI-T24-006 não asserta `MARKER_INCLUDE_PY` / `src/app.py` em hits/`files[]` | robot L112–118; design “e/ou” | Opcional complementar; Java+MD já fecham include | Residual — não bloqueia |
+| `SUGGESTION` | Libraries `OperatingSystem`/`String` importadas e não usadas no resource | `catalog_indexing.resource` Settings | Remover no Blue | Tratado no Blue |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — implementação aderente a design/bdd/interfaces. Prosseguir etapa Blue (`refactoring.md` + simplificação sem mudança de comportamento).
+
+---
+
+## Review — Blue — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `refactoring.md` + cleanup resource |
+| Data | 2026-07-19 |
+| Pipeline | autonomous |
+| Resultado | `BLUE_APPROVED_BY_ARCHITECT` |
+
+### Critérios
+
+| Critério | Resultado |
+|---|---|
+| Baseline unitários registrada (40 passed) | OK |
+| Simplificação sem mudança de comportamento | OK — remove Libraries mortas |
+| Sem otimização especulativa | OK |
+| Unitários pós-Blue verdes | OK (re-run 40 passed) |
+
+### Achados
+
+| Severidade | Achado | Status |
+|---|---|---|
+| — | Nenhum BLOCKING/MAJOR | — |
+
+### Decisão
+
+`BLUE_APPROVED_BY_ARCHITECT` — Blue concluído; pronto para QA suites/cobertura e docs/changelog.
