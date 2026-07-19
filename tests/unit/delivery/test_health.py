@@ -9,9 +9,15 @@ from pathlib import Path
 
 from tests.unit.delivery.helpers import (
     SECRET_TOKEN,
+    RecordingReconcile,
+    RecordingScheduler,
+    RecordingSync,
+    RecordingSurfaces,
+    base_environ,
     build_runtime,
     write_valid_config,
 )
+from tests.unit.ui.helpers import WEB_ROOT
 
 
 class TestHealthzPayload(unittest.TestCase):
@@ -67,9 +73,49 @@ class TestHealthzAfterBoot(unittest.TestCase):
     """UT-H03 / UT-H04 — health só após boot; sem segredos."""
 
     def test_ut_h03_healthz_200_only_after_full_boot(self) -> None:
+        from github_rag.catalog.memory import InMemoryCatalogRepository
+        from github_rag.delivery import DefaultContainerRuntime
+        from github_rag.query.fake import FakeQueryService
+        from github_rag.schedule.memory import InMemoryCronPreferenceStore
+        from github_rag.schedule.scheduler import DefaultDailyScheduler
+        from github_rag.ui.api import DefaultManagementUiApi
+
+        from tests.unit.ui.helpers import NoopReconcile, SpyOrchestrator, WEB_ROOT
+
         with tempfile.TemporaryDirectory() as tmp:
             cfg = write_valid_config(Path(tmp))
-            runtime, _, _, _, surfaces = build_runtime(config_path=cfg)
+            catalog = InMemoryCatalogRepository()
+            orch = SpyOrchestrator(catalog)
+            scheduler = DefaultDailyScheduler(
+                preference_store=InMemoryCronPreferenceStore(),
+                reconcile=NoopReconcile(),
+                orchestrator=orch,
+                default_cron="0 2 * * *",
+            )
+            ui = DefaultManagementUiApi(
+                catalog=catalog,
+                orchestrator=orch,
+                scheduler=scheduler,
+                query=FakeQueryService(),
+                drain_on_index=False,
+                web_root=WEB_ROOT,
+            )
+            sync = RecordingSync()
+            reconcile = RecordingReconcile()
+            rec_scheduler = RecordingScheduler()
+            surfaces = RecordingSurfaces()
+            runtime = DefaultContainerRuntime(
+                environ=base_environ(config_path=cfg),
+                sync=sync,
+                reconcile=reconcile,
+                scheduler=rec_scheduler,
+                catalog=catalog,
+                orchestrator=orch,
+                ui=ui,
+                bind_ui=surfaces.bind_ui,
+                bind_mcp=surfaces.bind_mcp,
+                skip_infra=True,
+            )
 
             pre_app = getattr(runtime, "ui_app", None) or getattr(
                 runtime, "asgi_app", None
@@ -96,6 +142,11 @@ class TestHealthzAfterBoot(unittest.TestCase):
             self.assertEqual(body.get("status"), "ok")
             self.assertEqual(body.get("ui"), "ready")
             self.assertEqual(body.get("mcp"), "ready")
+
+            web_root = WEB_ROOT
+            if web_root.is_dir():
+                self.assertEqual(client.get("/").status_code, 200)
+                self.assertEqual(client.get("/api/repos").status_code, 200)
 
     def test_ut_h04_healthz_body_has_no_secrets(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

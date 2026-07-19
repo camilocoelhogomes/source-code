@@ -9,7 +9,9 @@ Motivo da separação
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -74,6 +76,7 @@ def create_app(
     drain_on_index: bool,
     web_root: Path,
     issue_store: CatalogIssueStore | None = None,
+    get_state: Callable[[], Any] | None = None,
 ) -> FastAPI:
     """Monta FastAPI com rotas da Management UI.
 
@@ -212,6 +215,11 @@ def create_app(
         inventados como ``/api/connections``.
         """
         raise HTTPException(status_code=404, detail="Not Found")
+
+    if get_state is not None:
+        from github_rag.delivery.health import register_health_routes
+
+        register_health_routes(app, get_state=get_state)
 
     if web_root.is_dir():
         app.mount(

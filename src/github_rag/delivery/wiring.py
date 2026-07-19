@@ -335,7 +335,7 @@ def wire_ui_app(
     query: Any,
     issue_store: Any | None = None,
 ) -> Any:
-    """``DefaultManagementUiApi(...).build()`` → FastAPI."""
+    """``DefaultManagementUiApi(...)`` — builder; ``build()`` em runtime."""
     from github_rag.ui import DefaultManagementUiApi
 
     return DefaultManagementUiApi(
@@ -345,7 +345,7 @@ def wire_ui_app(
         query=query,
         drain_on_index=True,
         issue_store=issue_store,
-    ).build()
+    )
 
 
 def wire_mcp_server(

@@ -191,14 +191,15 @@ class TestWiringHelpersCoverage(unittest.TestCase):
         from github_rag.delivery.wiring import wire_mcp_server, wire_ui_app
 
         with mock.patch("github_rag.ui.DefaultManagementUiApi") as ui_cls:
-            ui_cls.return_value.build.return_value = "ui-app"
-            app = wire_ui_app(
+            ui_cls.return_value = "ui-builder"
+            built = wire_ui_app(
                 catalog=object(),
                 orchestrator=object(),
                 scheduler=object(),
                 query=object(),
             )
-        self.assertEqual(app, "ui-app")
+        self.assertEqual(built, "ui-builder")
+        ui_cls.assert_called_once()
 
         with mock.patch("github_rag.mcp.DefaultMcpEvidenceServer") as mcp_cls:
             mcp_cls.return_value.build.return_value = "mcp-app"

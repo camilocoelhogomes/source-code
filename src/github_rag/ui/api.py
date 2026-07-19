@@ -9,7 +9,9 @@ Motivo da separação
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI
 
@@ -60,11 +62,16 @@ class DefaultManagementUiApi:
         self._web_root = web_root if web_root is not None else default_web_root()
         self._issue_store = issue_store
 
-    def build(self) -> FastAPI:
+    def build(
+        self,
+        *,
+        get_state: Callable[[], Any] | None = None,
+    ) -> FastAPI:
         """Monta a aplicação ASGI (I-T18-001).
 
         Responsabilidade: delegar a ``create_app`` com deps capturadas.
-        Motivo da separação: composition ≠ registro de rotas.
+        Motivo da separação: composition ≠ registro de rotas; ``get_state``
+        opcional registra ``/healthz`` antes do static (T31 / I-T19-007).
         """
         return create_app(
             catalog=self._catalog,
@@ -74,4 +81,5 @@ class DefaultManagementUiApi:
             drain_on_index=self._drain_on_index,
             web_root=self._web_root,
             issue_store=self._issue_store,
+            get_state=get_state,
         )

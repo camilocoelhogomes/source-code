@@ -1,6 +1,6 @@
 ---
 name: e2e-robot-autonomous-loop
-description: Executa o ciclo determinístico python -m github_rag.e2e → descoberta de falhas → tasks de bug → orquestrador autônomo até Robot verde. Substitui gates HITL por commits; único gate humano é aprovação de mudanças em e2e/robot/**. Use ao rodar e2e Robot, fechar MVP local verde, ou corrigir falhas e2e de forma autônoma.
+description: Executa o ciclo determinístico python -m github_rag.e2e → descoberta de falhas → tasks de bug → orquestrador autônomo até Robot verde. Reutiliza .venv persistente (criar/install uma vez por loop). Substitui gates HITL por commits; único gate humano é aprovação de mudanças em e2e/robot/**. Use ao rodar e2e Robot, fechar MVP local verde, ou corrigir falhas e2e de forma autônoma.
 ---
 
 # Loop autônomo e2e Robot
@@ -9,11 +9,48 @@ O agente principal **apenas orquestra**. Não implementa correções nem altera 
 
 ## Princípios
 
-1. **Critério de parada determinístico:** `python -m github_rag.e2e` exit `0` (green path: `health`, `catalog_indexing`, `ui`, `ui_browser`, `mcp`, `negative`; `--exclude bdd015`).
+1. **Critério de parada determinístico:** `.venv/bin/python -m github_rag.e2e` exit `0` (green path: `health`, `catalog_indexing`, `ui`, `ui_browser`, `mcp`, `negative`; `--exclude bdd015`).
 2. **Commit substitui HITL:** em cada etapa que `feature-discovery` ou `implementation-pipeline` pediriam aprovação humana, faça **commit** com artefato candidato e registre decisão automática (`APPROVED_BY_ARCHITECT` ou `APPROVED_BY_PO`) em `approvals.md`. **Não** aguarde humano, exceto no gate Robot (abaixo).
 3. **Suítes Robot congeladas:** arquivos em `e2e/robot/**` e `e2e/fixtures/**` são **imutáveis** neste loop. Qualquer proposta de alteração → pare, commit candidato, solicite aprovação humana explícita. Sem aprovação, trate como `gap-teste` ou `produto` — nunca mude o Robot.
 4. **Correções no pai:** tasks de bug vivem em `spec/features/github-etl-mcp-rag/tasks/` (T22–T27 existentes + T28+ novas).
 5. **Orquestração filha (opcional):** runs e índices em `spec/features/mvp-local-e2e-green/runs/` ou `spec/features/<loop-feature-id>/runs/`.
+6. **Venv persistente:** criar e instalar deps **uma única vez** no início do loop; reutilizar em W1–W3; **nunca** apagar/recriar salvo mudança em `pyproject.toml`/`uv.lock`.
+
+## W0 — Bootstrap venv (uma vez por loop)
+
+Executar **somente** se `.venv/` não existir, estiver corrompido, ou deps mudaram desde o último install.
+
+```bash
+# Criar (apenas se .venv/ ausente)
+python3.12 -m venv .venv
+
+# Instalar/atualizar (apenas se necessário — ver abaixo)
+.venv/bin/python -m pip install -e ".[e2e]"
+.venv/bin/rfbrowser init   # apenas se browsers Playwright ausentes
+```
+
+### Quando reinstalar (e só então)
+
+| Gatilho | Ação |
+|---------|------|
+| `.venv/` ausente ou interpretador quebrado | `python3.12 -m venv .venv` + install |
+| `pyproject.toml` ou lockfile alterado desde último install | `.venv/bin/python -m pip install -e ".[e2e]"` |
+| `import github_rag.e2e` falha após merge de task que alterou deps | install incremental |
+| Nenhum dos acima | **pular** — reutilizar `.venv` existente |
+
+### Comandos canônicos do loop
+
+Sempre invocar via caminho do venv (sem `activate`, sem `pip install` repetido):
+
+```bash
+.venv/bin/python -m github_rag.e2e
+.venv/bin/python -m pytest ...
+.venv/bin/rfbrowser ...
+```
+
+**Proibido durante o loop:** `rm -rf .venv`, recriar venv a cada W1/W3, ou `pip install -e ".[e2e]"` quando deps não mudaram.
+
+Registrar bootstrap em `spec/features/<loop-feature-id>/runs/venv-bootstrap-YYYYMMDD.md` (criado? deps atualizadas? motivo).
 
 ## Pré-condições (bloqueie e reporte)
 
@@ -21,8 +58,8 @@ O agente principal **apenas orquestra**. Não implementa correções nem altera 
 |------|-------------|
 | `.env` local | Token GitHub válido; **nunca** commitar |
 | Podman + compose | `podman-compose` ou `podman compose` no PATH |
-| Deps e2e | `pip install -e ".[e2e]"` |
-| Browser | `rfbrowser init` |
+| Venv e2e | W0 concluído; `.venv/bin/python -c "import github_rag.e2e"` ok |
+| Browser | `rfbrowser init` (W0, se necessário) |
 | GitHub | `git remote -v` + `gh auth status` |
 | `main` | Atualizada antes de cada onda |
 
@@ -31,6 +68,10 @@ Referência operacional: `e2e/README.md`, checklist `spec/features/mvp-e2e-audit
 ## Ciclo principal
 
 ```text
+┌─────────────────────────────────────────────────────────────┐
+│  W0  VENV BOOTSTRAP (uma vez) → reutilizar em todo o loop  │
+└────────────────────────────┬────────────────────────────────┘
+                             ▼
 ┌─────────────────────────────────────────────────────────────┐
 │  W1  RUN E2E  →  resumo sanitizado em spec/.../runs/       │
 └────────────────────────────┬────────────────────────────────┘
@@ -49,12 +90,12 @@ Referência operacional: `e2e/README.md`, checklist `spec/features/mvp-e2e-audit
                     re-run W1 até exit 0
 ```
 
-Repita W1→W2→W3 até exit `0`. Exit `0` na primeira W1 encerra (registrar verde; W2 dedup confirma zero falhas novas).
+Repita W1→W2→W3 até exit `0` (W0 não se repete). Exit `0` na primeira W1 encerra (registrar verde; W2 dedup confirma zero falhas novas).
 
 ## W1 — Executar e2e
 
 ```bash
-python -m github_rag.e2e
+.venv/bin/python -m github_rag.e2e
 ```
 
 Registrar em `spec/features/<loop-feature-id>/runs/e2e-run-YYYYMMDD.md`:
@@ -117,12 +158,13 @@ Handoff mínimo em `spec/features/<loop-feature-id>/runs/orchestrator-handoff-YY
 
 ```yaml
 feature_id: github-etl-mcp-rag
-stop_criterion: python -m github_rag.e2e exit 0
+stop_criterion: .venv/bin/python -m github_rag.e2e exit 0
 tasks: [T22..T27 pendentes + T28+ de W2]
 dependency_waves: conforme implementation-plan.md do pai
 architect_gate: true
 human_intermediate_gate: false
 robot_files_frozen: true
+venv: reuse .venv from W0; pip install only if pyproject.toml changed
 ```
 
 Ordem sugerida de ondas:
@@ -172,8 +214,9 @@ Fluxo:
 ## Restrições
 
 - Agente principal **nunca** implementa código de produto nem altera Robot sem gate.
+- **Venv:** bootstrap W0 uma vez; subagents W3 usam o mesmo `.venv` — não recriar nem reinstalar deps sem gatilho válido.
 - Cobertura ≥ 95% herdada do orquestrador autônomo por task.
-- Nunca force push; nunca commitar `.env` ou `e2e/results/`.
+- Nunca force push; nunca commitar `.env`, `.venv/` ou `e2e/results/`.
 - Falha de token/stack/timeout vira achado registrado — não abortar sem evidência.
 - Mudança de escopo fora do achado e2e → pausar e devolver ao discovery completo.
 
