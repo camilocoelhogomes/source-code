@@ -6,7 +6,7 @@
 | Task | `T07-consolidate-evidence-close` |
 | Autor | QA Engineer |
 | Data | 2026-07-19 |
-| Estado | `TESTS_READY_FOR_REVIEW` |
+| Estado | `APPROVED_BY_ARCHITECT` |
 | Versão | `0.1.0` |
 | Design base | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
 | Execução | `tests/bdd/test_mvp_e2e_audit_closure_pack.py` — valida pacote canônico (sem fixes/MVP) |
@@ -16,6 +16,7 @@
 | Data | Autor | Decisão | Versão | Observações |
 |---|---|---|---|---|
 | 2026-07-19 | QA Engineer | `TESTS_READY_FOR_REVIEW` | `0.1.0` | CLOSE-01..CLOSE-12; contrato `AuditClosurePack`; RED até pacote. |
+| 2026-07-19 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.0` | Alinhado design 0.1.0; CLOSE-01..12; RED 12 failed pré-artefato. |
 
 ## Convenções
 

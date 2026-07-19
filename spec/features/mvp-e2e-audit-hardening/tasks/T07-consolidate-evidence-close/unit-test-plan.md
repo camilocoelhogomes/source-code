@@ -6,16 +6,16 @@
 | Task | `T07-consolidate-evidence-close` |
 | Autor | QA Engineer |
 | Data | 2026-07-19 |
-| Estado | `DRAFT` |
+| Estado | `APPROVED_BY_ARCHITECT` |
 | Versão | `0.1.0` |
-| Interfaces base | `0.1.0` |
+| Interfaces base | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
 | Natureza | Documental — **sem** unitários em `src/`; contratos via BDD CLOSE-01..12 |
 
 ## 0. Histórico Architect
 
 | Data | Autor | Decisão | Versão | Observações |
 |---|---|---|---|---|
-| — | — | pendente | `0.1.0` | Aguarda review Architect. |
+| 2026-07-19 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.0` | Corners via CLOSE-01..12; N/A unitários `src/`; cobertura global ≥95% sem código novo. |
 
 ## 1. Escopo de testes
 

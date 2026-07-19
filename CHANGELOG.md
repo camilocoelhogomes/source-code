@@ -6,6 +6,14 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- Pacote de fechamento da auditoria (T07 / `mvp-e2e-audit-hardening`): contrato
+  `AuditClosurePack` em
+  `spec/features/mvp-e2e-audit-hardening/audit/closure-pack.md` — índice de
+  evidências T01–T06, métricas de sucesso, backlog pai T22–T27, ordem
+  run-first → falha → gap-fill, status `CLOSURE_READY` (encerrável /
+  aguardando merge); MVP de produto **não** entregue; BDD
+  `tests/bdd/test_mvp_e2e_audit_closure_pack.py`. Sem fix de produto
+  (`src/github_rag/**`, `e2e/robot/**`, composes).
 - Inventário de cobertura MVP e2e (T01 / feature `mvp-e2e-audit-hardening`):
   matriz documental `CoverageInventory` em
   `spec/features/mvp-e2e-audit-hardening/audit/coverage-inventory.md`

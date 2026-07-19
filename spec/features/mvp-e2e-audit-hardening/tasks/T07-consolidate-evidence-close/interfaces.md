@@ -6,10 +6,10 @@
 | Task | `T07-consolidate-evidence-close` |
 | Autor | Tech Lead Architect |
 | Data | 2026-07-19 |
-| Estado | `DRAFT` |
+| Estado | `APPROVED_BY_ARCHITECT` |
 | Versão | `0.1.0` |
 | Design base | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
-| BDD base | `0.1.0` |
+| BDD base | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
 | Branch | `feature/mvp-e2e-audit-hardening-T07-consolidate-evidence-close` |
 | Natureza | **100% documental / operacional** (D-T07-005) |
 | Escopo desta etapa | Contrato lógico `AuditClosurePack` — pacote + status; **sem** Protocol/ABC Python novo, **sem** código de produção |
@@ -18,7 +18,7 @@
 
 | Data | Autor | Decisão | Versão | Observações |
 |---|---|---|---|---|
-| — | — | pendente | `0.1.0` | Aguarda review Architect. |
+| 2026-07-19 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.0` | `AuditClosurePack` documental; I-T07-001..011; sem Protocol em `src/`. |
 
 ## 1. Escopo e exclusões
 
