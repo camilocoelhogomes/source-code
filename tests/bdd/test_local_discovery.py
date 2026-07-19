@@ -145,6 +145,39 @@ class TestLocalDiscoveryBdd(unittest.TestCase):
         self.assertEqual(len(result.repos), 1)
         self.assertEqual(result.repos[0].repo_identifier, "single-repo")
 
+    def test_loc_t34_01_host_repos_remaps_file_repos_glob(self) -> None:
+        """LOC-T34-01 / BDD-016: file:///repos/* + HOST_REPOS no host."""
+        _init_git_repo(self.mount / "sample-local")
+
+        config = _AppConfig(
+            connections={
+                "local-e2e-fixture": _git_connection("file:///repos/*"),
+            }
+        )
+        result = LocalRepoDiscovery(host_repos=str(self.mount)).discover(config)
+
+        self.assertEqual(len(result.repos), 1)
+        self.assertEqual(result.repos[0].origin, RepoOrigin.LOCAL)
+        self.assertEqual(result.repos[0].repo_identifier, "sample-local")
+        self.assertEqual(result.issues, ())
+
+    def test_loc_t34_02_missing_subpath_after_remap_registers_issue(self) -> None:
+        """LOC-T34-02: subpath remapeado sem diretório → issue."""
+        config = _AppConfig(
+            connections={
+                "local-missing": _git_connection("file:///repos/__missing__/*"),
+            }
+        )
+        result = LocalRepoDiscovery(host_repos=str(self.mount)).discover(config)
+
+        self.assertEqual(result.repos, ())
+        self.assertEqual(len(result.issues), 1)
+        msg = result.issues[0].message.lower()
+        self.assertTrue(
+            "no matching" in msg or "inaccessible" in msg,
+            msg,
+        )
+
     def test_loc06_github_connections_ignored(self) -> None:
         """LOC-06: somente type git é processado."""
         from github_rag.config.schema import (

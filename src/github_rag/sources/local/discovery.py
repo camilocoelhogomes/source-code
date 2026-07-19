@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from github_rag.catalog.models import RepoOrigin
 from github_rag.config.schema import AppConfig, GitConnection, GitHubConnection
-from github_rag.sources.local.git_fs import GitFilesystemInspector
+from github_rag.sources.local.git_fs import GitFilesystemInspector, remap_repos_mount_path
 
 
 @dataclass(frozen=True)
@@ -69,8 +69,14 @@ class LocalRepoDiscovery:
         Isola volumes montados e heurística Git de config (T02) e catálogo (T07).
     """
 
-    def __init__(self, inspector: GitFilesystemInspector | None = None) -> None:
+    def __init__(
+        self,
+        inspector: GitFilesystemInspector | None = None,
+        *,
+        host_repos: str | None = None,
+    ) -> None:
         self._inspector = inspector or GitFilesystemInspector()
+        self._host_repos = host_repos
 
     def discover(self, config: AppConfig) -> LocalDiscoveryResult:
         """Descobre repos de todas as conexões ``type: git``."""
@@ -107,7 +113,7 @@ class LocalRepoDiscovery:
             )
             return LocalDiscoveryResult(repos=(), issues=tuple(issues))
 
-        base = parsed.base_path
+        base = remap_repos_mount_path(parsed.base_path, self._host_repos)
         if not self._inspector.is_accessible(base):
             issues.append(
                 LocalDiscoveryIssue(

@@ -158,6 +158,35 @@ class TestLocalRepoDiscovery(unittest.TestCase):
         self.assertEqual(result.repos, ())
         self.assertTrue(any("no matching" in i.message for i in result.issues))
 
+    def test_t34_host_repos_remaps_file_repos_glob(self) -> None:
+        repo = self.mount / "sample-local"
+        repo.mkdir()
+        inspector = mock.create_autospec(GitFilesystemInspector, instance=True)
+        inspector.parse_file_url.return_value = ParsedFileUrl(Path("/repos"), "*")
+        inspector.is_accessible.return_value = True
+        inspector.expand_candidates.return_value = [repo]
+        inspector.inspect_repo.return_value = RepoInspection(True, True)
+
+        discovery = LocalRepoDiscovery(inspector, host_repos=str(self.mount))
+        result = discovery.discover_connection("local-e2e", _git_conn("file:///repos/*"))
+
+        inspector.is_accessible.assert_called_once_with(self.mount.resolve())
+        self.assertEqual(len(result.repos), 1)
+        self.assertEqual(result.repos[0].repo_identifier, "sample-local")
+
+    def test_t34_without_host_repos_inaccessible_repos_issue(self) -> None:
+        inspector = mock.create_autospec(GitFilesystemInspector, instance=True)
+        inspector.parse_file_url.return_value = ParsedFileUrl(Path("/repos"), "*")
+        inspector.is_accessible.return_value = False
+
+        result = LocalRepoDiscovery(inspector).discover_connection(
+            "local", _git_conn("file:///repos/*")
+        )
+        inspector.is_accessible.assert_called_once_with(Path("/repos"))
+        self.assertEqual(result.repos, ())
+        self.assertEqual(len(result.issues), 1)
+        self.assertIn("inaccessible", result.issues[0].message.lower())
+
 
 if __name__ == "__main__":
     unittest.main()

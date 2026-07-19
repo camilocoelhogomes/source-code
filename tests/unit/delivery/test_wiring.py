@@ -113,6 +113,23 @@ class TestWiringHelpersCoverage(unittest.TestCase):
         sync = wire_catalog_sync({}, catalog=object())
         self.assertTrue(hasattr(sync, "sync"))
 
+    def test_t34_wire_catalog_sync_passes_host_repos(self) -> None:
+        from unittest import mock
+
+        from github_rag.delivery.wiring import wire_catalog_sync
+
+        with mock.patch(
+            "github_rag.sources.local.discovery.LocalRepoDiscovery"
+        ) as discovery_cls:
+            discovery_cls.return_value = object()
+            with mock.patch("github_rag.catalog.sync.CatalogSync") as sync_cls:
+                sync_cls.return_value = object()
+                wire_catalog_sync(
+                    {"HOST_REPOS": "/tmp/e2e-fixtures/repos"},
+                    catalog=object(),
+                )
+        discovery_cls.assert_called_once_with(host_repos="/tmp/e2e-fixtures/repos")
+
     def test_wire_query_service_missing_frontier_env(self) -> None:
         from github_rag.delivery.wiring import wire_query_service
 

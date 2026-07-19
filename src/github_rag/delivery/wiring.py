@@ -150,11 +150,11 @@ def wire_catalog_sync(environ: Mapping[str, str], *, catalog: Any) -> Any:
     from github_rag.sources.github.discovery import GitHubRepoDiscovery
     from github_rag.sources.local.discovery import LocalRepoDiscovery
 
-    _ = environ  # frontier env reservada para clients futuros
+    host_repos = environ.get("HOST_REPOS", "").strip() or None
     return CatalogSync(
         catalog=catalog,
         github_discovery=GitHubRepoDiscovery(),
-        local_discovery=LocalRepoDiscovery(),
+        local_discovery=LocalRepoDiscovery(host_repos=host_repos),
     )
 
 
