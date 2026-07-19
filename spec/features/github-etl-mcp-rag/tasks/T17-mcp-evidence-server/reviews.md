@@ -103,3 +103,38 @@ Revisar alinhamento design §4 / D-T17-* e aprovar ou devolver com achados. QA *
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — bdd.md v0.1.0 + testes alinhados ao design APPROVED. Prosseguir para interfaces.
+
+---
+
+## Review — Interfaces (v0.1.0)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `interfaces.md` + stubs `src/github_rag/mcp/*` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| I-T17-001 — SDK `mcp`/`FastMCP`; pin `<2` | OK | interfaces §2; `pyproject.toml`; `server.py`/`ports.py` import |
+| I-T17-002/014 — `McpEvidenceServer` / `DefaultMcpEvidenceServer` | OK | `ports.py`, `server.py` |
+| I-T17-003 — 5 tools fechadas | OK | `tools.APPROVED_TOOL_NAMES`; §3.4 |
+| I-T17-004..013 — catálogo/QueryService/DetailFields/limiter/encoding/erros/bans | OK | §2–§5 |
+| Comentários responsabilidade + motivo em cada contrato | OK | interfaces §3 + docstrings nos stubs |
+| Stubs sem comportamento completo (`NotImplementedError`) | OK | `build`/`run`/`register_tools`/serialize/`map_query_error` |
+| Alinhamento BDD MCP-01..12 | OK | interfaces §6 |
+| Símbolos BDD importáveis | OK | `DefaultMcpEvidenceServer`, `McpToolError` |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING`, `MAJOR` ou `SUGGESTION` | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — interfaces v0.1.0 + stubs. Prosseguir para unit-test plan / implementação.
