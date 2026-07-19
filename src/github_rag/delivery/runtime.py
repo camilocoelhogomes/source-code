@@ -271,18 +271,22 @@ class DefaultContainerRuntime:
         """Expõe ASGI com ``/healthz`` e prepara app MCP (I-T19-013)."""
         from fastapi import FastAPI
 
-        if self._ui is not None:
-            app = self._ui.build() if hasattr(self._ui, "build") else self._ui
-        else:
-            app = FastAPI()
-
-        register_health_routes(
-            app,
-            get_state=lambda: {
+        def _get_state() -> dict[str, bool]:
+            return {
                 "ui_ready": self._ui_ready,
                 "mcp_ready": self._mcp_ready,
-            },
-        )
+            }
+
+        if self._ui is not None:
+            if hasattr(self._ui, "build"):
+                app = self._ui.build(get_state=_get_state)
+            else:
+                app = self._ui
+                register_health_routes(app, get_state=_get_state)
+        else:
+            app = FastAPI()
+            register_health_routes(app, get_state=_get_state)
+
         self.ui_app = app
         self.asgi_app = app
 

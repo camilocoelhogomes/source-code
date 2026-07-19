@@ -6,6 +6,9 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Corrigido
 
+- Healthz com static mount (T31): `GET /healthz` registrado antes de
+  `StaticFiles` em `/`; `wire_ui_app` retorna builder; runtime injeta
+  `get_state` em `build()` — corrige F-W1-001 (404 pós-boot).
 - Discovery GitHub (T28): fallback org→user em HTTP 404.
 
 ### Adicionado
