@@ -136,3 +136,42 @@
 ### Resultado
 
 `CHANGES_REQUIRED` na implementação candidata (M-IMPL-T15-01, M-IMPL-T15-02, M-IMPL-T15-03) → correções aplicadas pelo próprio Architect (arquivos listados acima; suíte reexecutada, sem regressão, cobertura do pacote `schedule` elevada a 100%) → **`APPROVED_BY_ARCHITECT`**. Sem achados BLOCKING ou MAJOR abertos (S-IMPL-T15-02 é SUGGESTION informativa, sem ação).
+
+## Revisão 6 — Tech Lead Architect — Refatoração Blue (`src/github_rag/schedule/scheduler.py`)
+
+- **Revisor:** Tech Lead Architect
+- **Artefatos:** `spec/.../T15-daily-scheduler/refactoring.md`; `src/github_rag/schedule/scheduler.py`
+- **Data:** 2026-07-18
+- **Worktree:** `/private/tmp/github_rag_T15` (branch `feature/github-etl-mcp-rag-T15-daily-scheduler`)
+
+### Mudanças avaliadas
+
+1. Extração de `_cron_trigger(expression)` e `_add_cron_job(scheduler, expression)`,
+   eliminando a duplicação de `add_job(...)` entre `start()` e o fallback
+   `JobLookupError` de `_reschedule()`.
+2. `active_cron()` reescrito como expressão condicional direta (mesma semântica
+   ENG-004: preferência do store prevalece sobre `default_cron`).
+
+### Verificação
+
+- Reexecutei a suíte completa no worktree (venv isolado, `PYTHONPATH=src pytest -q`):
+  **813 passed, 2 skipped**, cobertura total **98.85%** (gate 95%) — idêntico ao
+  baseline registrado em `refactoring.md` pré-Blue.
+- `src/github_rag/schedule/scheduler.py`: **100%** linhas+branches (0 missing),
+  sem regressão de cobertura.
+- Diff linha a linha: `_add_cron_job` preserva exatamente os mesmos argumentos de
+  `add_job` (`run_tick_once`, `id=_JOB_ID`, `replace_existing=True`,
+  `max_instances=1`, `coalesce=True`); `_cron_trigger` preserva
+  `CronTrigger.from_crontab(expression, timezone=_UTC)`; `except JobLookupError`
+  em `_reschedule` inalterado. Nenhuma assinatura pública (`start`, `stop`,
+  `set_cron`, `active_cron`, `run_tick_once`) foi alterada — contrato de
+  `interfaces.md` 0.2.0 preservado.
+
+### Achados
+
+Nenhum. Sem BLOCKING/MAJOR/SUGGESTION.
+
+### Resultado
+
+**`BLUE_APPROVED_BY_ARCHITECT`**. Simplificação sem alteração de comportamento
+ou contrato; testes verdes antes/depois com cobertura equivalente.

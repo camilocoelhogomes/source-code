@@ -175,6 +175,30 @@ Defaults de engenharia (via env / `load_settings`):
 Capacidade `< 1` é rejeitada por `WorkerLimiterError`. Pools de indexação e
 consulta são isolados (`create_index_limiter` / `create_query_limiter`).
 
+## Agenda cron (T15)
+
+Indexação periódica via **APScheduler** (`DailyScheduler`):
+
+- Env `INDEX_CRON` (default `0 2 * * *`, 02:00 UTC) → `AppSettings.index_cron`
+- Preferência UI persistida em PostgreSQL (`scheduler_preference`) **prevalece**
+  sobre o default de env em runtime (ENG-004)
+- Expressão inválida → `InvalidCronExpressionError` (sem aplicar parcialmente)
+- Tick: `StartupIndexReconcile` + `IndexingOrchestrator.run_until_idle()`
+  (não reprocessa `up_to_date` com o mesmo tip)
+- Migration: `alembic upgrade head` aplica `0002_scheduler_preference`
+
+```python
+from github_rag.schedule import DefaultDailyScheduler, InMemoryCronPreferenceStore
+
+scheduler = DefaultDailyScheduler(
+    preference_store=InMemoryCronPreferenceStore(),
+    reconcile=startup_reconcile,
+    orchestrator=orchestrator,
+    default_cron=settings.index_cron,
+)
+scheduler.start()
+```
+
 ## Descoberta GitHub (T05)
 
 Repositórios remotos são descobertos a partir de conexões `type: "github"`

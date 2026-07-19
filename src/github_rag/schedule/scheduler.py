@@ -46,9 +46,7 @@ class DefaultDailyScheduler:
 
     def active_cron(self) -> str:
         persisted = self._store.get()
-        if persisted is not None:
-            return persisted
-        return self._default_cron
+        return persisted if persisted is not None else self._default_cron
 
     def start(self) -> None:
         expression = validate_cron_expression(self.active_cron())
@@ -62,14 +60,7 @@ class DefaultDailyScheduler:
             )
             return
         scheduler = BackgroundScheduler(timezone=_UTC)
-        scheduler.add_job(
-            self.run_tick_once,
-            trigger=CronTrigger.from_crontab(expression, timezone=_UTC),
-            id=_JOB_ID,
-            replace_existing=True,
-            max_instances=1,
-            coalesce=True,
-        )
+        self._add_cron_job(scheduler, expression)
         scheduler.start()
         self._scheduler = scheduler
         _LOG.info(
@@ -96,17 +87,25 @@ class DefaultDailyScheduler:
             self._orchestrator.run_until_idle()
             _LOG.info("daily_scheduler tick end")
 
+    def _cron_trigger(self, expression: str) -> CronTrigger:
+        return CronTrigger.from_crontab(expression, timezone=_UTC)
+
+    def _add_cron_job(
+        self, scheduler: BackgroundScheduler, expression: str
+    ) -> None:
+        scheduler.add_job(
+            self.run_tick_once,
+            trigger=self._cron_trigger(expression),
+            id=_JOB_ID,
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
+
     def _reschedule(self, expression: str) -> None:
         assert self._scheduler is not None
-        trigger = CronTrigger.from_crontab(expression, timezone=_UTC)
+        trigger = self._cron_trigger(expression)
         try:
             self._scheduler.reschedule_job(_JOB_ID, trigger=trigger)
         except JobLookupError:  # job ausente (nunca registrado/removido): recria
-            self._scheduler.add_job(
-                self.run_tick_once,
-                trigger=trigger,
-                id=_JOB_ID,
-                replace_existing=True,
-                max_instances=1,
-                coalesce=True,
-            )
+            self._add_cron_job(self._scheduler, expression)
