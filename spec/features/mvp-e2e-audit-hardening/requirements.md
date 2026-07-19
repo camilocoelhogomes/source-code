@@ -4,14 +4,14 @@
 
 - **Feature ID:** `mvp-e2e-audit-hardening`
 - **Versão:** 0.1.0
-- **Estado:** `PENDING_HUMAN_APPROVAL`
+- **Estado:** `APPROVED`
 - **Natureza:** feature filha / delta operacional sobre a prova e2e do MVP já especificado em `github-etl-mcp-rag` (0.5.0 / T21). Não redefine o produto; audita cobertura, executa provas e gera tasks de correção e lacuna **dentro** de `github-etl-mcp-rag`.
 - **Feature pai / destino das tasks:** `github-etl-mcp-rag`
 - **Dependências:**
   - `github-etl-mcp-rag` requisitos 0.5.0 (REQ-043–052, BDD-001–024, BDD-026–028);
   - artefatos T19 (`docker-compose.e2e.yml` + empacotamento) e T21 (`e2e/robot/**`, `python -m github_rag.e2e`).
 - **Rastreabilidade:** requisitos `REQ-*`, regras `BR-*`, decisões `DEC-*` e cenários `BDD-*` deste documento.
-- **Aprovação humana:** pendente.
+- **Aprovação humana (requisitos 0.1.0):** `aprovado` em 2026-07-18 por `humano` (commit candidato `c460bd5`).
 
 ## Justificativa do feature-id
 
