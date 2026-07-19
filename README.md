@@ -322,9 +322,37 @@ app = server.build()       # FastMCP com as 5 tools
 server.run(transport="stdio")  # processo MCP (T19 empacota na imagem)
 ```
 
+## UI de gestão e busca (T18)
+
+O pacote `github_rag.ui` expõe a Management UI via **FastAPI** + frontend
+estático em `web/`. Consome catálogo, `IndexingOrchestrator`, `DailyScheduler`
+e `QueryService`. Não há formulários de conexões nem token (BDD-023).
+
+| Endpoint | Função |
+|---|---|
+| `GET /api/repos` | Lista catálogo ativo (origem + estado REQ-020) |
+| `POST /api/repos/index` | Enfileira indexação dos ids selecionados |
+| `GET /api/repos/{id}` | Progresso + flags Zoekt/Tree-sitter/metadados |
+| `GET /api/repos/{id}/executions` | Histórico (mensagem/horário em falhas) |
+| `GET/PUT /api/scheduler/cron` | Lê/grava expressão cron ativa |
+| `POST /api/search/exact` | Busca exata |
+| `POST /api/search/semantic` | Busca semântica (`reformulate` opcional) |
+
+```python
+from github_rag.ui import DefaultManagementUiApi
+
+api = DefaultManagementUiApi(
+    catalog=catalog,
+    orchestrator=orchestrator,
+    scheduler=scheduler,
+    query=query_service,
+)
+app = api.build()  # FastAPI; T19 sobe com uvicorn
+```
+
 ## Entrega por container
 
 O venv é exclusivo do desenvolvimento local. Docker/T19 é a entrega
 padronizada: a imagem/container não monta nem usa o `.venv` do host. As
 dependências são instaladas diretamente no runtime da imagem. O processo MCP
-(T17) é exposto na imagem pelo delivery (T19).
+(T17) e a UI (T18) são expostos na imagem pelo delivery (T19).

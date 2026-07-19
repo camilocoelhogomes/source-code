@@ -6,6 +6,13 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- Management UI (T18): porta `ManagementUiApi` / `DefaultManagementUiApi` via
+  **FastAPI** (`fastapi>=0.115,<1`) + frontend estático em `web/`. Listagem de
+  repos (origem/estado REQ-020 com labels PT), indexação por checkbox,
+  progresso e flags por arquivo, histórico de falhas (mensagem/horário),
+  configuração de expressão cron (`DailyScheduler.set_cron`), buscas exact e
+  semantic via `QueryService`. Sem CRUD de conexões/token (BDD-023). Dependência
+  de dev `httpx` para TestClient.
 - Agenda cron de indexação (T15): `DailyScheduler` / `DefaultDailyScheduler` via
   **APScheduler** (DEC-015/BDD-024); `CronPreferenceStore` (memória + SQLAlchemy);
   env `INDEX_CRON` → `AppSettings.index_cron` (default `0 2 * * *`); preferência
@@ -13,6 +20,7 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
   (`run_tick_once` + lock) reusa `StartupIndexReconcile` + orquestrador T14;
   expressão inválida → `InvalidCronExpressionError`; migration Alembic
   `0002_scheduler_preference`. Dependência `apscheduler>=3.10,<4`.
+
 - Orquestrador de indexação (T14): `IndexingOrchestrator` + `StartupIndexReconcile`
   só via portas (ENG-013). Fila com `WorkerLimiter`; estados REQ-020; startup
   reconcile (ENG-011) com recover de `queued`/`indexing`; reindex arquivo inteiro
