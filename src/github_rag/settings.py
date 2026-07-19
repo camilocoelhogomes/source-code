@@ -69,6 +69,16 @@ Tipagem sempre via ``pathlib.Path`` — sem hardcode de separador. T19 não usa
 ``.venv`` do host.
 """
 
+ENV_INDEX_CRON = "INDEX_CRON"
+"""Nome canônico da env de expressão cron default de indexação (T15 / ENG-004).
+
+Responsabilidade: único identificador de processo para o default de agenda.
+Motivo da separação: schedule consome ``AppSettings.index_cron``; não relê env.
+Invariantes: string estável; valor tipado exposto como ``str``.
+Erros: nenhum nesta constante.
+Compatibilidade: OS-agnostic (não é path).
+"""
+
 DEFAULT_INDEX_WORKERS = 2
 """Default de ``INDEX_WORKERS`` quando a env está ausente ou em branco (ENG-003).
 
@@ -87,6 +97,16 @@ Motivo da separação: default versionado no contrato, não espalhado em callers
 Invariantes: literal ``4``; usado só se env ausente/blank.
 Erros: nenhum.
 Compatibilidade: OS-agnostic (Windows, macOS, Linux, container T19).
+"""
+
+DEFAULT_INDEX_CRON = "0 2 * * *"
+"""Default de ``INDEX_CRON`` quando a env está ausente ou em branco (ENG-004).
+
+Responsabilidade: expressão cron diária (02:00 UTC) — caso especial de REQ-017.
+Motivo da separação: default versionado no contrato T01; validação sintática em T15.
+Invariantes: literal ``0 2 * * *``; usado só se env ausente/blank.
+Erros: nenhum.
+Compatibilidade: OS-agnostic.
 """
 
 # CONFIG_PATH ausente/nulo no bootstrap: default tipado é None (sem path default).
@@ -122,8 +142,9 @@ class AppSettings(Protocol):
     """Snapshot somente-leitura dos settings de bootstrap do processo.
 
     Responsabilidade
-        Expor ``index_workers``, ``query_workers`` e ``config_path`` já tipados
-        após ``load_settings``, sem reconsultar o ambiente.
+        Expor ``index_workers``, ``query_workers``, ``config_path`` e
+        ``index_cron`` já tipados após ``load_settings``, sem reconsultar o
+        ambiente.
 
     Motivo da separação
         Isola o contrato de configuração de processo do domínio (parser do arquivo
@@ -133,6 +154,8 @@ class AppSettings(Protocol):
     Invariantes
         - ``index_workers`` e ``query_workers`` são ``int`` após carga ok.
         - ``config_path`` é ``None`` se ``CONFIG_PATH`` ausente/blank; senão ``Path``.
+        - ``index_cron`` é ``str`` não-vazia (env ou ``DEFAULT_INDEX_CRON``); sem
+          validação de sintaxe cron (T15 / ``validate_cron_expression``).
         - Não implica que o arquivo em ``config_path`` exista ou seja válido (T02).
 
     Erros
@@ -182,6 +205,19 @@ class AppSettings(Protocol):
         """
         ...
 
+    @property
+    def index_cron(self) -> str:
+        """Expressão cron default de boot (env ``INDEX_CRON`` ou default).
+
+        Responsabilidade: expor a string já resolvida para o ``DailyScheduler``.
+        Motivo da separação: atributo tipado distinto do nome de env ``INDEX_CRON``;
+        o pacote ``schedule`` não relê ``os.environ`` (D-T15-001).
+        Invariantes: sempre ``str`` não-vazia após strip; sem validação de sintaxe.
+        Erros: nenhum na propriedade; sintaxe inválida falha em T15.
+        Compatibilidade: OS-agnostic (não é path).
+        """
+        ...
+
 
 @dataclass(frozen=True)
 class _AppSettingsSnapshot:
@@ -190,6 +226,7 @@ class _AppSettingsSnapshot:
     index_workers: int
     query_workers: int
     config_path: Path | None
+    index_cron: str
 
 
 def _load_worker(
@@ -254,6 +291,12 @@ def load_settings(
         if raw_config_path is None or not raw_config_path.strip()
         else _NativePath(raw_config_path)
     )
+    raw_index_cron = source.get(ENV_INDEX_CRON)
+    index_cron = (
+        DEFAULT_INDEX_CRON
+        if raw_index_cron is None or not raw_index_cron.strip()
+        else raw_index_cron.strip()
+    )
     return _AppSettingsSnapshot(
         index_workers=_load_worker(
             source,
@@ -266,4 +309,5 @@ def load_settings(
             DEFAULT_QUERY_WORKERS,
         ),
         config_path=config_path,
+        index_cron=index_cron,
     )
