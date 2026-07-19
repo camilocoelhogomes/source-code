@@ -49,10 +49,11 @@ class TestPodmanE2eStackLauncher(unittest.TestCase):
         return e2e.PodmanE2eStackLauncher(
             repo_root=REPO_ROOT,
             run_command=runner,
+            host_app=False,
             **kwargs,
         ), runner, e2e
 
-    def test_ut_l01_up_invokes_podman_compose_build(self) -> None:
+    def test_ut_l01_up_invokes_podman_compose_without_build(self) -> None:
         launcher, runner, _e2e = self._make_launcher()
         launcher.up(env={"E2E_GITHUB_TOKEN": SECRET_TOKEN})
         self.assertEqual(len(runner.calls), 1)
@@ -61,13 +62,13 @@ class TestPodmanE2eStackLauncher(unittest.TestCase):
         self.assertIn("podman", blob)
         self.assertIn("compose", blob)
         self.assertTrue(
-            any(str(c).endswith("docker-compose.e2e.yml") for c in cmd)
-            or "docker-compose.e2e.yml" in blob,
+            any(str(c).endswith("docker-compose.dev.yml") for c in cmd)
+            or "docker-compose.dev.yml" in blob,
             cmd,
         )
         self.assertIn("up", cmd)
         self.assertIn("-d", cmd)
-        self.assertIn("--build", cmd)
+        self.assertNotIn("--build", cmd)
 
     def test_ut_l02_up_injects_host_config_and_repos(self) -> None:
         launcher, runner, _e2e = self._make_launcher()
@@ -176,8 +177,8 @@ class TestPodmanE2eStackLauncher(unittest.TestCase):
 
     def test_ut_l10_default_compose_file(self) -> None:
         launcher, _runner, e2e = self._make_launcher()
-        compose = getattr(launcher, "compose_file", None) or e2e.COMPOSE_E2E
-        self.assertTrue(str(compose).endswith("docker-compose.e2e.yml"))
+        compose = getattr(launcher, "compose_file", None) or e2e.COMPOSE_DEV
+        self.assertTrue(str(compose).endswith("docker-compose.dev.yml"))
 
 
 if __name__ == "__main__":

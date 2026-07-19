@@ -1,10 +1,11 @@
-"""Adaptador Podman + docker-compose.e2e.yml (T21).
+"""Adaptador Podman + compose dev/e2e (T21) com app no host.
 
 Responsabilidade deste módulo
-    Implementar ``E2eStackLauncher`` via Podman compose e poll ``/healthz``.
+    Subir infra via compose (sem build de app), iniciar ``github_rag.delivery``
+    no host e poll ``/healthz``.
 
 Motivo da separação
-    Mantém a porta estável; ``run_command`` injetável nos unit tests.
+    Mantém a porta estável; acelera ciclo TDD local vs rebuild de imagem.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 import time
 import urllib.error
 import urllib.request
@@ -20,7 +22,9 @@ from pathlib import Path
 from typing import Any, Callable
 
 from github_rag.e2e.errors import E2eStackError
+from github_rag.e2e.host_env import build_host_delivery_env, default_zoekt_index_dir
 from github_rag.e2e.paths import (
+    COMPOSE_DEV,
     COMPOSE_E2E,
     E2E_CONFIG_FIXTURE,
     E2E_REPOS_FIXTURE,
@@ -115,14 +119,14 @@ def ensure_local_git_fixture(repos_dir: Path) -> None:
 
 
 class PodmanE2eStackLauncher:
-    """Adaptador Podman + docker-compose.e2e.yml (I-T21-003/004).
+    """Adaptador Podman compose + app no host (I-T21-003/004).
 
     Responsabilidade
-        Implementar ``E2eStackLauncher`` invocando Podman compose no compose
-        canônico T19; mesclar ``HOST_CONFIG``/``HOST_REPOS``; poll ``/healthz``.
+        ``podman compose -f docker-compose.dev.yml up -d`` (infra, sem build),
+        iniciar ``python -m github_rag.delivery`` no host, poll ``/healthz``.
 
     Motivo da separação
-        Porta estável; detalhe Podman substituível por doubles (D-T21-008).
+        Porta estável; detalhe Podman/host-app substituível por doubles.
     """
 
     def __init__(
@@ -133,6 +137,7 @@ class PodmanE2eStackLauncher:
         health_url: str = "http://127.0.0.1:8080/healthz",
         healthy_timeout_seconds: float | None = None,
         run_command: CommandRunner | None = None,
+        host_app: bool = True,
     ) -> None:
         self._repo_root = (
             repo_root.resolve()
@@ -142,7 +147,7 @@ class PodmanE2eStackLauncher:
         self.compose_file = (
             compose_file.resolve()
             if compose_file is not None
-            else (self._repo_root / COMPOSE_E2E.name)
+            else COMPOSE_DEV.resolve()
         )
         self._health_url = health_url
         self._healthy_timeout = (
@@ -151,9 +156,10 @@ class PodmanE2eStackLauncher:
             else healthy_timeout_seconds
         )
         self._run_command = run_command or _default_run_command
+        self._host_app = host_app
+        self._app_process: subprocess.Popen[str] | None = None
         self._host_config = self._repo_root / "e2e/fixtures/config.e2e.json"
         self._host_repos = self._repo_root / "e2e/fixtures/repos"
-        # Prefer package constants when they match repo_root layout
         if E2E_CONFIG_FIXTURE.exists() and self._repo_root == resolve_repo_root(
             Path(__file__)
         ):
@@ -166,6 +172,13 @@ class PodmanE2eStackLauncher:
             merged.update({k: str(v) for k, v in env.items()})
         merged.setdefault("HOST_CONFIG", str(self._host_config.resolve()))
         merged.setdefault("HOST_REPOS", str(self._host_repos.resolve()))
+        index_host = str(
+            default_zoekt_index_dir(
+                self._repo_root,
+                e2e=self.compose_file.name == COMPOSE_E2E.name,
+            )
+        )
+        merged.setdefault("ZOEKT_INDEX_HOST", index_host)
         return merged
 
     def _secrets_from(self, env: Mapping[str, str]) -> list[str]:
@@ -175,6 +188,44 @@ class PodmanE2eStackLauncher:
             if val:
                 secrets.append(val)
         return secrets
+
+    def _start_host_app(self, effective: Mapping[str, str]) -> None:
+        token_extra: dict[str, str] = {}
+        if effective.get("E2E_GITHUB_TOKEN", "").strip():
+            token_extra["E2E_GITHUB_TOKEN"] = effective["E2E_GITHUB_TOKEN"].strip()
+            token_extra["GITHUB_TOKEN"] = effective["E2E_GITHUB_TOKEN"].strip()
+        elif effective.get("GITHUB_TOKEN", "").strip():
+            token_extra["GITHUB_TOKEN"] = effective["GITHUB_TOKEN"].strip()
+
+        host_env = build_host_delivery_env(
+            repo_root=self._repo_root,
+            config_path=Path(effective["HOST_CONFIG"]),
+            repos_dir=Path(effective["HOST_REPOS"]),
+            zoekt_index_dir=Path(effective["ZOEKT_INDEX_HOST"]),
+            extra=token_extra,
+        )
+        self._app_process = subprocess.Popen(
+            [sys.executable, "-m", "github_rag.delivery"],
+            env=host_env,
+            cwd=str(self._repo_root),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+
+    def _stop_host_app(self) -> None:
+        proc = self._app_process
+        self._app_process = None
+        if proc is None:
+            return
+        if proc.poll() is not None:
+            return
+        proc.terminate()
+        try:
+            proc.wait(timeout=20)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait(timeout=5)
 
     def up(self, env: Mapping[str, str] | None = None, **_kwargs: Any) -> None:
         effective = self._merge_env(env)
@@ -187,7 +238,6 @@ class PodmanE2eStackLauncher:
             str(self.compose_file),
             "up",
             "-d",
-            "--build",
         ]
         code, _stdout, stderr = self._run_command(cmd, effective)
         if code != 0:
@@ -195,8 +245,18 @@ class PodmanE2eStackLauncher:
                 stderr or f"podman compose up failed with exit {code}",
                 secrets=self._secrets_from(effective),
             )
+        if self._host_app:
+            self._start_host_app(effective)
 
     def wait_healthy(self, *, timeout_seconds: float | None = None) -> None:
+        if self._host_app and self._app_process is not None:
+            exit_code = self._app_process.poll()
+            if exit_code is not None:
+                stderr = (self._app_process.stderr.read() or "") if self._app_process.stderr else ""
+                raise E2eStackError.from_stderr(
+                    f"host app exited before healthy (code={exit_code}): {stderr[:500]}"
+                )
+
         deadline = time.monotonic() + (
             self._healthy_timeout
             if timeout_seconds is None
@@ -231,6 +291,8 @@ class PodmanE2eStackLauncher:
         )
 
     def down(self) -> None:
+        if self._host_app:
+            self._stop_host_app()
         effective = self._merge_env(None)
         cmd = [
             "podman",
@@ -244,7 +306,6 @@ class PodmanE2eStackLauncher:
         except OSError:
             return
         if code != 0:
-            # best-effort: swallow after ensuring no secret leak if raised
             _ = E2eStackError.from_stderr(
                 stderr or "podman compose down failed",
                 secrets=self._secrets_from(effective),

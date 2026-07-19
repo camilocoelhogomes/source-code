@@ -21,10 +21,17 @@ Instalação típica (macOS Homebrew): `brew install podman-compose`.
 | File | Audience | Command |
 |------|----------|---------|
 | `docker-compose.yml` | End user / stable image | `docker compose up --build` |
-| `docker-compose.e2e.yml` | T21 Robot + CI (Podman) | `podman compose -f docker-compose.e2e.yml up --build` |
-| `docker-compose.dev.yml` | Local development (`./src` mount) | `docker compose -f docker-compose.dev.yml up --build` |
+| `docker-compose.dev.yml` | Dev + e2e local (infra only) | `podman compose -f docker-compose.dev.yml up -d` |
+| `docker-compose.e2e.yml` | Alias infra e2e (mesmo modelo) | `podman compose -f docker-compose.e2e.yml up -d` |
 
-Do **not** treat T19 as the MVP e2e gate: Robot/`compose up` proof belongs to **T21**.
+**Dev/e2e:** app roda no host (`.venv`), sem rebuild de imagem:
+
+```bash
+podman compose -f docker-compose.dev.yml up -d
+python -m github_rag.delivery          # ou python -m github_rag.e2e (Robot)
+```
+
+Do **not** treat T19 as the MVP e2e gate: Robot proof belongs to **T21**.
 
 ## Services and ports
 

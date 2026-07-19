@@ -488,50 +488,64 @@ class TestCD07Amd64Documented(unittest.TestCase):
 
 
 class TestCD08ComposeHealthAndServices(unittest.TestCase):
-    """CD-08 — healthchecks + serviços ENG-002 nos três composes."""
+    """CD-08 — serviços ENG-002; app em container só no compose usuário."""
 
-    def test_all_composes_services_and_healthcheck(self) -> None:
+    _INFRA = ("postgres", "qdrant", "zoekt", "slm")
+
+    def test_all_composes_declare_infra_services(self) -> None:
         for path in COMPOSE_FILES:
             text = _read(path)
-            for svc in ("app", "postgres", "qdrant", "zoekt", "slm"):
+            for svc in self._INFRA:
                 self.assertRegex(
                     text,
                     re.compile(rf"^\s*{svc}\s*:", re.M),
                     f"{path.name}: serviço compose ausente: {svc}",
                 )
-            self.assertRegex(
+
+    def test_user_compose_has_app_healthcheck_and_mcp(self) -> None:
+        text = _read(COMPOSE)
+        self.assertRegex(text, re.compile(r"^\s*app\s*:", re.M))
+        self.assertRegex(
+            text,
+            re.compile(r"healthcheck\s*:", re.I),
+            "docker-compose.yml: deve declarar healthcheck",
+        )
+        self.assertRegex(
+            text,
+            re.compile(r"/healthz", re.I),
+            "docker-compose.yml: healthcheck deve referenciar /healthz",
+        )
+        self.assertRegex(
+            text,
+            re.compile(r"8001|MCP_PORT|mcp", re.I),
+            "docker-compose.yml: deve expor/configurar superfície MCP",
+        )
+
+    def test_dev_and_e2e_compose_are_infra_only(self) -> None:
+        for path in (COMPOSE_DEV, COMPOSE_E2E):
+            text = _read(path)
+            self.assertNotRegex(
                 text,
-                re.compile(r"healthcheck\s*:", re.I),
-                f"{path.name}: deve declarar healthcheck",
-            )
-            self.assertRegex(
-                text,
-                re.compile(r"/healthz", re.I),
-                f"{path.name}: healthcheck deve referenciar /healthz",
-            )
-            self.assertRegex(
-                text,
-                re.compile(r"8001|MCP_PORT|mcp", re.I),
-                f"{path.name}: deve expor/configurar superfície MCP",
+                re.compile(r"^\s*app\s*:", re.M),
+                f"{path.name}: app roda no host — sem serviço app no compose",
             )
 
 
 class TestCD09VolumesAndEnvExample(unittest.TestCase):
-    """CD-09 / ENG-005 — volumes CONFIG_PATH + /repos."""
+    """CD-09 / ENG-005 — volumes CONFIG_PATH + /repos no compose usuário."""
 
-    def test_compose_volumes_and_env_example(self) -> None:
-        for path in COMPOSE_FILES:
-            compose = _read(path)
-            self.assertRegex(
-                compose,
-                re.compile(r"CONFIG_PATH", re.I),
-                f"{path.name}: deve injetar/documentar CONFIG_PATH",
-            )
-            self.assertRegex(
-                compose,
-                re.compile(r"/repos"),
-                f"{path.name}: deve montar /repos para file:///repos/...",
-            )
+    def test_user_compose_volumes_and_env_example(self) -> None:
+        compose = _read(COMPOSE)
+        self.assertRegex(
+            compose,
+            re.compile(r"CONFIG_PATH", re.I),
+            "docker-compose.yml: deve injetar CONFIG_PATH",
+        )
+        self.assertRegex(
+            compose,
+            re.compile(r"/repos"),
+            "docker-compose.yml: deve montar /repos para file:///repos/...",
+        )
         env_ex = _read(ENV_EXAMPLE)
         for name in (
             "CONFIG_PATH",
@@ -540,8 +554,10 @@ class TestCD09VolumesAndEnvExample(unittest.TestCase):
             "INDEX_WORKERS",
             "QUERY_WORKERS",
             "INDEX_CRON",
+            "GITHUB_RAG_DEV_HOST",
         ):
             self.assertIn(name, env_ex)
+        self.assertIn("127.0.0.1", env_ex)
         self.assertNotIn("ghp_", env_ex)
         self.assertNotRegex(
             env_ex,
@@ -585,32 +601,26 @@ class TestCD11ThreeComposesBdd025(unittest.TestCase):
             re.compile(r"GITHUB_TOKEN\s*=\s*\S{8,}"),
         )
 
-    def test_e2e_compose_isolated_no_src_mount(self) -> None:
+    def test_e2e_compose_isolated_infra_only(self) -> None:
         text = _read(COMPOSE_E2E)
         self.assertRegex(
             text,
             re.compile(r"^\s*name\s*:\s*github-rag-e2e\s*$", re.M),
         )
         self.assertRegex(text, re.compile(r"e2e_", re.I))
-        self.assertRegex(
-            text,
-            re.compile(
-                r"GITHUB_TOKEN\s*:\s*\$\{E2E_GITHUB_TOKEN:-\$\{GITHUB_TOKEN:-\}\}",
-            ),
-            "e2e deve mapear E2E_GITHUB_TOKEN→GITHUB_TOKEN (D-T19-020)",
-        )
+        self.assertNotRegex(text, re.compile(r"^\s*app\s*:", re.M))
         self.assertNotRegex(
             text,
             re.compile(r"-\s*\./src\b|:\s*\./src\b"),
         )
 
-    def test_dev_compose_src_mount_no_venv(self) -> None:
+    def test_dev_compose_infra_only_no_venv(self) -> None:
         text = _read(COMPOSE_DEV)
         self.assertRegex(
             text,
             re.compile(r"^\s*name\s*:\s*github-rag-dev\s*$", re.M),
         )
-        self.assertRegex(text, re.compile(r"\./src\b"))
+        self.assertNotRegex(text, re.compile(r"^\s*app\s*:", re.M))
         self.assertNotRegex(text, _VENV_MOUNT_RE)
 
     def test_user_compose_does_not_mount_src(self) -> None:

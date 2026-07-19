@@ -8,7 +8,8 @@ LABEL org.opencontainers.image.title="github-rag" \
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    GITHUB_RAG_APP_ROOT=/app
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git ca-certificates \

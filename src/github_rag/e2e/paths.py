@@ -12,6 +12,7 @@ from __future__ import annotations
 from pathlib import Path
 
 COMPOSE_E2E_NAME: str = "docker-compose.e2e.yml"
+COMPOSE_DEV_NAME: str = "docker-compose.dev.yml"
 ROBOT_SUITE_DIRNAME: str = "e2e/robot"
 E2E_CONFIG_FIXTURE_REL: str = "e2e/fixtures/config.e2e.json"
 E2E_REPOS_FIXTURE_REL: str = "e2e/fixtures/repos"
@@ -44,6 +45,7 @@ def resolve_repo_root(start: Path | None = None) -> Path:
 _REPO_ROOT = resolve_repo_root(Path(__file__).resolve())
 
 COMPOSE_E2E: Path = _REPO_ROOT / COMPOSE_E2E_NAME
+COMPOSE_DEV: Path = _REPO_ROOT / COMPOSE_DEV_NAME
 ROBOT_ROOT: Path = _REPO_ROOT / ROBOT_SUITE_DIRNAME
 E2E_CONFIG_FIXTURE: Path = _REPO_ROOT / E2E_CONFIG_FIXTURE_REL
 E2E_REPOS_FIXTURE: Path = _REPO_ROOT / E2E_REPOS_FIXTURE_REL

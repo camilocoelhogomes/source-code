@@ -14,6 +14,7 @@ from github_rag.e2e.credentials import E2eCredentialResolver, ResolvedE2eCredent
 from github_rag.e2e.errors import E2eCredentialError, E2eStackError
 from github_rag.e2e.launcher import PodmanE2eStackLauncher
 from github_rag.e2e.paths import (
+    COMPOSE_DEV,
     COMPOSE_E2E,
     E2E_CONFIG_FIXTURE,
     E2E_REPOS_FIXTURE,
@@ -33,6 +34,7 @@ __all__ = [
     "E2eCredentialError",
     "E2eStackError",
     "run_mvp_e2e",
+    "COMPOSE_DEV",
     "COMPOSE_E2E",
     "ROBOT_ROOT",
     "E2E_CONFIG_FIXTURE",

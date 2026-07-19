@@ -32,6 +32,36 @@ class DeliveryWiringError(Exception):
     """Falha tipada de wiring/infra de entrega sem vazar segredos."""
 
 
+_ENV_APP_ROOT = "GITHUB_RAG_APP_ROOT"
+
+
+def _resolve_delivery_root() -> Path:
+    """Localiza a raiz de entrega (``alembic.ini`` + ``migrations/``).
+
+    Responsabilidade
+        Resolver o diretório de runtime da imagem/container ou checkout dev.
+
+    Motivo da separação
+        Com ``pip install .``, ``__file__`` fica em ``site-packages`` e
+        ``parents[3]`` não aponta para ``/app``; override via env ou walk-up
+        a partir de árvore de desenvolvimento.
+    """
+    override = os.environ.get(_ENV_APP_ROOT, "").strip()
+    if override:
+        root = Path(override).resolve()
+        if (root / "alembic.ini").is_file() and (root / "migrations").is_dir():
+            return root
+        raise DeliveryWiringError("alembic.ini ausente no contexto de entrega")
+
+    start = Path(__file__).resolve()
+    for candidate in start.parents:
+        if (candidate / "alembic.ini").is_file() and (
+            candidate / "migrations"
+        ).is_dir():
+            return candidate
+    raise DeliveryWiringError("alembic.ini ausente no contexto de entrega")
+
+
 def _require_env(environ: Mapping[str, str], name: str) -> str:
     value = environ.get(name, "")
     if not isinstance(value, str) or not value.strip():
@@ -87,10 +117,8 @@ def run_alembic_upgrade(environ: Mapping[str, str]) -> None:
     from alembic import command
     from alembic.config import Config
 
-    repo_root = Path(__file__).resolve().parents[3]
+    repo_root = _resolve_delivery_root()
     ini_path = repo_root / "alembic.ini"
-    if not ini_path.is_file():
-        raise DeliveryWiringError("alembic.ini ausente no contexto de entrega")
 
     cfg = Config(str(ini_path))
     cfg.set_main_option("sqlalchemy.url", database_url)

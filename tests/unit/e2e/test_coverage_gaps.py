@@ -163,7 +163,7 @@ class TestLauncherCoverage(unittest.TestCase):
         launcher = e2e.PodmanE2eStackLauncher(
             run_command=lambda *_a: (0, "", "")
         )
-        self.assertTrue(str(launcher.compose_file).endswith("docker-compose.e2e.yml"))
+        self.assertTrue(str(launcher.compose_file).endswith("docker-compose.dev.yml"))
 
 
 class TestSuiteCoverage(unittest.TestCase):

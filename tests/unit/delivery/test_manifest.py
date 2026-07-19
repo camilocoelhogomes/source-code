@@ -66,62 +66,55 @@ class TestDockerfileManifest(unittest.TestCase):
 
 
 class TestComposeManifest(unittest.TestCase):
-    """UT-M03 / UT-M04 — contratos comuns aos três composes."""
+    """UT-M03 / UT-M04 — contratos compose."""
 
-    def test_ut_m03_services_and_ports_all_composes(self) -> None:
+    _INFRA = ("postgres", "qdrant", "zoekt", "slm")
+
+    def test_ut_m03_infra_services_all_composes(self) -> None:
         for path in COMPOSE_FILES:
             text = read_text(path)
-            for svc in ("app", "postgres", "qdrant", "zoekt", "slm"):
+            for svc in self._INFRA:
                 self.assertRegex(
                     text,
                     re.compile(rf"^\s*{svc}\s*:", re.M),
                     f"{path.name}: serviço ausente: {svc}",
                 )
-            self.assertRegex(
-                text, re.compile(r"8080", re.I), f"{path.name}: porta UI 8080"
-            )
-            self.assertRegex(
-                text,
-                re.compile(r"8001|MCP_PORT", re.I),
-                f"{path.name}: porta/config MCP",
-            )
 
-    def test_ut_m04_volumes_config_repos_healthz_all_composes(self) -> None:
-        for path in COMPOSE_FILES:
-            text = read_text(path)
-            self.assertRegex(text, re.compile(r"CONFIG_PATH", re.I), path.name)
-            self.assertRegex(text, re.compile(r"/repos"), path.name)
-            self.assertRegex(text, re.compile(r"healthcheck\s*:", re.I), path.name)
-            self.assertRegex(text, re.compile(r"/healthz", re.I), path.name)
-            self.assertNotRegex(text, _VENV_MOUNT_RE, path.name)
+    def test_ut_m03_user_compose_app_and_surface_ports(self) -> None:
+        text = read_text(COMPOSE)
+        self.assertRegex(text, re.compile(r"^\s*app\s*:", re.M))
+        self.assertRegex(text, re.compile(r"8080", re.I))
+        self.assertRegex(text, re.compile(r"8001|MCP_PORT", re.I))
+
+    def test_ut_m04_user_compose_volumes_and_healthz(self) -> None:
+        text = read_text(COMPOSE)
+        self.assertRegex(text, re.compile(r"CONFIG_PATH", re.I))
+        self.assertRegex(text, re.compile(r"/repos"))
+        self.assertRegex(text, re.compile(r"healthcheck\s*:", re.I))
+        self.assertRegex(text, re.compile(r"/healthz", re.I))
+        self.assertNotRegex(text, _VENV_MOUNT_RE)
 
 
 class TestThreeComposeRoles(unittest.TestCase):
     """UT-M07 / UT-M08 / UT-M09 — papéis D-T19-020 (BDD-025)."""
 
-    def test_ut_m07_e2e_isolation_and_token_alias(self) -> None:
+    def test_ut_m07_e2e_isolation_infra_only(self) -> None:
         text = read_text(COMPOSE_E2E)
         self.assertRegex(
             text,
             re.compile(r"^\s*name\s*:\s*github-rag-e2e\s*$", re.M),
         )
         self.assertRegex(text, re.compile(r"e2e_", re.I))
-        self.assertRegex(
-            text,
-            re.compile(
-                r"GITHUB_TOKEN\s*:\s*\$\{E2E_GITHUB_TOKEN:-\$\{GITHUB_TOKEN:-\}\}",
-            ),
-            "alias canônico E2E_GITHUB_TOKEN→GITHUB_TOKEN",
-        )
+        self.assertNotRegex(text, re.compile(r"^\s*app\s*:", re.M))
         self.assertNotRegex(text, re.compile(r"-\s*\./src\b|:\s*\./src\b"))
 
-    def test_ut_m08_dev_src_mount_exposes_postgres(self) -> None:
+    def test_ut_m08_dev_infra_only_exposes_postgres(self) -> None:
         text = read_text(COMPOSE_DEV)
         self.assertRegex(
             text,
             re.compile(r"^\s*name\s*:\s*github-rag-dev\s*$", re.M),
         )
-        self.assertRegex(text, re.compile(r"\./src\b"))
+        self.assertNotRegex(text, re.compile(r"^\s*app\s*:", re.M))
         self.assertRegex(text, re.compile(r"5432:5432"))
         self.assertNotRegex(text, _VENV_MOUNT_RE)
 

@@ -1,11 +1,13 @@
 .venv/
 __pycache__/
+.DS_Store
 *.py[cod]
 *.egg-info/
 .pytest_cache/
 .coverage
 htmlcov/
 .env
+.data/
 e2e/results/*
 !e2e/results/.gitkeep
 e2e/fixtures/repos/sample-local/.git/

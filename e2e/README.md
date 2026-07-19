@@ -65,10 +65,12 @@ export $(grep -v '^#' .env | xargs)   # ou: set -a; source .env; set +a
 python -m github_rag.e2e
 ```
 
-Equivalente manual:
+Equivalente manual (infra + app no host, **sem** `--build`):
 
 ```bash
-podman compose -f docker-compose.e2e.yml up -d --build
+podman compose -f docker-compose.dev.yml up -d
+export $(grep -v '^#' .env | xargs)
+python -m github_rag.delivery   # outro terminal, ou deixe o launcher subir
 robot --exclude bdd015 --outputdir e2e/results \
   e2e/robot/health.robot \
   e2e/robot/catalog_indexing.robot \
@@ -76,8 +78,10 @@ robot --exclude bdd015 --outputdir e2e/results \
   e2e/robot/ui_browser.robot \
   e2e/robot/mcp.robot \
   e2e/robot/negative.robot
-podman compose -f docker-compose.e2e.yml down
+podman compose -f docker-compose.dev.yml down
 ```
+
+`python -m github_rag.e2e` faz o mesmo (compose dev + app host + Robot + down).
 
 ## CI
 

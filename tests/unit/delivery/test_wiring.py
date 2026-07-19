@@ -80,6 +80,33 @@ class TestWiringHelpersCoverage(unittest.TestCase):
         with self.assertRaises(DeliveryWiringError):
             run_alembic_upgrade({})
 
+    def test_resolve_delivery_root_honours_app_root_override(self) -> None:
+        import os
+        from pathlib import Path
+        from unittest import mock
+
+        from github_rag.delivery.wiring import (
+            DeliveryWiringError,
+            _resolve_delivery_root,
+        )
+
+        repo = Path(__file__).resolve().parents[3]
+        with mock.patch.dict(os.environ, {"GITHUB_RAG_APP_ROOT": str(repo)}):
+            self.assertEqual(_resolve_delivery_root(), repo)
+
+    def test_resolve_delivery_root_fails_when_override_missing_ini(self) -> None:
+        import os
+        from unittest import mock
+
+        from github_rag.delivery.wiring import (
+            DeliveryWiringError,
+            _resolve_delivery_root,
+        )
+
+        with mock.patch.dict(os.environ, {"GITHUB_RAG_APP_ROOT": "/tmp/nowhere"}):
+            with self.assertRaises(DeliveryWiringError):
+                _resolve_delivery_root()
+
     def test_wire_catalog_sync_builds(self) -> None:
         from github_rag.delivery.wiring import wire_catalog_sync
 
