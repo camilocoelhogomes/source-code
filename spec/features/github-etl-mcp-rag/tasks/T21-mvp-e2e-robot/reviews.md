@@ -85,3 +85,50 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — BDD contratos E2E-01..10 + documentação Robot green path alinhados ao design `0.1.1`, BDD-026–028, exclusão BDD-015, CI `E2E_GITHUB_TOKEN`, doubles sem Podman real. Prosseguir para interfaces.
+
+---
+
+## Review — Interfaces `0.1.0` — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `interfaces.md` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (aprovação Architect substitui HITL intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Protocols plano `E2eStackLauncher` + `RobotMvpSuite` | OK | interfaces §8; I-T21-002 |
+| Defaults `PodmanE2eStackLauncher` + `DefaultRobotMvpSuite` | OK | §§9–10; I-T21-003 |
+| `E2eCredentialResolver` + HITL/CI (D-T21-006) | OK | §7; I-T21-006/007 |
+| Erros `E2eCredentialError` / `E2eStackError.from_stderr` | OK | §6; I-T21-008; E2E-10 |
+| Timeouts design §3.7 | OK | §5; I-T21-016 |
+| Paths `COMPOSE_E2E` / `ROBOT_ROOT` / HOST_* fixtures | OK | §§4/9; I-T21-004/005 |
+| Ordem resolve→up→healthy→robot→down + finally | OK | I-T21-009; §10 |
+| Exclude `bdd015` explícito + green path suites | OK | I-T21-010/011 |
+| Superfície pública E2E-09 + uso estável docs-cicd | OK | §11; I-T21-017/018 |
+| RESPONSABILIDADE + MOTIVO DA SEPARAÇÃO em cada contrato | OK | §§4–10 |
+| Assinaturas alinhadas a `test_mvp_e2e_robot.py` | OK | `environ`, `robot_runner`, `.token`, exports |
+| Sem `src/` nesta etapa | OK | I-T21-020 |
+| Sem reabrir ownership T19 / domínio | OK | §1 fora de escopo; I-T21-001 |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` na self-review | — | — | — |
+| `SUGGESTION` | Alias transitório `COMPOSE_E2E_PATH` / `run_robot=` mencionados só como não-contrato | interfaces §4; I-T21-014 | Developer usa só nomes canônicos | Aceito (documentado) |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — interfaces.md `0.1.0` congelam `github_rag.e2e` (I-T21-001..020) alinhados ao design `0.1.1` e BDD E2E-01..10. Prosseguir para unit-test-plan (QA).
