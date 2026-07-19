@@ -46,15 +46,30 @@ def _default_run_command(
     return completed.returncode, completed.stdout or "", completed.stderr or ""
 
 
+def _load_catalog_indexing_keywords():
+    """Importa helpers T24 de ``e2e/robot/libraries`` (sys.path)."""
+    import sys
+
+    libs = resolve_repo_root(Path(__file__)) / "e2e" / "robot" / "libraries"
+    libs_str = str(libs.resolve())
+    if libs_str not in sys.path:
+        sys.path.insert(0, libs_str)
+    import CatalogIndexingKeywords as cik  # noqa: PLC0415
+
+    return cik
+
+
 def ensure_local_git_fixture(repos_dir: Path) -> None:
-    """Garante um clone/repo mínimo sob ``repos_dir/sample-local`` (BDD-016).
+    """Garante sample-local com git + seed e2e T24 (BDD-006 base).
 
     Responsabilidade
-        Criar ``main`` com commit inicial se ``.git`` ausente (fixture versionável
-        sem nested ``.git`` no git do produto).
+        Preparar volume HOST_REPOS/sample-local para catálogo local:
+        init main (legado T21) + árvore elegibilidade idempotente.
+        Se ``.git`` já existe, não faz early-return cego — aplica seed T24.
 
     Motivo da separação
-        Evita commitar objetos git aninhados; runtime prepara o volume local.
+        Superfície e2e (D-T24-010), não ETL; suite Robot assume fixture
+        montada e legível pelo container (:ro).
     """
     sample = repos_dir / "sample-local"
     sample.mkdir(parents=True, exist_ok=True)
@@ -64,8 +79,6 @@ def ensure_local_git_fixture(repos_dir: Path) -> None:
             "# sample-local\n\nMinimal local Git fixture for T21 e2e.\n",
             encoding="utf-8",
         )
-    if (sample / ".git").is_dir():
-        return
     env = {
         **os.environ,
         "GIT_AUTHOR_NAME": "e2e",
@@ -73,24 +86,32 @@ def ensure_local_git_fixture(repos_dir: Path) -> None:
         "GIT_COMMITTER_NAME": "e2e",
         "GIT_COMMITTER_EMAIL": "e2e@example.com",
     }
-    commands = (
-        ["git", "init", "-b", "main"],
-        ["git", "add", "README.md"],
-        ["git", "commit", "-m", "init e2e local fixture"],
-    )
-    for cmd in commands:
-        completed = subprocess.run(
-            cmd,
-            cwd=sample,
-            env=env,
-            capture_output=True,
-            text=True,
-            check=False,
+    if not (sample / ".git").is_dir():
+        commands = (
+            ["git", "init", "-b", "main"],
+            ["git", "add", "README.md"],
+            ["git", "commit", "-m", "init e2e local fixture"],
         )
-        if completed.returncode != 0:
-            raise E2eStackError.from_stderr(
-                completed.stderr or f"git fixture failed: {cmd}",
+        for cmd in commands:
+            completed = subprocess.run(
+                cmd,
+                cwd=sample,
+                env=env,
+                capture_output=True,
+                text=True,
+                check=False,
             )
+            if completed.returncode != 0:
+                raise E2eStackError.from_stderr(
+                    completed.stderr or f"git fixture failed: {cmd}",
+                )
+
+    # Seed T24 (BDD-006 paths + MAIN_ONLY) — sempre, idempotente (S01/S02).
+    try:
+        cik = _load_catalog_indexing_keywords()
+        cik.prepare_eligibility_tree(sample)
+    except Exception as exc:  # noqa: BLE001 — surface as E2eStackError
+        raise E2eStackError.from_stderr(str(exc)) from exc
 
 
 class PodmanE2eStackLauncher:

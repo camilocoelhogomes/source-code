@@ -58,6 +58,87 @@ class TestLauncherCoverage(unittest.TestCase):
                 with self.assertRaises(launcher_mod.E2eStackError):
                     launcher_mod.ensure_local_git_fixture(repos)
 
+    def test_ensure_local_git_fixture_seeds_bdd006_paths(self) -> None:
+        """UT-T24-S01 — seed include/exclude BDD-006 na 1ª chamada."""
+        from github_rag.e2e.launcher import ensure_local_git_fixture  # noqa: PLC0415
+
+        with tempfile.TemporaryDirectory() as tmp:
+            repos = Path(tmp) / "repos"
+            ensure_local_git_fixture(repos)
+            sample = repos / "sample-local"
+            self.assertTrue((sample / ".git").is_dir())
+            self.assertTrue((sample / "README.md").is_file())
+            self.assertTrue(
+                (sample / "src" / "Hello.java").is_file()
+                or (sample / "src" / "app.py").is_file(),
+                "seed BDD-006: include code ausente",
+            )
+            self.assertTrue(
+                (sample / "docs" / "notes.md").is_file(),
+                "seed BDD-006: docs/notes.md ausente",
+            )
+            self.assertTrue(
+                (sample / "data" / "report.csv").is_file(),
+                "seed BDD-006: data/report.csv ausente",
+            )
+            self.assertTrue(
+                (sample / "img" / "photo.png").is_file(),
+                "seed BDD-006: img/photo.png ausente",
+            )
+            self.assertTrue((sample / ".gitignore").is_file())
+            self.assertTrue(
+                (sample / "ignored_dir" / "secret_marker.txt").is_file(),
+                "seed BDD-006: ignored_dir/secret_marker.txt ausente",
+            )
+            gi = (sample / ".gitignore").read_text(encoding="utf-8")
+            self.assertIn("ignored_dir", gi)
+            # I-T24-009 — tokens canônicos nos paths seed (não só arquivos vazios)
+            blob = "\n".join(
+                p.read_text(encoding="utf-8", errors="replace")
+                for p in sample.rglob("*")
+                if p.is_file() and ".git" not in p.parts
+            )
+            self.assertIn("T24_INCLUDE_MD_E5F6", blob)
+            self.assertIn("T24_EXCLUDE_CSV_G7H8", blob)
+            self.assertIn("T24_EXCLUDE_GITIGNORE_I9J0", blob)
+            self.assertTrue(
+                "T24_INCLUDE_JAVA_A1B2" in blob or "T24_INCLUDE_PY_C3D4" in blob,
+                "seed BDD-006: token include Java/Python ausente",
+            )
+
+    def test_ensure_local_git_fixture_seed_idempotent_with_existing_git(
+        self,
+    ) -> None:
+        """UT-T24-S02 — com .git existente, ainda aplica seed T24 (não early-return cego)."""
+        from github_rag.e2e.launcher import ensure_local_git_fixture  # noqa: PLC0415
+
+        with tempfile.TemporaryDirectory() as tmp:
+            repos = Path(tmp) / "repos"
+            # 1ª chamada cria .git (legado T21); seed T24 pode ainda faltar
+            ensure_local_git_fixture(repos)
+            sample = repos / "sample-local"
+            self.assertTrue((sample / ".git").is_dir())
+            # 2ª chamada deve materializar/manter paths BDD-006
+            ensure_local_git_fixture(repos)
+            self.assertTrue(
+                (sample / "docs" / "notes.md").is_file(),
+                "rerun com .git não pode pular seed BDD-006",
+            )
+            self.assertTrue((sample / "data" / "report.csv").is_file())
+            self.assertTrue((sample / ".gitignore").is_file())
+            # marker MAIN_ONLY na main (seed base BDD-017)
+            main_only = (sample).rglob("*")
+            blob = "\n".join(
+                p.read_text(encoding="utf-8", errors="replace")
+                for p in main_only
+                if p.is_file() and ".git" not in p.parts
+            )
+            self.assertIn(
+                "MAIN_ONLY_MARKER",
+                blob,
+                "seed base deve incluir MAIN_ONLY_MARKER na main",
+            )
+
     def test_health_ok_invalid_json(self) -> None:
         e2e = import_e2e()
         launcher = e2e.PodmanE2eStackLauncher(
