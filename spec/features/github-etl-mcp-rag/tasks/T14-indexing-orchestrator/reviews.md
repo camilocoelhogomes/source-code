@@ -178,3 +178,116 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — BDD v0.1.0 aprovado. Prosseguir para interfaces (Architect/QA).
+
+---
+
+## Review — Unit tests (v0.1.0)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `unit-test-plan.md` + `tests/unit/indexing/` + `tests/bdd/test_indexing_orchestrator.py` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (gate Architect substitui HITL) |
+| Interfaces base | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Contratos I-T14 | OK | Orchestrator/Startup/Pipeline/progress/types cobertos em unit + BDD |
+| Extremos / corners | OK | progress 0/neg/clamp; metadata intent ignorado; RAG vazio/mismatch/SLM fail; source token/path; enqueue dedupe/skip; first replace; error→wipe; gitignore; tip boom → error |
+| BDD IO-01..14 | OK | `tests/bdd/test_indexing_orchestrator.py` — 14 cenários nomeados |
+| Zoekt 1× all_eligible | OK | IO-11 |
+| Qdrant incremental sem purge | OK | IO-12 |
+| Restart Zoekt+Qdrant | OK | IO-07 `delete_calls` + `deleted_repos` |
+| StartupIndexReconcile / ENG-011 | OK | IO-08/09; unit tip-failure recover |
+| ENG-013 AST | OK | IO-14 |
+| Sem implementação no QA | OK | Plano CANDIDATE→aprovado após código; suite guia contratos |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — `ARCHITECT_UNIT_TESTS_APPROVAL`.
+
+---
+
+## Review — Implementation
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `src/github_rag/indexing/` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (gate Architect substitui HITL) |
+| Design / Interfaces / BDD | `0.1.2` / `0.1.0` / `0.1.0` |
+| Evidência testes | `769 passed`; coverage global **98.79%** (`pytest -q --ignore=tests/integration`); indexing ~98–100% |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| I-T14-001..010 | OK | `ports.py`, `orchestrator.py`, `startup_reconcile.py`, `pipeline.py`; keyword-only deps; `repo_id=str(id)` |
+| Zoekt 1× `index(all_eligible)` | OK | `orchestrator.py` L181–192 — uma chamada; stages ZOEKT por path |
+| Qdrant incremental sem purge | OK | L205–254: `delete_paths` deleted+mod; `upsert` tip; sem `purge_other_commits`; first/restart → `replace_repo_commit` |
+| Restart delete Zoekt+Qdrant | OK | L173–175: `delete_repository` + `delete_repo` quando `restart_full` |
+| StartupIndexReconcile ENG-011 | OK | `startup_reconcile.py` L49–60: indexing→error→queued→enqueue; queued/not_indexed/error enqueue |
+| ENG-013 | OK | imports só portas/DTOs catalog/concurrency/snapshot/eligibility/index.*; BDD IO-14 |
+| REQ-020 / BR-005 / ENG-012 | OK | estados via T03; falha→`mark_error` sem avançar commit; RAG arquivo inteiro |
+| Cobertura ≥95% | OK | global 98.79%; pacote indexing ≥95% |
+| Segurança | OK | token só ctor; erros sem secrets |
+| Manutenibilidade | OK | pipeline/progress/types separados |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Achados sem bloqueio
+
+| Severidade | Achado | Evidência | Nota |
+|---|---|---|---|
+| `SUGGESTION` | `__init__.py` ainda diz “reservada para T14” | `src/github_rag/indexing/__init__.py` | Atualizar exports/doc na etapa de documentação se desejado |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — `ARCHITECT_IMPLEMENTATION_APPROVAL`. Prosseguir Blue (já aplicada) / docs.
+
+---
+
+## Review — Blue refactor
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `refactoring.md` + `orchestrator.py` (handler erro / dead code) |
+| Data | 2026-07-18 |
+| Pipeline | autonomous |
+| Resultado | `BLUE_APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Sem alteração de contratos | OK | API pública I-T14 inalterada |
+| Sem otimização especulativa | OK | Sem mudança de hot-path; B-01/B-02 são simplificação/robustez de estado |
+| Testes verdes pós-Blue | OK | 769 passed; coverage 98.79% |
+| Baseline vs resultado | OK | `refactoring.md` — cobertura mantida/≥95% |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum | — | — |
+
+### Decisão
+
+`BLUE_APPROVED_BY_ARCHITECT`.
