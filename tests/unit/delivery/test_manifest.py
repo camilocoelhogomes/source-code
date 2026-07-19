@@ -8,12 +8,23 @@ import unittest
 
 from tests.unit.delivery.helpers import (
     COMPOSE,
+    COMPOSE_DEV,
+    COMPOSE_E2E,
+    COMPOSE_FILES,
     DEC015_RUNTIME_PACKAGES,
     DEC015_TREE_SITTER_GRAMMARS,
     DOCKERFILE,
     ENV_EXAMPLE,
     PYPROJECT,
     read_text,
+)
+
+_VENV_MOUNT_RE = re.compile(
+    r"(COPY|ADD)\s+[^\n]*\.venv"
+    r"|-\s*\./\.venv"
+    r"|/\.venv:"
+    r"|:\s*\.venv\b",
+    re.I,
 )
 
 
@@ -55,38 +66,68 @@ class TestDockerfileManifest(unittest.TestCase):
 
 
 class TestComposeManifest(unittest.TestCase):
-    """UT-M03 / UT-M04."""
+    """UT-M03 / UT-M04 — contratos comuns aos três composes."""
 
-    def test_ut_m03_services_and_ports(self) -> None:
-        text = read_text(COMPOSE)
-        for svc in ("app", "postgres", "qdrant", "zoekt", "slm"):
+    def test_ut_m03_services_and_ports_all_composes(self) -> None:
+        for path in COMPOSE_FILES:
+            text = read_text(path)
+            for svc in ("app", "postgres", "qdrant", "zoekt", "slm"):
+                self.assertRegex(
+                    text,
+                    re.compile(rf"^\s*{svc}\s*:", re.M),
+                    f"{path.name}: serviço ausente: {svc}",
+                )
+            self.assertRegex(
+                text, re.compile(r"8080", re.I), f"{path.name}: porta UI 8080"
+            )
             self.assertRegex(
                 text,
-                re.compile(rf"^\s*{svc}\s*:", re.M),
-                f"serviço ausente: {svc}",
+                re.compile(r"8001|MCP_PORT", re.I),
+                f"{path.name}: porta/config MCP",
             )
-        self.assertRegex(text, re.compile(r"8080", re.I), "porta UI 8080")
+
+    def test_ut_m04_volumes_config_repos_healthz_all_composes(self) -> None:
+        for path in COMPOSE_FILES:
+            text = read_text(path)
+            self.assertRegex(text, re.compile(r"CONFIG_PATH", re.I), path.name)
+            self.assertRegex(text, re.compile(r"/repos"), path.name)
+            self.assertRegex(text, re.compile(r"healthcheck\s*:", re.I), path.name)
+            self.assertRegex(text, re.compile(r"/healthz", re.I), path.name)
+            self.assertNotRegex(text, _VENV_MOUNT_RE, path.name)
+
+
+class TestThreeComposeRoles(unittest.TestCase):
+    """UT-M07 / UT-M08 / UT-M09 — papéis D-T19-020 (BDD-025)."""
+
+    def test_ut_m07_e2e_isolation_and_token_alias(self) -> None:
+        text = read_text(COMPOSE_E2E)
         self.assertRegex(
             text,
-            re.compile(r"8001|MCP_PORT", re.I),
-            "porta/config MCP",
+            re.compile(r"^\s*name\s*:\s*github-rag-e2e\s*$", re.M),
         )
-
-    def test_ut_m04_volumes_config_repos_healthz(self) -> None:
-        text = read_text(COMPOSE)
-        self.assertRegex(text, re.compile(r"CONFIG_PATH", re.I))
-        self.assertRegex(text, re.compile(r"/repos"))
-        self.assertRegex(text, re.compile(r"healthcheck\s*:", re.I))
-        self.assertRegex(text, re.compile(r"/healthz", re.I))
-        self.assertNotRegex(
+        self.assertRegex(text, re.compile(r"e2e_", re.I))
+        self.assertRegex(
             text,
             re.compile(
-                r"(COPY|ADD)\s+[^\n]*\.venv"
-                r"|-\s*\./\.venv"
-                r"|/\.venv:",
-                re.I,
+                r"GITHUB_TOKEN\s*:\s*\$\{E2E_GITHUB_TOKEN:-\$\{GITHUB_TOKEN:-\}\}",
             ),
+            "alias canônico E2E_GITHUB_TOKEN→GITHUB_TOKEN",
         )
+        self.assertNotRegex(text, re.compile(r"-\s*\./src\b|:\s*\./src\b"))
+
+    def test_ut_m08_dev_src_mount_exposes_postgres(self) -> None:
+        text = read_text(COMPOSE_DEV)
+        self.assertRegex(
+            text,
+            re.compile(r"^\s*name\s*:\s*github-rag-dev\s*$", re.M),
+        )
+        self.assertRegex(text, re.compile(r"\./src\b"))
+        self.assertRegex(text, re.compile(r"5432:5432"))
+        self.assertNotRegex(text, _VENV_MOUNT_RE)
+
+    def test_ut_m09_user_compose_no_src_mount(self) -> None:
+        text = read_text(COMPOSE)
+        self.assertNotRegex(text, re.compile(r"-\s*\./src\b|:\s*\./src\b"))
 
 
 class TestPyprojectAndEnvExample(unittest.TestCase):
@@ -107,6 +148,7 @@ class TestPyprojectAndEnvExample(unittest.TestCase):
         for name in (
             "CONFIG_PATH",
             "GITHUB_TOKEN",
+            "E2E_GITHUB_TOKEN",
             "INDEX_WORKERS",
             "QUERY_WORKERS",
             "INDEX_CRON",

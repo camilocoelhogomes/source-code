@@ -275,3 +275,230 @@ Resultado QA: **33 failed**, 0 passed — `ImportError`/`ModuleNotFoundError` (`
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — design.md v0.2.0 alinhado a REQ-043–044, BDD-025, ENG-017 e D-T19-020. Prosseguir para BDD/manifesto residual.
+
+---
+
+## Review — BDD `0.2.0` (delta 3 composes) — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `bdd.md` v0.2.0 + `tests/bdd/test_container_delivery.py` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (aprovação Architect substitui HITL) |
+| Resultado | `CHANGES_REQUIRED` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| BDD-025 / REQ-043 — existência 3 composes + Dockerfile + `.env.example` | OK (texto) / parcial (exec) | CD-11 + `COMPOSE_FILES`; RED por arquivos ausentes (esperado) |
+| D-T19-020 — papéis user/e2e/dev | parcial | CD-11: `name`, `e2e_`, `./src` rules; **falta** assert do alias de token |
+| CD-06/08/09 nos 3 composes | OK | `COMPOSE_FILES` em CD-06/08/09 |
+| REQ-044 — sem Robot/`compose up` | OK | convenções + CD-11 |
+| RED esperado (e2e/dev ausentes) | OK | pytest: falhas `AssertionError: artefato de delivery ausente: docker-compose.e2e.yml` (+ CD-11/dev) |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| `MAJOR` | CD-11 texto exige mapeamento `E2E_GITHUB_TOKEN`→`GITHUB_TOKEN`, mas o teste executável só checa presença de `E2E_GITHUB_TOKEN` — não congela `GITHUB_TOKEN: ${E2E_GITHUB_TOKEN:-…}` (D-T19-020 / design §4.4.1 / DEC-020) | `bdd.md` CD-11 L118; `test_container_delivery.py` `test_e2e_compose_isolated_no_src_mount` L613–627 | Assert regex (ou equivalente) da fórmula de alias no `docker-compose.e2e.yml` |
+| `SUGGESTION` | Regex `e2e_` é ampla (pode casar comentário) | `test_e2e_compose_isolated_no_src_mount` L619 | Preferir volumes nomeados `e2e_` / padrão de volume compose |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| `MAJOR` | Alias token e2e não assertado no executável | ver acima | ver acima |
+
+### Decisão
+
+`CHANGES_REQUIRED` — devolver ao QA. Não aprovar BDD 0.2.0 até o assert do mapeamento `E2E_GITHUB_TOKEN`→`GITHUB_TOKEN`.
+
+---
+
+## Review — Interfaces `0.2.0` (residual manifesto 3 composes) — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `interfaces.md` v0.2.0 |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (aprovação Architect substitui HITL) |
+| Resultado | `CHANGES_REQUIRED` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Sem novos Protocols Python | OK | §1 escopo; I-T19-* inalterados |
+| Superfície 3 composes listada | parcial | §1 tabela composes; falta fórmula de alias |
+| I-T19-017 / M-T19-* congela D-T19-020 | parcial | §11 ainda só M-T19-001..006 (pré-delta) |
+| Rastreabilidade CD-11 | falha | §13 mapeia CD-05..09; omite CD-11 |
+| Comentários responsabilidade/motivo | OK | §§1/4–9 preservados |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| `MAJOR` | Residual D-T19-020 não congela o alias canônico `GITHUB_TOKEN: ${E2E_GITHUB_TOKEN:-${GITHUB_TOKEN:-}}` na superfície de manifesto | `interfaces.md` §1 L45 (`E2E_GITHUB_TOKEN` sem fórmula); design §4.4.1 L172 | Explicitar fórmula (ou equivalente) em §1 e/ou novo `M-T19-007` |
+| `MAJOR` | §11 M-T19-* e §13 BDD→contratos não incluem papéis/CD-11 do delta 0.2.0 | `interfaces.md` §11 L546–555; §13 L571–578 | Adicionar M-T19 papéis (e2e/dev/user) + linha CD-11 |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| `MAJOR` | Alias + M-T19/CD-11 residual incompletos | ver acima | ver acima |
+
+### Decisão
+
+`CHANGES_REQUIRED` — devolver para correção do residual de manifesto. Protocols Python permanecem OK; não reabrir I-T19-001..019.
+
+---
+
+## Review — Unit tests `0.2.0` (delta 3 composes) — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `unit-test-plan.md` v0.2.0 + `tests/unit/delivery/test_manifest.py` + `helpers.py` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (aprovação Architect substitui HITL) |
+| Resultado | `CHANGES_REQUIRED` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| UT-M03/04 nos 3 composes | OK | `COMPOSE_FILES` em `test_ut_m03_*` / `test_ut_m04_*` |
+| UT-M07/08/09 papéis | parcial | name/`e2e_`/`./src`/`5432:5432`; **falta** alias token |
+| UT-M06 `E2E_GITHUB_TOKEN` | OK | `test_ut_m06_*` exige nome no `.env.example` |
+| RED esperado (e2e/dev ausentes) | OK | pytest: `AssertionError` ausente e2e/dev + `E2E_GITHUB_TOKEN` em `.env.example` |
+| Sem implementação de composes | OK | só asserts de arquivo |
+| Suíte UT-B/H/W/X pré-aprovada | OK | fora do delta; não reaberta |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| `MAJOR` | UT-M07 / plano dizem `E2E_GITHUB_TOKEN` mas não assertam mapeamento →`GITHUB_TOKEN` exigido por D-T19-020 / design §4.4.1 / CD-11 | `unit-test-plan.md` UT-M07 L75; `test_manifest.py` `test_ut_m07_*` L102–110 | Assert da fórmula de alias no e2e compose (alinhar a CD-11 corrigido) |
+| `SUGGESTION` | §4 tabela RED ainda descreve ausência de Dockerfile/compose base (estado 0.1.x); delta 0.2.0 falha por e2e/dev + `E2E_GITHUB_TOKEN` | `unit-test-plan.md` §4 L105–111 vs pytest atual | Atualizar razões RED do delta |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| `MAJOR` | Alias token e2e não assertado em UT-M07 | ver acima | ver acima |
+
+### Decisão
+
+`CHANGES_REQUIRED` — devolver ao QA. Não aprovar unit 0.2.0 até UT-M07 congelar o alias `E2E_GITHUB_TOKEN`→`GITHUB_TOKEN`.
+
+---
+
+## Review — BDD `0.2.0` (re-review pós-correção) — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `bdd.md` v0.2.0 + `tests/bdd/test_container_delivery.py` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (aprovação Architect substitui HITL) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Alias `E2E_GITHUB_TOKEN`→`GITHUB_TOKEN` | OK | `test_e2e_compose_isolated_no_src_mount` regex `GITHUB_TOKEN\s*:\s*\$\{E2E_GITHUB_TOKEN:-\$\{GITHUB_TOKEN:-\}\}` |
+| D-T19-020 papéis + CD-06/08/09 nos 3 composes | OK | CD-11 + `COMPOSE_FILES` |
+| REQ-044 manifesto-only | OK | convenções / CD-11 |
+
+### Achados (MAJOR anterior)
+
+| Severidade | Achado | Status |
+|---|---|---|
+| `MAJOR` | Alias token e2e não assertado | **Corrigido** |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — BDD 0.2.0 + executável alinhados a D-T19-020 / design §4.4.1.
+
+---
+
+## Review — Interfaces `0.2.0` (re-review pós-correção) — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `interfaces.md` v0.2.0 |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (aprovação Architect substitui HITL) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Fórmula alias em §1 | OK | §1 L46 |
+| M-T19-007/008/009 | OK | §11 L555–557 |
+| §13 CD-11 | OK | §13 L583 |
+| Sem Protocols novos | OK | escopo residual |
+
+### Achados (MAJOR anteriores)
+
+| Severidade | Achado | Status |
+|---|---|---|
+| `MAJOR` | Alias + M-T19/CD-11 incompletos | **Corrigido** |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — residual manifesto 0.2.0 suficiente vs D-T19-020. Prosseguir implementação dos composes (Developer).
+
+---
+
+## Review — Unit tests `0.2.0` (re-review pós-correção) — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `unit-test-plan.md` v0.2.0 + `tests/unit/delivery/test_manifest.py` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (aprovação Architect substitui HITL) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| UT-M07 fórmula alias | OK | `test_ut_m07_*` mesma regex canônica; plano UT-M07 L77 |
+| UT-M03/04/08/09 papéis | OK | `COMPOSE_FILES` + roles |
+| Sem compose real | OK | asserts de arquivo |
+
+### Achados (MAJOR anterior)
+
+| Severidade | Achado | Status |
+|---|---|---|
+| `MAJOR` | UT-M07 sem alias | **Corrigido** |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — unit 0.2.0 suficiente. Developer materializa `docker-compose.e2e.yml` / `.dev.yml` + `.env.example` com `E2E_GITHUB_TOKEN`.

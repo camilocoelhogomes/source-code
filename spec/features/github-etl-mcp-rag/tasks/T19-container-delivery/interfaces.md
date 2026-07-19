@@ -7,18 +7,21 @@
 | Autor | Tech Lead Architect |
 | Data | 2026-07-18 |
 | Estado | `APPROVED_BY_ARCHITECT` |
-| Versão | `0.1.0` |
-| Design base | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
-| BDD base | `0.1.1` (`APPROVED_BY_ARCHITECT`) |
+| Versão | `0.2.0` |
+| Design base | `0.2.0` (`APPROVED_BY_ARCHITECT`) |
+| BDD base | `0.2.0` (`APPROVED_BY_ARCHITECT`) |
 | Branch | `feature/github-etl-mcp-rag-T19-container-delivery` |
-| Escopo desta etapa | Contratos de comunicação T19 **somente** (stubs/assinaturas; sem implementação de produção) |
-| Aprovação Architect | `APPROVED_BY_ARCHITECT` em 2026-07-18 |
+| Escopo desta etapa | Residual delta 0.1.7: superfície de manifesto dos **três** composes (sem novos Protocols Python) |
+| Aprovação Architect | `APPROVED_BY_ARCHITECT` (delta 0.2.0) |
 
 ## 0. Histórico Architect
 
 | Data | Autor | Decisão | Versão | Observações |
 |---|---|---|---|---|
 | 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.0` | Porta `ContainerRuntime`; `run_container_boot`; wiring/health/`__main__`/mcp_stdio; manifesto fora do pacote Python. |
+| 2026-07-18 | Tech Lead Architect | `CHANGES_REQUIRED` | `0.2.0` | Review: MAJOR — residual §1/§11 não congela fórmula `GITHUB_TOKEN: ${E2E_GITHUB_TOKEN:-…}` nem M-T19 papéis D-T19-020; §13 omite CD-11. |
+| 2026-07-18 | Tech Lead Architect | `PENDING_ARCHITECT_REVIEW` | `0.2.0` | Correção: fórmula alias em §1; M-T19-007..009; §13 CD-11. |
+| 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.2.0` | Re-review: fórmula + M-T19-007..009 + CD-11; MAJOR fechados. |
 
 ## 1. Escopo e exclusões
 
@@ -40,12 +43,14 @@
 | Artefato | Papel | Como congela contrato |
 |---|---|---|
 | `Dockerfile` | Imagem `app` | Asserts BDD CD-05/06/07/10 |
-| `docker-compose.yml` | Serviços ENG-002 + volumes + healthcheck | Asserts CD-07/08/09 |
-| `.env.example` | Nomes de env sem segredos | Assert CD-09 |
-| `docs/runbook-local.md` / README | amd64, portas, volumes | Assert CD-07 |
+| `docker-compose.yml` | Usuário final — ENG-002 + volumes + health; **sem** `./src` | CD-08/09/11 |
+| `docker-compose.e2e.yml` | E2e (T21/CI) — `name: github-rag-e2e`, volumes `e2e_*`, alias canônico `GITHUB_TOKEN: ${E2E_GITHUB_TOKEN:-${GITHUB_TOKEN:-}}`; **sem** `./src` | CD-08/09/11; M-T19-007 |
+| `docker-compose.dev.yml` | Dev — `name: github-rag-dev`, monta `./src`, expõe PG `5432:5432`; **sem** `.venv` | CD-08/09/11; M-T19-008 |
+| `.env.example` | Nomes de env sem segredos (incl. `E2E_GITHUB_TOKEN` sem valor) | Assert CD-09/11 |
+| `docs/runbook-local.md` / README | amd64, portas, volumes, qual compose usar | Assert CD-07 |
 
-**Responsabilidade da superfície de manifesto:** declarar SO, `pip install .`, serviços, mounts e CMD.  
-**Motivo da separação:** entrega Docker (ENG-002/009) fica na raiz; o pacote `delivery` só orquestra processo Python — testes de manifesto leem arquivos, não Protocols.
+**Responsabilidade da superfície de manifesto:** declarar SO, `pip install .`, serviços, mounts e CMD; distinguir os três papéis operacionais (D-T19-020).  
+**Motivo da separação:** entrega Docker (ENG-002/009/017) fica na raiz; o pacote `delivery` só orquestra processo Python — testes de manifesto leem arquivos, não Protocols. Sem Protocols novos neste delta.
 
 ### Dependências consumidas (não redefinidas)
 
@@ -543,11 +548,14 @@ Contratos **declarativos** (assertados em `tests/bdd/test_container_delivery.py`
 | ID manifesto | Requisito |
 |---|---|
 | M-T19-001 | `Dockerfile`: `pip install` do projeto (`.`); sem extras `[dev]`; binário `git`; CMD `python -m github_rag.delivery` |
-| M-T19-002 | `docker-compose.yml`: serviços `app`, `postgres`, `qdrant`, `zoekt`, `slm`; `healthcheck` com `/healthz`; MCP (`8001`/`MCP_PORT`/`mcp`) |
-| M-T19-003 | Volumes/`CONFIG_PATH` + mount `/repos`; `.env.example` com nomes sem segredos reais |
+| M-T19-002 | Os **três** composes: serviços `app`, `postgres`, `qdrant`, `zoekt`, `slm`; `healthcheck` com `/healthz`; MCP (`8001`/`MCP_PORT`/`mcp`) |
+| M-T19-003 | Nos **três** composes: volumes/`CONFIG_PATH` + mount `/repos`; `.env.example` com nomes sem segredos reais (incl. `E2E_GITHUB_TOKEN`) |
 | M-T19-004 | `linux/amd64` (ou `amd64`) documentado |
-| M-T19-005 | Sem COPY/mount de `.venv` do host |
+| M-T19-005 | Sem COPY/mount de `.venv` do host (Dockerfile + 3 composes) |
 | M-T19-006 | `pyproject.toml` declara DEC-015 + grammars + `uvicorn` (imagem instala via pip do contexto) |
+| M-T19-007 | `docker-compose.e2e.yml`: `name: github-rag-e2e`; volumes `e2e_*`; fórmula `GITHUB_TOKEN: ${E2E_GITHUB_TOKEN:-${GITHUB_TOKEN:-}}`; sem `./src` |
+| M-T19-008 | `docker-compose.dev.yml`: `name: github-rag-dev`; monta `./src`; `5432:5432`; sem `.venv` |
+| M-T19-009 | `docker-compose.yml` (usuário): sem montagem `./src` |
 
 Esses itens **não** geram Protocols em `delivery/`; o Developer materializa os arquivos na implementação.
 
@@ -573,6 +581,7 @@ Imagem `app` instala **todas** as deps runtime do `pyproject.toml` (incl. GitPyt
 | CD-04 | I-T19-005/014 — ordem sync→reconcile→scheduler→bind |
 | CD-05..09 | I-T19-017 / M-T19-* — manifesto |
 | CD-10 | I-T19-001/010/016 — exports + CMD |
+| CD-11 | M-T19-007/008/009 — papéis dos 3 composes + alias e2e (D-T19-020 / BDD-025) |
 
 ## 14. Handoff
 
