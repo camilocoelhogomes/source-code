@@ -6,6 +6,9 @@ Reference GitHub repo: `camilocoelhogomes/source-code` (this project).
 
 ## HITL local (obrigatório para prova real)
 
+Checklist operacional da auditoria (gate T04, sem secrets):
+[`spec/features/mvp-e2e-audit-hardening/audit/hitl-env-checklist.md`](../spec/features/mvp-e2e-audit-hardening/audit/hitl-env-checklist.md).
+
 1. Copie o exemplo de env e **não** faça commit do `.env`:
 
 ```bash
