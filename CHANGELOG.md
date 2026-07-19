@@ -97,6 +97,13 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Alterado
 
+- Fix tooling e2e compose/zoekt (T22): serviço `zoekt` nos três composes
+  (`docker-compose.yml`, `docker-compose.e2e.yml`, `docker-compose.dev.yml`)
+  declara `command: ["zoekt-webserver", "-index", "/data/index", "-rpc"]`
+  (preserva ENTRYPOINT `tini`; mitiga F-T04-002 exit 1 por `tini` sem filho).
+  Pré-req de compose provider no `PATH` (`podman-compose` / `podman compose`)
+  documentado em `e2e/README.md` e `docs/runbook-local.md` (F-T04-001). Sem
+  alteração de domínio (`src/github_rag/**`) nem expansão Robot/browser.
 - Qdrant vector store (T13): no setup da collection, `QdrantVectorStore` solicita
   `create_payload_index` KEYWORD para `repo_id`, `commit_sha` e `path`. Setup
   idempotente (índice já existente / warning `:memory:` não aborta); filtros

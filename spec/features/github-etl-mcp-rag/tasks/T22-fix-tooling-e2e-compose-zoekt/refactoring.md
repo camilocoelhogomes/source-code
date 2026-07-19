@@ -70,3 +70,12 @@ Comparação performance before/after: **N/A** (mesma contagem; sem meta de lat�
 ## 5. Decisão
 
 `BLUE_APPROVED_BY_ARCHITECT` — simplificação estrutural de produção **N/A**; Blue mínima no helper de teste (remoção de API morta); subset T22 estável em **35 passed / 16 subtests / 0.04s**.
+
+## 6. Evidência de cobertura (gate pós-Blue / docs)
+
+| Métrica | Valor | Critério |
+|---|---|---|
+| Suite completa | **1215 passed**, **2 skipped** | regressão |
+| Cobertura TOTAL | **96.53%** | ≥95% (obrigatório) |
+
+Evidência registrada no gate `ARCHITECT_DOCS` (`approvals.md` / `reviews.md`), 2026-07-19.

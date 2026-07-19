@@ -344,3 +344,42 @@
 ### Decisão
 
 `BLUE_APPROVED_BY_ARCHITECT` — baseline **35 passed / 16 subtests / 0.04s**; simplificação estrutural de produção N/A; Blue mínima no helper de teste aprovada.
+
+---
+
+## Review — Docs / changelog — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `CHANGELOG.md` + `e2e/README.md` + `docs/runbook-local.md` |
+| Data | 2026-07-19 |
+| Pipeline | autonomous (aprovação Architect substitui HITL intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| CHANGELOG `[Unreleased]` entrada T22 | OK | seção Alterado: `command` zoekt + pré-req compose provider |
+| Docs F-T04-001 (M-T22-010..014) | OK | `e2e/README.md` + `docs/runbook-local.md` (já na implementação; sem delta nesta etapa) |
+| Sem secrets em docs/changelog | OK | só nomes de variáveis / paths |
+| Spec T22 completo | OK | design, bdd, interfaces, unit-test-plan, refactoring, reviews, approvals |
+| Cobertura global ≥95% | OK | **1215 passed**, 2 skipped; **TOTAL 96.53%** |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| — | Nenhum `BLOCKING` / `MAJOR` | — | — | — |
+
+### Evidência de cobertura
+
+```text
+1215 passed, 2 skipped
+TOTAL coverage: 96.53% (≥95%)
+```
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — docs/changelog T22; gate `ARCHITECT_DOCS` aprovado.
