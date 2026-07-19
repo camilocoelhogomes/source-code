@@ -42,3 +42,17 @@
 | SUGGESTION | Default `issue_store=None` preserva T18 | I-T25-004 | Já documentado | OK |
 
 **Gate:** avançar para unit-test-plan + testes.
+
+## Review UNIT-TEST-PLAN + testes v0.1.0 — Tech Lead Architect
+
+| Data | Autor | Decisão |
+|---|---|---|
+| 2026-07-19 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` |
+
+| Severidade | Achado | Evidência | Correção | Resultado |
+|---|---|---|---|---|
+| — | Matriz UT-I/D/P cobre I-T25-* e extremos | unit-test-plan.md | — | OK |
+| — | Falha pré-impl por `ModuleNotFoundError: github_rag.ui.issues` | pytest collection | — | OK (esperado) |
+| — | NEG-01..03 BDD executáveis presentes | test_negative_integral.py | — | OK |
+
+**Gate:** avançar para implementação TDD.

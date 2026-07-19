@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import tempfile
-from collections.abc import Callable, Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -72,10 +72,12 @@ class RecordingSync:
         *,
         on_sync: Callable[[Any], None] | None = None,
         fail: BaseException | None = None,
+        local_issues: Sequence[Any] | None = None,
     ) -> None:
         self.calls: list[Any] = []
         self._on_sync = on_sync
         self._fail = fail
+        self._local_issues = local_issues
 
     def sync(self, config: Any) -> Any:
         if self._on_sync is not None:
@@ -86,9 +88,14 @@ class RecordingSync:
 
         class _Result:
             active: tuple[Any, ...] = ()
+            upserted: tuple[Any, ...] = ()
             deactivated: tuple[Any, ...] = ()
+            local_issues: tuple[Any, ...] = ()
 
-        return _Result()
+        result = _Result()
+        if getattr(self, "_local_issues", None) is not None:
+            result.local_issues = tuple(self._local_issues)  # type: ignore[attr-defined]
+        return result
 
 
 class RecordingReconcile:
