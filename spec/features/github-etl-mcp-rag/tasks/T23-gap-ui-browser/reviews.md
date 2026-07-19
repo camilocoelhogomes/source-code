@@ -148,3 +148,45 @@ pytest tests/bdd/test_ui_browser_gap.py tests/unit/e2e/test_ui_browser_manifest.
 ```
 
 Falhas esperadas: dep `robotframework-browser` ausente; `GREEN_PATH_SUITES` sem `ui_browser`; `browser.resource` / `ui_browser.robot` ausentes; README sem `rfbrowser init`; fixture sem wildcard.
+
+---
+
+## Review — Unit test plan `0.1.0` — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `unit-test-plan.md` + `tests/bdd/test_ui_browser_gap.py` + `tests/unit/e2e/test_ui_browser_manifest.py` |
+| Data | 2026-07-19 |
+| Pipeline | autonomous (aprovação Architect substitui HITL intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Cobertura UB-01..09 + UB-18 (Camada A) | OK | `test_ui_browser_gap.py` classes `TestUB01`…`TestUB09`, `TestUB18` |
+| Matriz UT-UB ↔ M-T23-* / I-T23-* | OK | unit-test-plan §2–3; `test_ui_browser_manifest.py` |
+| Ordem green path após `ui` (I-T23-006/007) | OK | BDD UB-02; UT-UB-10..14 / 53..54 / 63 |
+| Extremos fixture wildcard / secrets / README / tags | OK | UT-UB-50..62 |
+| Sem Playwright / `rfbrowser init` no pytest | OK | D-T23-014; imports só texto/TOML/fs |
+| Não enfraquece BDD aprovado | OK | unitário reforça ordem + corners; Camada B fora do gate |
+| RED pré-implementação | OK | `15 failed, 20 passed` (reproduzido 2026-07-19) |
+| Produção intacta nesta etapa | OK | só testes + specs |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| `SUGGESTION` | UT-UB-60 só asserta ausência de `Close Ui Browser` em texto sintético; não chama helper que “rejeita” resource incompleto | `test_ui_browser_manifest.py` `test_ut_ub_60_resource_missing_close_keyword` | Opcional: helper `assert_browser_resource_keywords` + `assertRaises`; contrato real já em UB-03 / UT-UB-20 | Aberto residual — não bloqueia |
+| `SUGGESTION` | Ramo RequestsLibrary-só em `assert_robot_browser_surface` é morto após check de `Library Browser` | `test_ui_browser_manifest.py` L112–115 | Remover ou inverter ordem se desejado | Aberto residual — não bloqueia |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — unit-test-plan + suíte cobrem M-T23-*/UB-*/extremos/secrets; manifesto sem Playwright; RED canônico pré-implementação. Prosseguir para implementação Developer (sem alterar testes para obter verde).

@@ -6,7 +6,7 @@
 | Task | `T23-gap-ui-browser` |
 | Autor | QA Engineer |
 | Data | 2026-07-19 |
-| Estado | `TESTS_READY_FOR_REVIEW` |
+| Estado | `APPROVED_BY_ARCHITECT` |
 | Versão | `0.1.0` |
 | Design / BDD / Interfaces | `0.1.0` / `0.1.0` / `0.1.0` (todos `APPROVED_BY_ARCHITECT`) |
 | Cobertura alvo | Gate manifesto (deps/suite/resource/tags/README/fixture); suite global ≥95% permanece |
@@ -18,6 +18,7 @@
 | Data | Autor | Decisão | Versão | Observações |
 |---|---|---|---|---|
 | 2026-07-19 | QA Engineer | `TESTS_READY_FOR_REVIEW` | `0.1.0` | Plano + testes manifesto TDD; RED por dep/suite/resource/README/wildcard ausentes. Modo autônomo — aguarda review Architect. |
+| 2026-07-19 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.0` | Review: alinhado design/BDD/interfaces 0.1.0; UB-01..09/18 + UT-UB-01..63; RED 15f/20p; sem Playwright; sem BLOCKING/MAJOR. Modo autônomo. |
 
 ## 1. Estratégia
 
@@ -151,4 +152,4 @@ Após implementação Developer: Camada A verde; Camada B = Robot + `rfbrowser i
 
 ## 6. Estado
 
-`TESTS_READY_FOR_REVIEW` — plano `0.1.0` + suíte manifesto/unitários prontos para review Architect. **Não** marcado `APPROVED` nesta entrega.
+`APPROVED_BY_ARCHITECT` — plano `0.1.0` + suíte manifesto/unitários aprovados. Prosseguir para implementação Developer (sem alterar testes para obter verde).
