@@ -124,17 +124,48 @@ class SemaphoreWorkerLimiter:
         _validate_capacity(capacity=capacity, pool=pool)
         self._capacity = capacity
         self._semaphore = threading.Semaphore(capacity)
+        self._lock = threading.Lock()
+        self._active = 0
+        self._waiting = 0
+        self._peak_active = 0
 
     @property
     def capacity(self) -> int:
         return self._capacity
 
+    @property
+    def active(self) -> int:
+        """Slots atualmente na seção crítica (I-T26-001 / T26)."""
+        with self._lock:
+            return self._active
+
+    @property
+    def waiting(self) -> int:
+        """Threads bloqueadas em acquire aguardando slot (I-T26-001 / T26)."""
+        with self._lock:
+            return self._waiting
+
+    @property
+    def peak_active(self) -> int:
+        """Máximo de ``active`` desde a construção (I-T26-001 / T26)."""
+        with self._lock:
+            return self._peak_active
+
     @contextmanager
     def acquire(self) -> Iterator[None]:
+        with self._lock:
+            self._waiting += 1
         self._semaphore.acquire()
+        with self._lock:
+            self._waiting -= 1
+            self._active += 1
+            if self._active > self._peak_active:
+                self._peak_active = self._active
         try:
             yield
         finally:
+            with self._lock:
+                self._active -= 1
             self._semaphore.release()
 
 
