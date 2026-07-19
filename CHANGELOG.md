@@ -6,6 +6,14 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- Pacote de fechamento da auditoria (T07 / `mvp-e2e-audit-hardening`): contrato
+  `AuditClosurePack` em
+  `spec/features/mvp-e2e-audit-hardening/audit/closure-pack.md` — índice de
+  evidências T01–T06, métricas de sucesso, backlog pai T22–T27, ordem
+  run-first → falha → gap-fill, status `CLOSURE_READY` (encerrável /
+  aguardando merge); MVP de produto **não** entregue; BDD
+  `tests/bdd/test_mvp_e2e_audit_closure_pack.py`. Sem fix de produto
+  (`src/github_rag/**`, `e2e/robot/**`, composes).
 - Inventário de cobertura MVP e2e (T01 / feature `mvp-e2e-audit-hardening`):
   matriz documental `CoverageInventory` em
   `spec/features/mvp-e2e-audit-hardening/audit/coverage-inventory.md`
@@ -16,6 +24,13 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
   (PAT operador, `cp .env.example .env`, `GITHUB_TOKEN`/`E2E_GITHUB_TOKEN`,
   gate T04 READY/BLOCKED sem secrets); link em `e2e/README.md`; testes BDD
   `tests/bdd/test_mvp_e2e_audit_hitl_env_prep.py`. `.env` permanece gitignored.
+- Auditoria run-first pytest (T03 / `mvp-e2e-audit-hardening`): evidência
+  versionável `ParentPytestRun` em
+  `spec/features/mvp-e2e-audit-hardening/runs/pytest-all-tasks.md` (comando
+  canônico `python -m pytest tests/ -q --tb=line`, exit/contagens/falhas do pai
+  com superfície candidata, `coverage_gate`, soft-dep T01, sem secrets) +
+  contrato BDD `tests/bdd/test_mvp_e2e_audit_pytest_run.py`. Sem alteração de
+  produto (`src/github_rag/**`) nem `e2e/robot/**`.
 - Auditoria run-first Robot green path (T04 / `mvp-e2e-audit-hardening`):
   evidência versionável `RobotGreenPathRun` em
   `spec/features/mvp-e2e-audit-hardening/runs/e2e-robot-green-path.md`
@@ -24,6 +39,23 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
   secrets) + contrato BDD `tests/bdd/test_mvp_e2e_audit_e2e_robot_run.py`.
   Sem expansão Robot/browser e sem alteração de produto (`src/github_rag/**`,
   `e2e/robot/**`).
+- Backlog de falhas run-first (T05 / `mvp-e2e-audit-hardening`): contrato
+  `ParentFailureBacklog` — índice
+  `spec/features/mvp-e2e-audit-hardening/audit/failure-backlog-index.md` + task
+  pai `T22-fix-tooling-e2e-compose-zoekt` (superfície `tooling-e2e`;
+  classificação combinada REQ-017: F-T04-001=`flakiness`, F-T04-002=`produto`,
+  F-T04-003=consequência); pytest T03 com zero falhas (sem task inventada);
+  BDD `tests/bdd/test_mvp_e2e_audit_failure_backlog.py`. Sem fix de produto
+  nesta feature (`src/github_rag/**`, `e2e/robot/**`, composes).
+- Backlog de lacunas / gap-fill (T06 / `mvp-e2e-audit-hardening`): contrato
+  `ParentGapFillBacklog` — índice
+  `spec/features/mvp-e2e-audit-hardening/audit/gap-fill-backlog-index.md` +
+  tasks pai T23–T27 (`gap-ui-browser`, `gap-catalog-indexing-integral`,
+  `gap-negative-integral`, `gap-mcp-parallel-slo`, `gap-sdk-dec015-conformity`);
+  UI exige browser (API sozinha insuficiente); classificação `gap-teste` /
+  `assert-fraco`; sem duplicar T22; BDD
+  `tests/bdd/test_mvp_e2e_audit_gap_fill_backlog.py`. Sem keywords/browser/
+  produto nesta feature (`src/github_rag/**`, `e2e/robot/**`, composes).
 - Prova e2e do MVP (T21): pacote `github_rag.e2e` com contratos
   `E2eStackLauncher` / `RobotMvpSuite` (`PodmanE2eStackLauncher`,
   `DefaultRobotMvpSuite`, `E2eCredentialResolver`), suíte Robot Framework em
