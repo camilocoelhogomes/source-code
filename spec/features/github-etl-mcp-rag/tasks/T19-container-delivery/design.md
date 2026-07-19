@@ -9,7 +9,7 @@
 | Estado | `APPROVED_BY_ARCHITECT` |
 | Versão | `0.1.0` |
 | Branch | `feature/github-etl-mcp-rag-T19-container-delivery` |
-| Base | `feature/github-etl-mcp-rag-T18-management-ui` (T17/T20 na main; empilhado em T18) |
+| Base | `main` (T15/T17/T18/T20 mesclados) |
 | Rastreabilidade | REQ-036–038; DEC-011–012, DEC-015–016; BR-023–024; BDD-020–022, BDD-024; ENG-002, ENG-005–006, ENG-009, ENG-011, ENG-013–016 |
 
 ## 0. Histórico de revisão Architect
