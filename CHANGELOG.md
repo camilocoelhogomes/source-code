@@ -6,6 +6,11 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- Inventário de cobertura MVP e2e (T01 / feature `mvp-e2e-audit-hardening`):
+  matriz documental `CoverageInventory` em
+  `spec/features/mvp-e2e-audit-hardening/audit/coverage-inventory.md`
+  (BDD-001–024 exc. 015; inspeção estática; SoT de lacunas para T06). Sem
+  alteração de `e2e/` nem produto.
 - Auditoria HITL env prep (T02 / `mvp-e2e-audit-hardening`): checklist
   versionado `spec/features/mvp-e2e-audit-hardening/audit/hitl-env-checklist.md`
   (PAT operador, `cp .env.example .env`, `GITHUB_TOKEN`/`E2E_GITHUB_TOKEN`,
