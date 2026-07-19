@@ -122,3 +122,48 @@ Nenhum.
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — plano unitário documental: cobertura de corners via BDD; sem testes unitários de produto em `src/`.
+
+---
+
+## Review Implementação — Tech Lead Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `audit/hitl-env-checklist.md` + delta `e2e/README.md` + `CHANGELOG.md` |
+| Data | 2026-07-18 |
+| Branch | `feature/mvp-e2e-audit-hardening-T02-hitl-env-prep` |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Checks executados
+
+| Check | Resultado |
+|---|---|
+| Path canônico `audit/hitl-env-checklist.md` (HITL-01 / I-T02-002) | OK |
+| Pré-reqs Podman, repo, `.env.example`, `e2e/README.md` (HITL-02) | OK |
+| Passo PAT humano sem valor secreto (HITL-03 / DEC-005) | OK |
+| `cp .env.example .env` + `GITHUB_TOKEN`/`E2E_GITHUB_TOKEN` (HITL-04) | OK |
+| Proibições `git add .env` / token em `spec`/commits (HITL-05 / BR-004) | OK |
+| Comandos verificação sem `cat .env` / `echo $TOKEN` (HITL-06) | OK |
+| Gate T04 READY + checks PASS; evidência `present=true` sem valor (HITL-07) | OK |
+| Sem padrões `ghp_`/`gho_`/… nem assigns longos (HITL-08) | OK |
+| `.gitignore` cobre `.env`; `.env` local existe e não trackeado | OK — `git check-ignore -q .env` exit 0; `git ls-files` não lista `.env` |
+| Sem mudanças `src/**`, compose, robot (D-T02-001 / escopo T02) | OK |
+| Link cruzado `e2e/README.md` + entrada CHANGELOG Unreleased | OK |
+| BDD HITL-01..10 | OK — 10 passed (`pytest … --no-cov`) |
+| Cobertura produto | OK — evidência Developer: 1106 passed, cov 96.53% ≥ 95% |
+
+### Achados
+
+| ID | Severidade | Evidência | Achado | Correção esperada |
+|---|---|---|---|---|
+| — | — | — | Nenhum BLOCKING / MAJOR | — |
+| S-02 | `SUGGESTION` | `hitl-env-checklist.md` §1 L17–20 vs §6 L97 | Checkboxes de pré-req ainda `[ ]` enquanto Gate T04 = `READY` | Opcional: marcar `[x]` nos pré-reqs quando o gate for preenchido |
+
+### Bloqueios abertos
+
+Nenhum.
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — implementação documental de `HitlEnvPrep` aderente a design/interfaces/BDD; gate T04 `READY` registrado sem secrets; `.env` permanece fora do versionamento.

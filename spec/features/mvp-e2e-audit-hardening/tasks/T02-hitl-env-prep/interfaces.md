@@ -209,4 +209,4 @@ T04  python -m github_rag.e2e  (+ E2eCredentialResolver)
 - [x] Campos do gate T04 (§3.6) congelados.
 - [x] Proibições de secrets (§4) explícitas.
 - [x] Explicitado: **nenhuma** interface Python de runtime (D-T02-001).
-- [ ] Materialização do Markdown (implementação documental — etapa posterior do Developer).
+- [x] Materialização do Markdown (`audit/hitl-env-checklist.md` — `APPROVED_BY_ARCHITECT` 2026-07-18).

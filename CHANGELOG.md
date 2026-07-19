@@ -6,6 +6,11 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- Auditoria HITL env prep (T02 / `mvp-e2e-audit-hardening`): checklist
+  versionado `spec/features/mvp-e2e-audit-hardening/audit/hitl-env-checklist.md`
+  (PAT operador, `cp .env.example .env`, `GITHUB_TOKEN`/`E2E_GITHUB_TOKEN`,
+  gate T04 READY/BLOCKED sem secrets); link em `e2e/README.md`; testes BDD
+  `tests/bdd/test_mvp_e2e_audit_hitl_env_prep.py`. `.env` permanece gitignored.
 - Prova e2e do MVP (T21): pacote `github_rag.e2e` com contratos
   `E2eStackLauncher` / `RobotMvpSuite` (`PodmanE2eStackLauncher`,
   `DefaultRobotMvpSuite`, `E2eCredentialResolver`), suíte Robot Framework em
