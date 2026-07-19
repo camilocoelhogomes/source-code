@@ -3,3 +3,5 @@
 | Gate | Artefato | Versão | Decisão | Autor | Data |
 |---|---|---|---|---|---|
 | ARCHITECT_DESIGN | design.md | 0.1.0 | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-19 |
+| ARCHITECT_BDD | bdd.md | 0.1.0 | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-19 |
+| ARCHITECT_INTERFACES | interfaces.md | 0.1.0 | `APPROVED_BY_ARCHITECT` | Tech Lead Architect | 2026-07-19 |

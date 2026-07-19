@@ -14,3 +14,31 @@
 | SUGGESTION | Documentar que payload-index permanece regressão | §3.4 | Já em design | OK |
 
 **Gate:** avançar para `bdd.md`.
+
+## Review BDD v0.1.0 — Tech Lead Architect
+
+| Data | Autor | Decisão |
+|---|---|---|
+| 2026-07-19 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` |
+
+| Severidade | Achado | Evidência | Correção | Resultado |
+|---|---|---|---|---|
+| — | NEG-01 cobre texto integral BDD-008 | bdd.md §2 | — | OK |
+| — | NEG-02/03 alinhados a D-T25-* | bdd §3 | — | OK |
+| — | NEG-04 não substitui CONFIG_PATH | bdd NEG-04 | — | OK |
+
+**Gate:** avançar para `interfaces.md`.
+
+## Review INTERFACES v0.1.0 — Tech Lead Architect
+
+| Data | Autor | Decisão |
+|---|---|---|
+| 2026-07-19 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` |
+
+| Severidade | Achado | Evidência | Correção | Resultado |
+|---|---|---|---|---|
+| — | Comentários de responsabilidade/separação presentes | I-T25-001..007 | — | OK |
+| — | Store mutável + rota + probes cobrem NEG-* | interfaces §2–5 | — | OK |
+| SUGGESTION | Default `issue_store=None` preserva T18 | I-T25-004 | Já documentado | OK |
+
+**Gate:** avançar para unit-test-plan + testes.
