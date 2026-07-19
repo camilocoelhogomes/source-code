@@ -16,6 +16,13 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
   (PAT operador, `cp .env.example .env`, `GITHUB_TOKEN`/`E2E_GITHUB_TOKEN`,
   gate T04 READY/BLOCKED sem secrets); link em `e2e/README.md`; testes BDD
   `tests/bdd/test_mvp_e2e_audit_hitl_env_prep.py`. `.env` permanece gitignored.
+- Auditoria run-first pytest (T03 / `mvp-e2e-audit-hardening`): evidência
+  versionável `ParentPytestRun` em
+  `spec/features/mvp-e2e-audit-hardening/runs/pytest-all-tasks.md` (comando
+  canônico `python -m pytest tests/ -q --tb=line`, exit/contagens/falhas do pai
+  com superfície candidata, `coverage_gate`, soft-dep T01, sem secrets) +
+  contrato BDD `tests/bdd/test_mvp_e2e_audit_pytest_run.py`. Sem alteração de
+  produto (`src/github_rag/**`) nem `e2e/robot/**`.
 - Auditoria run-first Robot green path (T04 / `mvp-e2e-audit-hardening`):
   evidência versionável `RobotGreenPathRun` em
   `spec/features/mvp-e2e-audit-hardening/runs/e2e-robot-green-path.md`
