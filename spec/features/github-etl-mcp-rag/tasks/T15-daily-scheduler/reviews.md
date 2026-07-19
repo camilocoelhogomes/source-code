@@ -51,3 +51,30 @@
 ### Resultado
 
 `CHANGES_REQUIRED` na v0.1.0 (M-BDD-T15-01, M-BDD-T15-02) → correções aplicadas pelo próprio Architect no `bdd.md` (SCH-03 reescrito; novo SCH-13; tabela de rastreabilidade e histórico atualizados) → **`APPROVED_BY_ARCHITECT`** na v0.2.0. Sem achados BLOCKING ou MAJOR abertos.
+
+## Revisão 3 — Tech Lead Architect — `interfaces.md` v0.1.0 → v0.2.0
+
+- **Revisor:** Tech Lead Architect
+- **Artefato:** `spec/features/github-etl-mcp-rag/tasks/T15-daily-scheduler/interfaces.md`
+- **Data:** 2026-07-18
+
+### Achados
+
+| ID | Severidade | Evidência | Descrição | Correção esperada |
+|---|---|---|---|---|
+| M-I-T15-01 | MAJOR | `interfaces.md` v0.1.0 §6 (`class CronPreferenceStore(Protocol):` / `class DailyScheduler(Protocol):`, sem `@runtime_checkable`) | Todos os demais Protocols do produto são decorados com `@runtime_checkable` — `AppSettings` (`src/github_rag/settings.py:120`), `CatalogRepository` (`src/github_rag/catalog/repository.py:44`), `WorkerLimiter` (`src/github_rag/concurrency/limiter.py:51`), `IndexingOrchestrator`/`StartupIndexReconcile` (`src/github_rag/indexing/ports.py:17,43`), entre outros — e há teste dedicado ao padrão (`tests/unit/index/metadata/test_ports.py::test_ut_p01_runtime_checkable_implementations`, `tests/unit/test_settings.py:65`). Sem o decorator, `isinstance(fake_ou_adapter, Porta)` levanta `TypeError` em runtime, impedindo o QA de escrever o UT análogo para T15 e quebrando a convenção estrutural do pacote. | Decorar `CronPreferenceStore` e `DailyScheduler` com `@runtime_checkable`. |
+| M-I-T15-02 | MAJOR | `interfaces.md` v0.1.0 §6 (`CronPreferenceStore`/`DailyScheduler` sem docstring de classe; `stop()`/`active_cron()` sem nenhum comentário de Responsabilidade/Motivo) | Regra do usuário exige que toda interface tenha comentário de responsabilidade e do motivo da separação. O candidato documentava a separação I-T15-001 só na tabela de decisões (§2), fora do código da interface, e dois métodos da porta `DailyScheduler` (`stop`, `active_cron`) não tinham nenhum comentário, divergindo do padrão de `AppSettings` (T01) e `WorkerLimiter`/`WorkerLimiterError` (T04), que documentam Responsabilidade+Motivo na própria classe/Protocol. | Adicionar docstring de classe (Responsabilidade + Motivo da separação, referenciando I-T15-001) em `CronPreferenceStore` e `DailyScheduler`; completar `stop()`/`active_cron()`/`start()` com Responsabilidade/Motivo/Erros. |
+| M-I-T15-03 | MAJOR | `interfaces.md` v0.1.0 §8 (tabela `Permitido no módulo` / `Proibido` com 3 linhas genéricas) | BDD `SCH-13` (v0.2.0, `APPROVED_BY_ARCHITECT`) exige que `apscheduler` só apareça em `cron_expr.py`/`scheduler.py` **e** `sqlalchemy` só em `postgres.py` — isto é, proibição cruzada entre adaptadores, não apenas a proibição de SDK nos módulos de domínio. A tabela do candidato não declarava que `sqlalchemy` é proibido em `cron_expr.py`/`scheduler.py`, nem que `apscheduler` é proibido em `postgres.py`, deixando a granularidade do gate ENG-013/BDD-024 menos estrita que o cenário já aprovado que a interface deveria refletir. | Reescrever a tabela §8 por módulo, listando explicitamente o SDK permitido e todos os proibidos (incluindo o SDK do adaptador "irmão"). |
+
+### Verificação dos demais critérios (sem achados)
+
+- Alinhamento com `design.md` 0.2.0: `AppSettings.index_cron` (§3, D-T15-001), `run_tick_once` com lock de instância (§6, D-T15-011), `set_cron` como único caminho de escrita (§6, D-T15-002/D-T15-009), timezone UTC (I-T15-008).
+- Sem CRUD de conexões (BR-017): superfície de `CronPreferenceStore`/`DailyScheduler` restrita a preferência de cron + lifecycle do scheduler; §9 explicita exclusão de CRUD/`CatalogRepository`.
+- APScheduler confinado a `cron_expr.py`/`scheduler.py`; SQLAlchemy confinado a `postgres.py` (corrigido em §8, M-I-T15-03).
+- Migration `0002_scheduler_preference` com `down_revision = "0001_initial_catalog"` confere com a revisão real (`migrations/versions/0001_initial_catalog_schema.py:18-19`).
+- `SqlAlchemyCronPreferenceStore(session_factory)` alinhado ao padrão de injeção de `PostgresCatalogRepository` (T03, `catalog/postgres/factory.py:52`).
+- Construtores keyword-only (I-T15-004) conforme padrão T14 (I-T14-008).
+
+### Resultado
+
+`CHANGES_REQUIRED` na v0.1.0 (M-I-T15-01, M-I-T15-02, M-I-T15-03) → correções aplicadas pelo próprio Architect no `interfaces.md` (§6 `@runtime_checkable` + docstrings completos de classe/método; §7 docstrings de módulo `postgres.py`/`memory.py` + nota de naming convention; §8 tabela de confinamento de SDK reescrita por módulo; §2 nova decisão I-T15-009) → **`APPROVED_BY_ARCHITECT`** na v0.2.0. Sem achados BLOCKING ou MAJOR abertos.
