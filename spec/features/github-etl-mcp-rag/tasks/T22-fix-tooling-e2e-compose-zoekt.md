@@ -4,7 +4,7 @@
 |---|---|
 | Task ID | `T22-fix-tooling-e2e-compose-zoekt` |
 | Feature | `github-etl-mcp-rag` |
-| Estado | `READY_FOR_IMPLEMENTATION` (candidata; aberta por auditoria filha) |
+| Estado | `MERGED` (2026-07-19; PR pipeline autônomo T22) |
 | Superfície | `tooling-e2e` |
 | Origem | feature filha `mvp-e2e-audit-hardening` / T05 (`ParentFailureBacklog`) |
 | Evidência | `spec/features/mvp-e2e-audit-hardening/runs/e2e-robot-green-path.md` |
@@ -66,3 +66,25 @@ Corrigir a stack e2e (tooling) para que `python -m github_rag.e2e` consiga subir
 - Ownership da correção: `github-etl-mcp-rag` (esta task).
 - Feature filha apenas abriu o backlog; **sem implementação** de fix em `mvp-e2e-audit-hardening` — sem alteração de `src/github_rag/**`, `e2e/robot/**` nem composes **nessa** feature.
 - Após verde tooling: re-rodar e2e; falhas de cenário de produto (se houver) abrem tasks novas por superfície.
+
+## Pós-merge — run r3 (escopo distinto)
+
+Evidência: `spec/features/mvp-local-e2e-green/runs/e2e-run-20260719-r3.md`
+
+| ID | Sintoma pós-T22 | Relação com T22 |
+|---|---|---|
+| F-W1-007 | `zoekt-index` `FileNotFoundError` no **host** app | **Fora de escopo T22** — compose/healthy ok; delta wiring `ZOEKT_INDEX_BIN` |
+| F-W1-008..010 | fixture repo, search 400, ui_browser timeout | Não cobertos por T22; tasks/gaps separados |
+
+**Não reabrir T22.** Delegar F-W1-007 → **`T33-fix-e2e-zoekt-index-host-bin`** (`PENDING_PO_REVIEW`).
+
+## Pós-merge (PR#29) — evidência run W1 r3
+
+| ID | Classificação | Sintoma | Escopo T22 |
+|---|---|---|---|
+| F-W1-007 | **`produto`** + wiring **`tooling-e2e`** | App no host invoca `zoekt-index` → `FileNotFoundError`; zoekt container **ok** | **Fora** — T22 só garantiu zoekt-webserver healthy |
+| F-W1-009 | consequência F-W1-007 | search exact/semantic **400** (ui/mcp) | Fora |
+| — | — | `catalog_indexing` **2/10**; exit e2e **18** | — |
+
+- Run: `spec/features/mvp-local-e2e-green/runs/e2e-run-20260719-r3.md` (commit `d70fdab`).
+- Follow-up: `requirements-e2e-zoekt-index-host.md` → task proposta **`T33-fix-e2e-zoekt-index-host-cli`**.

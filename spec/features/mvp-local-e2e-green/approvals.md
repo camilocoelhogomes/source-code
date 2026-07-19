@@ -8,3 +8,5 @@
 | W2_PO_REQUIREMENTS (T31 healthz) | `requirements-healthz-static-mount.md` | APPROVED_BY_PO | product-owner | 2026-07-19 | Loop e2e autônomo; F-W1-001 StaticFiles shadow /healthz. |
 | W2_PO_PLAN_REVIEW (T31) | `T31-fix-healthz-static-mount-order.md` | APPROVED_BY_PO | product-owner | 2026-07-19 | Rastreabilidade CD-01/I-T19-007; READY_FOR_IMPLEMENTATION. |
 | HUMAN_ROBOT_GATE (RF7 IF + venv python) | `common.resource`, `negative.robot` | APROVADO | operador | 2026-07-19 | F-W1-003/005; `$EMPTY` syntax RF7; probes via `.venv/bin/python`. |
+| W2_PO_REQUIREMENTS (T33 zoekt-index) | `requirements-e2e-zoekt-index-host.md` | APPROVED_BY_PO | product-owner | 2026-07-19 | F-W1-007 host CLI wiring. |
+| W2_PO_PLAN_REVIEW (T33) | `T33-fix-e2e-zoekt-index-host-bin.md` | APPROVED_BY_PO | product-owner | 2026-07-19 | Dedup T22 mergeado; READY_FOR_IMPLEMENTATION. |
