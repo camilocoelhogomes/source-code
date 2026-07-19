@@ -3,7 +3,6 @@ Documentation     Browser Library lifecycle + UI helpers (T23 / C-T23-02).
 ...               Separated from common.resource: HTTP session ≠ New Browser/Page.
 Resource          common.resource
 Library           Browser
-Library           Collections
 Library           OperatingSystem
 Library           String
 
@@ -155,10 +154,12 @@ Open Reference Repo Detail
     Wait For Elements State    \#repo-detail    visible
 
 Assert Repo Detail Progress And Flags
-    [Documentation]    BDD-007 — ``#repo-detail`` com progresso e flags zoekt/tree_sitter/metadata.
+    [Documentation]    BDD-007 — ``#repo-detail`` com etapa (state_label) e flags zoekt/tree_sitter/metadata.
     ${text}=    Get Text    \#repo-detail
     Should Not Be Empty    ${text}
     Should Contain    ${text}    Detalhe
+    Should Match Regexp    ${text}
+    ...    (na fila|indexando|atualizado|não indexado|erro)
     Should Contain    ${text}    zoekt=
     Should Contain    ${text}    tree_sitter=
     Should Contain    ${text}    metadata=
