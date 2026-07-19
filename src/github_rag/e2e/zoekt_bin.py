@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import os
 import stat
+import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Callable
@@ -27,6 +28,8 @@ CommandRunner = Callable[
 
 _DEFAULT_INDEX_BIN = "zoekt-index"
 _CONTAINER_INDEX_DIR = "/data/index"
+_CONTAINER_INDEX_BIN = "zoekt-index"
+_CONTAINER_PS_FILTER = "name=_zoekt-cli_"
 _WRAPPER_FILENAME = "zoekt-index"
 _DEFAULT_MKDIR_TIMEOUT_SECONDS = 60.0
 _DEFAULT_CP_TIMEOUT_SECONDS = 300.0
@@ -34,6 +37,18 @@ _DEFAULT_EXEC_TIMEOUT_SECONDS = 900.0
 _ENV_MKDIR_TIMEOUT = "ZOEKT_MKDIR_TIMEOUT_SECONDS"
 _ENV_CP_TIMEOUT = "ZOEKT_CP_TIMEOUT_SECONDS"
 _ENV_EXEC_TIMEOUT = "ZOEKT_EXEC_TIMEOUT_SECONDS"
+_ENV_CONTAINER_INDEX_BIN = "ZOEKT_CONTAINER_INDEX_BIN"
+_ENV_CONTAINER_PS_FILTER = "ZOEKT_CLI_CONTAINER_FILTER"
+
+
+def _container_index_bin(env: Mapping[str, str]) -> str:
+    raw = env.get(_ENV_CONTAINER_INDEX_BIN, _CONTAINER_INDEX_BIN).strip()
+    return raw or _CONTAINER_INDEX_BIN
+
+
+def _container_ps_filter(env: Mapping[str, str]) -> str:
+    raw = env.get(_ENV_CONTAINER_PS_FILTER, _CONTAINER_PS_FILTER).strip()
+    return raw or _CONTAINER_PS_FILTER
 
 
 def default_wrapper_dir(repo_root: Path, *, e2e: bool = False) -> Path:
@@ -69,12 +84,13 @@ def find_zoekt_container_id(
     effective = dict(os.environ)
     if env:
         effective.update({k: str(v) for k, v in env.items()})
+    ps_filter = _container_ps_filter(effective)
     cmd = [
         "podman",
         "ps",
         "-q",
         "--filter",
-        "name=_zoekt_",
+        ps_filter,
         "--filter",
         "status=running",
     ]
@@ -86,8 +102,8 @@ def find_zoekt_container_id(
     cid = stdout.strip().splitlines()[0].strip() if stdout.strip() else ""
     if not cid:
         raise E2eStackError.from_stderr(
-            "zoekt container not running; ensure compose stack is up "
-            "(service zoekt)",
+            "zoekt-cli container not running; ensure compose stack is up "
+            "(service zoekt-cli)",
         )
     return cid
 
@@ -165,13 +181,15 @@ def _resolve_podman_timeout(
             ),
             "podman exec mkdir",
         )
-    if cmd[:2] == ["podman", "exec"] and "zoekt-index" in cmd:
-        return (
-            _timeout_seconds(
-                env, _ENV_EXEC_TIMEOUT, _DEFAULT_EXEC_TIMEOUT_SECONDS
-            ),
-            "podman exec zoekt-index",
-        )
+    if cmd[:2] == ["podman", "exec"] and len(cmd) > 3:
+        index_bin = _container_index_bin(env)
+        if cmd[3] == index_bin or index_bin in cmd:
+            return (
+                _timeout_seconds(
+                    env, _ENV_EXEC_TIMEOUT, _DEFAULT_EXEC_TIMEOUT_SECONDS
+                ),
+                f"podman exec {index_bin}",
+            )
     return (
         _timeout_seconds(env, _ENV_MKDIR_TIMEOUT, _DEFAULT_MKDIR_TIMEOUT_SECONDS),
         "podman",
@@ -219,6 +237,7 @@ def exec_zoekt_index_cli(
     exec_timeout = _timeout_seconds(
         effective, _ENV_EXEC_TIMEOUT, _DEFAULT_EXEC_TIMEOUT_SECONDS
     )
+    index_bin = _container_index_bin(effective)
 
     mkdir_cmd = ["podman", "exec", cid, "mkdir", "-p", tree_container]
     mkdir_code, _, mkdir_err = _run_podman_step(
@@ -250,7 +269,7 @@ def exec_zoekt_index_cli(
         "podman",
         "exec",
         cid,
-        "zoekt-index",
+        index_bin,
         "-index",
         _CONTAINER_INDEX_DIR,
         "-name",
@@ -262,7 +281,7 @@ def exec_zoekt_index_cli(
         exec_cmd,
         effective,
         timeout_seconds=exec_timeout,
-        operation="podman exec zoekt-index",
+        operation=f"podman exec {index_bin}",
     )
 
     rm_cmd = ["podman", "exec", cid, "rm", "-rf", tree_container]
@@ -285,13 +304,16 @@ def exec_zoekt_index_cli(
 def materialize_zoekt_index_wrapper(
     compose_file: Path,
     wrapper_dir: Path,
+    *,
+    python_executable: str | None = None,
 ) -> Path:
     """Escreve script executável ``zoekt-index``; retorna path absoluto."""
     wrapper_dir.mkdir(parents=True, exist_ok=True)
     target = wrapper_dir / _WRAPPER_FILENAME
     compose_literal = str(compose_file.resolve())
-    content = f'''#!/usr/bin/env python3
-"""Zoekt-index wrapper via podman exec (T33, auto-generated)."""
+    py = python_executable or sys.executable
+    content = f'''#!{py}
+"""Zoekt-index wrapper via podman exec (T33/T36, auto-generated)."""
 from __future__ import annotations
 
 import sys

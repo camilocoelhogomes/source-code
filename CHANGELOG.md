@@ -6,6 +6,9 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Corrigido
 
+- Zoekt index CLI e2e (T36): sidecar compose `zoekt-cli` com binário
+  `zoekt-index`; wrapper usa shebang `sys.executable` e `podman exec` no
+  container `zoekt-cli` (não no webserver `sourcegraph/zoekt:latest`).
 - E2e indexing boot race (T35): `E2E_DEFER_STARTUP_INDEX` no launcher e2e evita
   enqueue no startup reconcile; `enqueue` re-dispara repos `indexing`; wrapper
   zoekt faz `mkdir -p` antes de `podman cp`, timeouts configuráveis e erros

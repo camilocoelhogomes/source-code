@@ -37,6 +37,19 @@ services:
     ports:
       - "6070:6070"
 
+  # T36: zoekt-index CLI sidecar (sourcegraph/zoekt lacks zoekt-index binary).
+  zoekt-cli:
+    build:
+      context: ./docker/zoekt-cli
+      platforms:
+        - linux/amd64
+    platform: linux/amd64
+    command: ["sleep", "infinity"]
+    volumes:
+      - ${ZOEKT_INDEX_HOST:-./.data/dev-zoekt-index}:/data/index
+    environment:
+      ZOEKT_INDEX_DIR: /data/index
+
   slm:
     image: ollama/ollama:latest
     volumes:

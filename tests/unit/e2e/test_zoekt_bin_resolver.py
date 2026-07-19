@@ -79,7 +79,7 @@ class TestZoektBinResolver(unittest.TestCase):
         self.assertEqual(cid, "cid999")
         ps_calls = [c for c, _ in runner.calls if "ps" in c]
         self.assertTrue(ps_calls)
-        self.assertIn("zoekt", " ".join(str(x) for x in ps_calls[0]))
+        self.assertIn("zoekt-cli", " ".join(str(x) for x in ps_calls[0]))
 
     def test_ut_p08_03_container_absent_raises(self) -> None:
         from github_rag.e2e.errors import E2eStackError
@@ -150,6 +150,8 @@ class TestZoektBinResolver(unittest.TestCase):
         self.assertEqual(kinds[:2], ["mkdir", "cp"])
 
     def test_ut_p08_06_materialize_wrapper_executable(self) -> None:
+        import sys
+
         from github_rag.e2e.zoekt_bin import materialize_zoekt_index_wrapper
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -157,12 +159,16 @@ class TestZoektBinResolver(unittest.TestCase):
             path = materialize_zoekt_index_wrapper(
                 REPO_ROOT / "docker-compose.e2e.yml",
                 wrapper_dir,
+                python_executable=sys.executable,
             )
             self.assertTrue(path.is_file())
             mode = path.stat().st_mode
             self.assertTrue(mode & stat.S_IXUSR)
             content = path.read_text(encoding="utf-8")
             self.assertIn("exec_zoekt_index_cli", content)
+            first_line = content.splitlines()[0]
+            self.assertEqual(first_line, f"#!{sys.executable}")
+            self.assertNotIn("/usr/bin/env python3", content)
 
     def test_ut_p08_07_resolve_explicit_override(self) -> None:
         from github_rag.e2e.zoekt_bin import resolve_zoekt_index_bin
@@ -322,6 +328,172 @@ class TestZoektBinResolver(unittest.TestCase):
                         {"ZOEKT_CP_TIMEOUT_SECONDS": "1"},
                     )
         self.assertIn("timed out", str(ctx.exception).lower())
+
+
+class TestZoektBinT36Sidecar(unittest.TestCase):
+    def test_ut_t36_01_container_ps_filter_targets_zoekt_cli(self) -> None:
+        from github_rag.e2e.zoekt_bin import find_zoekt_container_id
+
+        runner = RecordingPodmanCommand(container_id="cli42")
+        compose = REPO_ROOT / "docker-compose.dev.yml"
+        cid = find_zoekt_container_id(compose, runner)
+        self.assertEqual(cid, "cli42")
+        ps_cmd = [c for c, _ in runner.calls if c[:2] == ["podman", "ps"]][0]
+        self.assertIn("name=_zoekt-cli_", ps_cmd)
+
+    def test_ut_t36_02_container_index_bin_override(self) -> None:
+        from github_rag.e2e.zoekt_bin import exec_zoekt_index_cli
+
+        runner = RecordingPodmanCommand()
+        compose = REPO_ROOT / "docker-compose.e2e.yml"
+        with tempfile.TemporaryDirectory() as tmp:
+            exec_zoekt_index_cli(
+                ["-index", "/x", "-name", "org/repo", tmp],
+                compose_file=compose,
+                run_command=runner,
+                env={"ZOEKT_CONTAINER_INDEX_BIN": "zoekt-index"},
+            )
+        exec_calls = [
+            c
+            for c, _ in runner.calls
+            if c[:2] == ["podman", "exec"] and "zoekt-index" in c
+        ]
+        self.assertEqual(len(exec_calls), 1)
+        self.assertEqual(exec_calls[0][3], "zoekt-index")
+        self.assertEqual(exec_calls[0][4], "-index")
+        self.assertEqual(exec_calls[0][5], "/data/index")
+        self.assertEqual(exec_calls[0][6], "-name")
+
+    def test_ut_t36_03_container_ps_filter_env_override(self) -> None:
+        from github_rag.e2e.zoekt_bin import find_zoekt_container_id
+
+        runner = RecordingPodmanCommand(container_id="custom")
+        find_zoekt_container_id(
+            REPO_ROOT / "docker-compose.e2e.yml",
+            runner,
+            env={"ZOEKT_CLI_CONTAINER_FILTER": "name=custom_zoekt_"},
+        )
+        ps_cmd = [c for c, _ in runner.calls if c[:2] == ["podman", "ps"]][0]
+        self.assertIn("name=custom_zoekt_", ps_cmd)
+
+    def test_ut_t36_04_timeout_seconds_invalid_env(self) -> None:
+        from github_rag.e2e.zoekt_bin import _timeout_seconds
+
+        self.assertEqual(
+            _timeout_seconds({"ZOEKT_CP_TIMEOUT_SECONDS": "not-a-number"}, "ZOEKT_CP_TIMEOUT_SECONDS", 99.0),
+            99.0,
+        )
+
+    def test_ut_t36_05_default_run_command_resolves_exec_timeout(self) -> None:
+        from github_rag.e2e import zoekt_bin
+
+        completed = mock.Mock(returncode=0, stdout="", stderr="")
+        with mock.patch("subprocess.run", return_value=completed) as run:
+            zoekt_bin._default_run_command(
+                ["podman", "exec", "cid", "zoekt-index", "-index", "/data/index"],
+                {"ZOEKT_EXEC_TIMEOUT_SECONDS": "120"},
+            )
+        self.assertEqual(run.call_args.kwargs["timeout"], 120.0)
+
+    def test_ut_t36_06_default_run_command_mkdir_timeout(self) -> None:
+        from github_rag.e2e import zoekt_bin
+
+        completed = mock.Mock(returncode=0, stdout="", stderr="")
+        with mock.patch("subprocess.run", return_value=completed) as run:
+            zoekt_bin._default_run_command(
+                ["podman", "exec", "cid", "mkdir", "-p", "/tmp/x"],
+                {"ZOEKT_MKDIR_TIMEOUT_SECONDS": "45"},
+            )
+        self.assertEqual(run.call_args.kwargs["timeout"], 45.0)
+
+    def test_ut_t36_07_subprocess_run_timeout_raises(self) -> None:
+        import subprocess
+
+        from github_rag.e2e.errors import E2eStackError
+        from github_rag.e2e.zoekt_bin import _subprocess_run
+
+        with mock.patch(
+            "subprocess.run",
+            side_effect=subprocess.TimeoutExpired(cmd=["podman", "cp"], timeout=1.0),
+        ):
+            with self.assertRaises(E2eStackError) as ctx:
+                _subprocess_run(
+                    ["podman", "cp", "a", "b"],
+                    {},
+                    timeout_seconds=1.0,
+                    operation="podman cp",
+                )
+        self.assertIn("timed out", str(ctx.exception).lower())
+
+    def test_ut_t36_08_container_helpers_defaults(self) -> None:
+        from github_rag.e2e.zoekt_bin import (
+            _container_index_bin,
+            _container_ps_filter,
+        )
+
+        self.assertEqual(_container_index_bin({}), "zoekt-index")
+        self.assertEqual(_container_ps_filter({}), "name=_zoekt-cli_")
+        self.assertEqual(
+            _container_index_bin({"ZOEKT_CONTAINER_INDEX_BIN": "  "}),
+            "zoekt-index",
+        )
+
+    def test_ut_t36_09_run_podman_step_uses_subprocess_when_default(self) -> None:
+        from github_rag.e2e.zoekt_bin import _default_run_command, _run_podman_step
+
+        completed = mock.Mock(returncode=0, stdout="ok", stderr="")
+        with mock.patch("subprocess.run", return_value=completed) as run:
+            code, out, err = _run_podman_step(
+                _default_run_command,
+                ["podman", "exec", "cid", "rm", "-rf", "/tmp/x"],
+                {},
+                timeout_seconds=30.0,
+                operation="podman exec rm",
+            )
+        self.assertEqual((code, out, err), (0, "ok", ""))
+        run.assert_called_once()
+
+    def test_ut_t36_10_resolve_podman_timeout_generic_exec(self) -> None:
+        from github_rag.e2e.zoekt_bin import _resolve_podman_timeout
+
+        timeout, operation = _resolve_podman_timeout(
+            ["podman", "exec", "cid", "rm", "-rf", "/tmp/x"],
+            {"ZOEKT_MKDIR_TIMEOUT_SECONDS": "22"},
+        )
+        self.assertEqual(timeout, 22.0)
+        self.assertEqual(operation, "podman")
+
+    def test_ut_t36_11_find_container_ps_error_includes_stderr(self) -> None:
+        from github_rag.e2e.errors import E2eStackError
+        from github_rag.e2e.zoekt_bin import find_zoekt_container_id
+
+        class PsFailRunner:
+            def __call__(self, cmd, env):
+                return 2, "", "podman daemon down"
+
+        with self.assertRaises(E2eStackError) as ctx:
+            find_zoekt_container_id(
+                REPO_ROOT / "docker-compose.e2e.yml",
+                PsFailRunner(),
+            )
+        self.assertIn("podman daemon down", str(ctx.exception))
+
+    def test_ut_t36_12_container_ps_filter_blank_falls_back(self) -> None:
+        from github_rag.e2e.zoekt_bin import _container_ps_filter
+
+        self.assertEqual(
+            _container_ps_filter({"ZOEKT_CLI_CONTAINER_FILTER": "   "}),
+            "name=_zoekt-cli_",
+        )
+
+    def test_ut_t36_13_stack_error_redact_skips_empty_secret(self) -> None:
+        from github_rag.e2e.errors import E2eStackError
+
+        err = E2eStackError.from_stderr(
+            "fail ghp_1234567890abcdefghij",
+            secrets=["", "ghp_1234567890abcdefghij"],
+        )
+        self.assertNotIn("ghp_1234567890abcdefghij", str(err))
 
 
 class TestHostEnvZoektBin(unittest.TestCase):
