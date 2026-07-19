@@ -13,7 +13,8 @@ Run Negative Probe
     [Arguments]    ${probe}
     ${repo}=    Normalize Path    ${CURDIR}/../..
     ${probe_script}=    Set Variable    ${repo}${/}e2e${/}probes${/}negative_probes.py
-    ${result}=    Run Process    python    ${probe_script}    ${probe}
+    ${python}=    Set Variable    ${repo}${/}.venv${/}bin${/}python
+    ${result}=    Run Process    ${python}    ${probe_script}    ${probe}
     ...    cwd=${repo}
     ...    env:PYTHONPATH=${repo}${/}src:${repo}
     ...    stdout=PIPE    stderr=PIPE
