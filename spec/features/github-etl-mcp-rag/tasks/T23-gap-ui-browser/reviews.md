@@ -44,3 +44,46 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — design.md `0.1.0` adequado para BDD/interfaces/unitários e implementação browser Robot. Prosseguir no pipeline da task.
+
+---
+
+## Review — BDD `0.1.0` — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `bdd.md` |
+| Data | 2026-07-19 |
+| Pipeline | autonomous (aprovação Architect substitui HITL intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Cobertura inventário `evidencia_browser` (001/002/007/009/010/016/019/023) | OK | UB-10..17; tabela §Rastreabilidade |
+| Separação Camada A (pytest manifesto) × Camada B (Robot browser) | OK | Convenções; D-T23-014; UB-01..09 vs UB-10..18 |
+| Dep `robotframework-browser` + README `rfbrowser init` | OK | UB-01; UB-05 |
+| Suite `ui_browser` + resource + tags | OK | UB-02..04; UB-18 |
+| Wildcard fixture BDD-001 | OK | UB-06; UB-10 |
+| Aceite negativo RequestsLibrary-só | OK | UB-08 |
+| Preservação suites API T21 | OK | UB-09 |
+| Sem secrets; fora T22/BDD-015/workers/filha | OK | UB-07; §Fora de escopo |
+| Ordem green path alinhada design §3.3 | OK | UB-02 (após `ui`) |
+| Idioma português | OK | artefato completo |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| `SUGGESTION` | UB-02 admite “após `catalog_indexing`” como alternativa; design §3.3 fixa após `ui` | bdd.md UB-02; design §3.3 | Implementação/unitários usam ordem canônica `(…, "ui", "ui_browser", …)` | Aberto residual — não bloqueia (design prevalece) |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — bdd.md `0.1.0` adequado para interfaces/unitários e implementação. Prosseguir para `interfaces.md`.

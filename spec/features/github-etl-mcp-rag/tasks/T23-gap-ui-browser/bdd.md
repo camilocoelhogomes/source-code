@@ -6,9 +6,10 @@
 | Task | `T23-gap-ui-browser` |
 | Autor | QA Engineer |
 | Data | 2026-07-19 |
-| Estado | `TESTS_READY_FOR_REVIEW` |
+| Estado | `APPROVED_BY_ARCHITECT` |
 | Versão | `0.1.0` |
 | Design base | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
+| Aprovação Architect | `APPROVED_BY_ARCHITECT` em 2026-07-19 (modo autônomo) |
 | Execução (contratos / CI padrão) | `tests/bdd/test_ui_browser_gap.py` (manifesto deps/suite/resource/tags/README/fixture; **sem** Playwright / `rfbrowser` / browser real) |
 | Execução (prova real) | Robot `e2e/robot/ui_browser.robot` + `resources/browser.resource` via `python -m github_rag.e2e` (stack T21/T22; Browser Library / Playwright) |
 
@@ -17,6 +18,7 @@
 | Data | Autor | Decisão | Versão | Observações |
 |---|---|---|---|---|
 | 2026-07-19 | QA Engineer | `TESTS_READY_FOR_REVIEW` | `0.1.0` | UB-01..UB-18; Browser Library na suíte; manifesto pytest sem Playwright; RequestsLibrary sozinha = não-aceite. Modo autônomo — aguarda review Architect. |
+| 2026-07-19 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.0` | Review: alinhado design 0.1.0; Camada A manifesto / Camada B Robot; UB-01..18 cobrem D-T23-001..015 e inventário evidencia_browser; sem BLOCKING/MAJOR. Modo autônomo. |
 
 ## Convenções
 
@@ -342,3 +344,9 @@ Estado esperado **depois** da implementação: **PASS** na Camada A; Camada B ve
 - Assert de paralelismo de workers no browser (BDD-002 cláusula workers → T26).
 - Redesign da management UI.
 - Implementação na feature filha `mvp-e2e-audit-hardening`.
+
+---
+
+## Estado
+
+`APPROVED_BY_ARCHITECT` — bdd.md `0.1.0` completo, sem BLOCKING/MAJOR abertos. Prosseguir para interfaces.
