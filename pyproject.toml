@@ -30,6 +30,7 @@ dependencies = [
     "openai>=1.40",
     "mcp>=1.27,<2",
     "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.32",
 ]
 
 [project.optional-dependencies]
@@ -63,6 +64,9 @@ source = ["github_rag"]
 omit = [
     "*/catalog/postgres/*",
     "*/schedule/postgres.py",
+    # Entrypoints de processo (CMD / stdio) — exercidos via manifesto AST + smoke operacional.
+    "*/delivery/__main__.py",
+    "*/delivery/mcp_stdio.py",
 ]
 
 [tool.coverage.report]
