@@ -45,25 +45,36 @@ def _default_robot_runner(
     output_dir: Path,
 ) -> RobotCliRunner:
     def _run(*args: Any, **kwargs: Any) -> int:
-        # Prefer explicit kwargs from suite; fall back to args
+        # Prefer explicit kwargs from suite; fall back to args for suite names
         exclude = kwargs.get("exclude") or kwargs.get("excludes") or "bdd015"
-        suites = kwargs.get("suites") or list(GREEN_PATH_SUITES)
+        if isinstance(exclude, (list, tuple)):
+            exclude_tag = next(
+                (str(x) for x in exclude if str(x).strip()), "bdd015"
+            )
+        else:
+            exclude_tag = str(exclude).strip() or "bdd015"
+        suites = kwargs.get("suites")
+        if not suites:
+            # Positional args may carry suite markers (not CLI flags)
+            named = [str(a) for a in args if not str(a).startswith("-")]
+            suites = named or list(GREEN_PATH_SUITES)
         output = Path(kwargs.get("outputdir") or output_dir)
         output.mkdir(parents=True, exist_ok=True)
-        suite_paths = [
-            str(robot_root / f"{name}.robot") for name in suites
-        ]
+        suite_paths = [str(robot_root / f"{name}.robot") for name in suites]
         cmd = [
             "robot",
             "--exclude",
-            "bdd015" if isinstance(exclude, str) else "bdd015",
+            exclude_tag,
             "--outputdir",
             str(output),
             *suite_paths,
         ]
-        if args:
-            # Allow passthrough extra CLI args without token
-            cmd.extend(str(a) for a in args)
+        # Only forward explicit CLI flags from args (never bare suite names —
+        # those are already encoded as suite_paths; duplicating breaks Robot).
+        for arg in args:
+            text = str(arg)
+            if text.startswith("-"):
+                cmd.append(text)
         completed = subprocess.run(cmd, check=False)
         return int(completed.returncode)
 
@@ -142,7 +153,6 @@ class DefaultRobotMvpSuite:
             self._launcher.wait_healthy()
             code = int(
                 self._robot_runner(
-                    *GREEN_PATH_SUITES,
                     exclude="bdd015",
                     excludes=["bdd015"],
                     suites=list(GREEN_PATH_SUITES),

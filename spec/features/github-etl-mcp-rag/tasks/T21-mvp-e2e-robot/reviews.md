@@ -202,3 +202,72 @@ Aguardando review Architect do unit-test-plan / suíte RED. Sem implementação 
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — unit-test-plan.md `0.1.1` + suíte `tests/unit/e2e/` cobrem contratos, extremos, CI/HITL, redaction, exclude bdd015, idempotência `down`, sem compose/Robot real. Prosseguir para implementação Developer (TDD GREEN + cobertura ≥95%).
+
+---
+
+## Review — Implementação — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `src/github_rag/e2e/` + `e2e/robot/` + fixtures + optional-deps |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (aprovação Architect substitui HITL intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` (após correções BLOCKING/MAJOR) |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Aderência interfaces I-T21-001..020 | OK (após fix) | Protocols, Podman/Default, resolver, erros, paths/timeouts, exports E2E-09, `__main__` |
+| Ordem resolve→up→healthy→robot→down + finally | OK | `suite.py` `DefaultRobotMvpSuite.run` |
+| CI vs HITL credencial (D-T21-006) | OK | `credentials.py` |
+| Exclude `bdd015` + green path suites | OK (após fix) | kwargs explícitos; CLI sem paths bare duplicados |
+| HOST_CONFIG / HOST_REPOS / compose e2e | OK | launcher + suite |
+| Redaction secrets | OK | `E2eStackError.from_stderr`; robot sem token em argv |
+| Robot green path (health/catalog/ui/mcp/negative) | OK | `e2e/robot/*.robot` + resources/McpKeywords |
+| Fixtures sem secrets + `.gitignore` | OK (após fix) | `config.e2e.json`; gitlink removido; `sample-local/.git/` ignorado |
+| T19 intacto | OK | sem edição compose/Dockerfile |
+| Cobertura ≥95% | OK | pytest total **96.53%** (1096 passed, 2 skipped) |
+
+### Achados — corrigidos nesta review
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| `BLOCKING` | `_default_robot_runner` anexava `*args` bare (`health`, …) após `*.robot`, quebrando o CLI Robot na prova real | `suite.py` (pré-fix); chamada `run()` com `*GREEN_PATH_SUITES` | Não duplicar markers como paths; só kwargs `suites=` / flags `-*` | Corrigido `suite.py` + assert em `test_coverage_gaps.py` |
+| `MAJOR` | `e2e/fixtures/repos/sample-local` versionado como gitlink `160000` sem `.gitmodules` (submodule quebrado; contradiz D-T21-012 / `ensure_local_git_fixture`) | `git ls-files -s` mode 160000; `fatal: no submodule mapping` | Remover gitlink; versionar só `README.md`; `.git/` via runtime + gitignore | Corrigido index + README |
+| `SUGGESTION` | design §3.2 lista `http.resource`/`mcp.resource`; implementação consolidou em `common.resource` + `McpKeywords.py` | layout `e2e/robot/` | Aceitável — mesma responsabilidade | Aceito |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — implementação alinhada a design 0.1.1 / interfaces 0.1.0 / BDD E2E-01..10 + ROBOT-01..06; correções BLOCKING/MAJOR aplicadas; cobertura 96.53%. Prosseguir Blue.
+
+---
+
+## Review — Blue refactoring — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `refactoring.md` + pacote `github_rag.e2e` |
+| Data | 2026-07-18 |
+| Resultado | `BLUE_APPROVED_BY_ARCHITECT` |
+
+### Critérios
+
+| Critério | Resultado |
+|---|---|
+| Complexidade desnecessária | Nenhuma estrutural — Blue N/A |
+| Gargalo performance com evidência | Nenhum — sem otimização especulativa |
+| Testes verdes + cov ≥95% | OK — baseline 1096 passed / 96.53% |
+| Sem mudança de contrato/comportamento | OK |
+
+### Decisão
+
+`BLUE_APPROVED_BY_ARCHITECT` — ver `refactoring.md`.

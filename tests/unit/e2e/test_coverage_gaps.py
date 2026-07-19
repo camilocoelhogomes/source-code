@@ -99,8 +99,9 @@ class TestSuiteCoverage(unittest.TestCase):
         ) as run:
             code = runner(
                 "health",
+                "catalog_indexing",
                 exclude="bdd015",
-                suites=["health"],
+                suites=["health", "catalog_indexing"],
                 outputdir=str(REPO_ROOT / "e2e" / "results"),
             )
         self.assertEqual(code, 0)
@@ -108,6 +109,14 @@ class TestSuiteCoverage(unittest.TestCase):
         self.assertIn("robot", cmd)
         self.assertIn("--exclude", cmd)
         self.assertIn("bdd015", cmd)
+        # Suite markers as bare args must NOT be appended (Robot would treat
+        # them as missing suite paths and fail the real e2e proof).
+        self.assertNotIn("health", cmd)
+        self.assertNotIn("catalog_indexing", cmd)
+        self.assertTrue(any(str(p).endswith("health.robot") for p in cmd))
+        self.assertTrue(
+            any(str(p).endswith("catalog_indexing.robot") for p in cmd)
+        )
 
     def test_suite_uses_os_environ_when_none(self) -> None:
         e2e = import_e2e()
