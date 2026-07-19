@@ -4,7 +4,7 @@
 |---|---|
 | Feature ID | `mvp-e2e-audit-hardening` |
 | Versão do plano | `0.1.0` |
-| Estado | `PENDING_PO_REVIEW` |
+| Estado | `READY_FOR_IMPLEMENTATION` |
 | Requisitos base | `requirements.md` v0.1.0 (aprovado 2026-07-18, commits `c460bd5` / `5e07020`) |
 | Natureza | feature filha operacional: audita cobertura MVP integral, executa provas (pytest + Robot), abre backlog no pai — **não** corrige produto |
 | Feature pai / destino das tasks de correção | `github-etl-mcp-rag` (IDs novos após T21, ex. T22+) |
@@ -161,6 +161,6 @@ T02-hitl-env-prep ──┐                                │
 
 ## 8. Handoff
 
-- Estado do plano: `PENDING_PO_REVIEW`.
-- Próximo gate: revisão PO (rastreabilidade/valor) → aprovação humana do plano → implementação task a task nesta feature (W0→W5).
+- Estado do plano: `READY_FOR_IMPLEMENTATION` (`HUMAN_PLAN_APPROVAL` 2026-07-18, commit `79aed65`).
+- Próximo: implementação task a task nesta feature (W0→W5).
 - Tasks de correção/lacuna no pai entram no `implementation-pipeline` / orquestrador autônomo **depois** de abertas (T05/T06), sob ownership de `github-etl-mcp-rag`.
