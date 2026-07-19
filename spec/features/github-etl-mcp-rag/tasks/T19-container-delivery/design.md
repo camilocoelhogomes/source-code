@@ -7,16 +7,18 @@
 | Autor | Tech Lead Architect |
 | Data | 2026-07-18 |
 | Estado | `APPROVED_BY_ARCHITECT` |
-| Versão | `0.1.0` |
+| Versão | `0.2.0` |
 | Branch | `feature/github-etl-mcp-rag-T19-container-delivery` |
-| Base | `main` (T15/T17/T18/T20 mesclados) |
-| Rastreabilidade | REQ-036–038; DEC-011–012, DEC-015–016; BR-023–024; BDD-020–022, BDD-024; ENG-002, ENG-005–006, ENG-009, ENG-011, ENG-013–016 |
+| Base | `main` (plano 0.1.7 / reqs 0.5.0 — commit `5727340`) |
+| Rastreabilidade | REQ-036–038, REQ-043–044, REQ-050; DEC-011–012, DEC-015–017; BR-023–025; BDD-020–022, BDD-024–025, BDD-028 (parte T19); ENG-002, ENG-005–006, ENG-009, ENG-011, ENG-013–017 |
 
 ## 0. Histórico de revisão Architect
 
 | Data | Autor | Decisão | Versão | Observações |
 |---|---|---|---|---|
 | 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.0` | Design: composition root `github_rag.delivery` (`ContainerRuntime` / `run_container_boot`); Dockerfile+compose (app/postgres/qdrant/zoekt/slm); boot ENG-011; deps `pyproject.toml` na imagem; amd64; healthchecks UI+MCP; sem domínio novo. |
+| 2026-07-18 | Tech Lead Architect | `PENDING_ARCHITECT_REVIEW` | `0.2.0` | Delta plano 0.1.7 / REQ-043: **três** composes (`docker-compose.yml`, `docker-compose.e2e.yml`, `docker-compose.dev.yml`); gate manifesto/doubles (REQ-044); sem Robot/`compose up` real (T21). |
+| 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.2.0` | Re-review pós-correção: D-T19-020 em §12; §13 delta completo; §6.1 `E2E_GITHUB_TOKEN`; §14 T21/Robot; §15 residual manifesto. Sem BLOCKING/MAJOR abertos. |
 
 ## 1. Contexto
 
@@ -50,7 +52,9 @@ O desenvolvedor precisa subir o produto com:
 6. SDKs DEC-015 presentes na imagem (BDD-024);
 7. plataforma primária `linux/amd64` (ENG-006);
 8. healthchecks básicos UI e MCP;
-9. **sem** novas features de domínio.
+9. **três** arquivos compose com papéis distintos (REQ-043 / BDD-025 / ENG-017);
+10. gate de testes só manifesto/doubles — sem Robot nem `compose up` real (REQ-044 / DEC-017; ownership e2e = T21);
+11. **sem** novas features de domínio.
 
 ## 3. Solução proposta
 
@@ -84,7 +88,10 @@ docker compose up
 | BDD-021 | Boot com JSON válido → conexões carregadas + sync deriva catálogo | Discovery interno (T05/T06) |
 | BDD-022 | Config ausente/inválida → exit ≠ 0; sem sync/reconcile/UI “meio ligada” | Mensagens UI de erro genérico |
 | BDD-024 | Imagem contém deps DEC-015 (pin `pyproject.toml`); GitPython (T20) presente; sem reinventar clientes | Revisão de adaptadores já entregues |
+| BDD-025 | Existem `Dockerfile` + **3** composes + `.env.example` sem segredos; testes de manifesto passam | Robot / `compose up` real (T21) |
+| BDD-028 (parte T19) | PR #19 só container; não inclui Robot | Declaração MVP (exige T21) |
 | ENG-011 | Passo 6 do boot chama só `StartupIndexReconcile.run()` | Pipeline de indexação (T14) |
+| ENG-017 | Três composes + `.env.example`; gate doubles | Prova runtime Podman (T21) |
 
 ## 4. Componentes
 
@@ -148,10 +155,24 @@ Pós-reconcile: `scheduler.start()`; drain da fila de indexação em thread/back
 | Arquivo | Papel |
 |---|---|
 | `Dockerfile` | Imagem `app` multi-stage opcional; Python 3.12; `pip install .` (runtime); `git` CLI; usuário non-root; `PLATFORM=linux/amd64` documentado |
-| `docker-compose.yml` | Serviços ENG-002 + volumes ENG-005 + healthchecks |
+| `docker-compose.yml` | Compose **usuário final / imagem pública** (REQ-043) — serviços ENG-002 + volumes ENG-005 + healthchecks |
+| `docker-compose.e2e.yml` | Compose **stack e2e** (REQ-043) — consumido por T21 (Podman) e pela esteira; volumes/projeto isolados; credencial via env (`GITHUB_TOKEN` / `E2E_GITHUB_TOKEN`) sem secret no git |
+| `docker-compose.dev.yml` | Compose **desenvolvimento** (REQ-043) — build local + montagens de código/config convenientes; postgres exposto; sem `.venv` do host |
 | `.env.example` | Nomes de env sem segredos reais |
-| `docs/runbook-local.md` (ou seção README) | Portas, recursos, volumes, Cursor MCP, amd64 |
+| `docs/runbook-local.md` (ou seção README) | Portas, recursos, volumes, Cursor MCP, amd64, qual compose usar |
 | `examples/config.json` | Já alinhado a `file:///repos/*` — referenciado no runbook |
+
+### 4.4.1 Três composes — contratos distintos (D-T19-020)
+
+Os três arquivos compartilham o **mesmo conjunto de serviços ENG-002** (`app`, `postgres`, `qdrant`, `zoekt`, `slm`), o mesmo entrypoint `python -m github_rag.delivery`, volumes `CONFIG_PATH` + `/repos`, healthcheck `/healthz` e plataforma `linux/amd64`. Diferem no **papel operacional**:
+
+| Arquivo | Consumidor | Diferenças obrigatórias |
+|---|---|---|
+| `docker-compose.yml` | Operador / usuário final | Nome de projeto default; imagem/`build` estável; mounts host via `HOST_CONFIG`/`HOST_REPOS`; sem bind de `./src` |
+| `docker-compose.e2e.yml` | T21 + CI (`docs-cicd`) | `name:` isolado (`github-rag-e2e`); volumes nomeados com prefixo `e2e_`; `GITHUB_TOKEN: ${E2E_GITHUB_TOKEN:-${GITHUB_TOKEN:-}}`; comentário de ownership T21/Podman; **sem** montar código-fonte do host |
+| `docker-compose.dev.yml` | Desenvolvedor local | `name:` `github-rag-dev`; monta `./src` (e opcionalmente `./web`) read-write para iteração; expõe `postgres:5432`; comentário ENG-009 (nunca `.venv`) |
+
+**Gate de testes (REQ-044):** asserts de manifesto leem os três arquivos (existência + serviços + volumes + health + ausência de `.venv` + ausência de segredos). **Não** é gate executar `compose up` nem Robot.
 
 ### 4.5 Serviços Compose (ENG-002)
 
@@ -238,6 +259,7 @@ Ordem **congelada**: sync **antes** de reconcile (D-T07 / D-T14-003). Reconcile 
 |---|---|---|
 | `CONFIG_PATH` | sim | ex. `/config/config.json` |
 | `GITHUB_TOKEN` | se houver conexão github | referenciada pelo JSON `{ "env": "GITHUB_TOKEN" }` |
+| `E2E_GITHUB_TOKEN` | não (só e2e/CI) | Alias opcional no `docker-compose.e2e.yml`: mapeia para `GITHUB_TOKEN` no container (`${E2E_GITHUB_TOKEN:-${GITHUB_TOKEN:-}}`); nunca versionar valor |
 | `INDEX_WORKERS` | não | `2` (ENG-003) |
 | `QUERY_WORKERS` | não | `4` |
 | `INDEX_CRON` | não | `0 2 * * *` (ENG-004/010) |
@@ -353,6 +375,7 @@ Antes do bind: healthcheck do compose falha (processo ainda não escuta ou app r
 | D-T19-010 | Todas as deps runtime do `pyproject.toml` (DEC-015 incl. GitPython) + `uvicorn` + `git` CLI na imagem `app` |
 | D-T19-011 | Reconcile **somente** via `StartupIndexReconcile` (D-T14-003); delivery não reimplementa tip×estado |
 | D-T19-012 | Sem novas features de domínio; sem CRUD de conexões/token |
+| D-T19-020 | **Três** composes na raiz (`docker-compose.yml`, `docker-compose.e2e.yml`, `docker-compose.dev.yml`) com papéis e diferenças de §4.4.1; gate de testes = manifesto/doubles apenas (REQ-043–044, BDD-025, ENG-017, DEC-017); Robot/`compose up` real = T21 |
 
 ## 13. Rastreabilidade
 
@@ -361,10 +384,14 @@ Antes do bind: healthcheck do compose falha (processo ainda não escuta ou app r
 | REQ-036 / DEC-011 | Compose + imagem |
 | REQ-037 | Env `CONFIG_PATH`, token, workers, `INDEX_CRON` |
 | REQ-038 / ENG-005 | Volume `/repos` + exemplo JSON |
+| REQ-043 / BR-025 / ENG-017 | Três composes + Dockerfile + `.env.example` (§4.4 / §4.4.1 / D-T19-020) |
+| REQ-044 / DEC-017 | Gate manifesto/doubles; sem Robot/`compose up` real |
+| REQ-050 / BDD-028 (parte T19) | PR #19 só container; Robot fora |
 | ENG-011 / BR-002–004 | Passo reconcile no boot |
 | BDD-020 | UI+MCP up |
 | BDD-021 / BDD-022 | ConfigLoader no boot + fail-fast |
 | BDD-024 / DEC-015 / T20 | Deps na imagem; GitPython presente |
+| BDD-025 | Existência dos 3 composes + manifesto (§4.4.1) |
 | ENG-002 | Serviços listados |
 | ENG-009 | Sem `.venv` do host na imagem |
 | ENG-006 | amd64 primário |
@@ -377,12 +404,14 @@ Antes do bind: healthcheck do compose falha (processo ainda não escuta ou app r
 - Otimização de tamanho de imagem além do razoável multi-stage.
 - Substituir Ollama por provedor cloud.
 - Alterar contratos T14/T17/T18.
+- Suíte Robot Framework, `compose up` / Podman real e prova e2e do MVP (ownership = **T21**; REQ-044–047, DEC-017–018).
+- Declaração de “MVP entregue” (exige T19 **e** T21 verdes).
+- Esteira GitHub Actions, docs EN, release GHCR (`docs-cicd-e2e-release`) — só consome os artefatos.
 
-## 15. Interfaces a formalizar no gate seguinte
+## 15. Interfaces / residual do delta 0.2.0
 
-O gate `interfaces.md` (QA/Architect) deve congelar, no mínimo:
+Contratos Python de `github_rag.delivery` já formalizados em `interfaces.md` v0.1.0. O residual deste delta é só a **superfície de manifesto**:
 
-1. `ContainerRuntime` / `run_container_boot` (assinaturas, erros, invariantes de ordem).
-2. Contrato de `/healthz`.
-3. Lista canônica de env lidas pelo wiring (sem reabrir `AppSettings` T01 além do já existente; `DATABASE_URL` / `ZOEKT_*` / Qdrant / OpenAI permanecem nas factories de fronteira, padrão T03/T10).
-4. Entry points: `__main__` (app) e `mcp_stdio` (opcional).
+1. Existência e papéis dos três composes (D-T19-020 / §4.4.1) — asserts BDD/unit, sem Protocols novos.
+2. `.env.example` inclui nomes canônicos + menção a `E2E_GITHUB_TOKEN` (sem valor secreto).
+3. Runbook documenta qual compose usar (usuário / e2e / dev).

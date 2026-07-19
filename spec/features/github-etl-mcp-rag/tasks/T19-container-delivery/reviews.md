@@ -230,3 +230,48 @@ Resultado QA: **33 failed**, 0 passed — `ImportError`/`ModuleNotFoundError` (`
 ### Decisão
 
 `BLUE_APPROVED_BY_ARCHITECT` — ver `refactoring.md`. Baseline: 1010 passed, cobertura global 96.38%.
+
+---
+
+## Review — Design `0.2.0` (delta 3 composes) — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `design.md` v0.2.0 |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (aprovação Architect substitui HITL) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| REQ-043 — três composes + Dockerfile + `.env.example` + runbook | OK | §4.4 / §4.4.1; D-T19-020 em §12 |
+| REQ-044 / DEC-017 — gate só manifesto/doubles | OK | §2 item 10; §3.2; §4.4.1 gate; §14 |
+| BDD-025 — artefatos + manifesto; sem Robot/`compose up` | OK | §3.2; §4.4; §13 |
+| ENG-017 — T19 residual 3 composes | OK | §3.2; §4.4.1; D-T19-020 |
+| ENG-011 — boot reconcile preservado | OK | §3.1; §5 [6][7]; D-T19-003/011 |
+| Contratos distintos user/e2e/dev | OK | §4.4.1 + D-T19-020 |
+| REQ-050 / BDD-028 parte T19 | OK | §3.2; §13; §14 |
+| Sem domínio novo | OK | §2 item 11; D-T19-012 |
+
+### Achados (1ª passagem) — status pós-correção
+
+| Severidade | Achado | Status |
+|---|---|---|
+| `MAJOR` | `D-T19-020` sem entrada em §12 | **Corrigido** — §12 L377 |
+| `MAJOR` | §13 sem rastreabilidade do delta | **Corrigido** — §13 L386–393 |
+| `SUGGESTION` | §6.1 sem `E2E_GITHUB_TOKEN` | **Corrigido** — §6.1 L261 |
+| `SUGGESTION` | §14 sem Robot/`compose up`/T21 | **Corrigido** — §14 L406–408 |
+| `SUGGESTION` | §15 “interfaces do zero” | **Corrigido** — §15 residual manifesto |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — design.md v0.2.0 alinhado a REQ-043–044, BDD-025, ENG-017 e D-T19-020. Prosseguir para BDD/manifesto residual.
