@@ -27,14 +27,18 @@ brew install podman-compose
 Sem o provider no `PATH`, `podman compose -f docker-compose.e2e.yml ...` falha
 antes do stack subir.
 
-## zoekt-index no host (T33)
+## zoekt-index no host (T33 / T36)
 
-O app e2e roda no **host** (`python -m github_rag.delivery`), mas o CLI
-`zoekt-index` vive na imagem `sourcegraph/zoekt` do serviço compose. **Não**
-é necessário instalar `zoekt-index` no PATH do operador quando a stack está
-up: o launcher materializa um wrapper em
+O app e2e roda no **host** (`python -m github_rag.delivery`). A imagem
+`sourcegraph/zoekt:latest` do serviço `zoekt` **não** inclui o binário
+`zoekt-index` (só webserver/archive-index). O serviço compose **`zoekt-cli`**
+(T36) fornece `zoekt-index` via sidecar (`docker/zoekt-cli/Dockerfile`).
+
+**Não** é necessário instalar `zoekt-index` no PATH do operador quando a stack
+está up: o launcher materializa um wrapper em
 `.data/e2e-zoekt-index-bin/zoekt-index` (ou `dev-zoekt-index-bin` no
-`docker-compose.dev.yml`) e injeta `ZOEKT_INDEX_BIN` no env do app.
+`docker-compose.dev.yml`) com shebang do `.venv` e injeta `ZOEKT_INDEX_BIN` no
+env do app. O wrapper executa `podman exec` no container **`zoekt-cli`**.
 
 Fallback: defina `ZOEKT_INDEX_BIN` no `.env` apontando para um binário local
 se preferir indexação nativa no host.
