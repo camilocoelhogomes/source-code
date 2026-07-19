@@ -4,6 +4,14 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ## [Unreleased]
 
+### Adicionado
+
+- Orquestrador de indexação (T14): `IndexingOrchestrator` + `StartupIndexReconcile`
+  só via portas (ENG-013). Fila com `WorkerLimiter`; estados REQ-020; startup
+  reconcile (ENG-011) com recover de `queued`/`indexing`; reindex arquivo inteiro
+  (ENG-012); Zoekt set-replace do conjunto tip; pipeline Tree-sitter → SLM por
+  chunk → Qdrant; falha parcial → `error` + restart wipe Zoekt+Qdrant (BR-005).
+
 ### Alterado
 
 - Qdrant vector store (T13): no setup da collection, `QdrantVectorStore` solicita
