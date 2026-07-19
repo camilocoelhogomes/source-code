@@ -4,15 +4,15 @@
 
 - **Feature ID:** `docs-cicd-e2e-release`
 - **Versão:** 0.2.0
-- **Estado:** `PENDING_HUMAN_APPROVAL`
+- **Estado:** `ENGINEERING_REFINEMENT`
 - **Natureza:** delta de redução de escopo — remove ownership da suíte Robot (passa a `github-etl-mcp-rag` / T21); mantém CI, docs EN e release GHCR consumindo T19+T21.
 - **Dependência obrigatória:**
   - `github-etl-mcp-rag` / `T19-container-delivery` (Dockerfile + 3 composes com testes passando);
   - `github-etl-mcp-rag` / `T21-mvp-e2e-robot` (suíte Robot e2e entregue e verde na prova do MVP).
 - **Rastreabilidade:** requisitos `REQ-*`, regras `BR-*`, decisões `DEC-*` e cenários `BDD-*` deste documento.
 - **Aprovação humana (requisitos 0.1.0):** `aprovado` em 2026-07-18 por `camilocoelhogomes` (commit candidato `ae1941ebd43ca97ef6d77a55004847f4af4d72db`).
-- **Aprovação humana (plano 0.1.1):** `aprovo` em 2026-07-18 por `camilocoelhogomes` (commit candidato `8d0f84b64a6a03fab361b072ac02e456dd7e92ca`); tasks T01–T07 estavam em `READY_FOR_IMPLEMENTATION` sob 0.1.x — **plano deve ser refeito** após aprovação de 0.2.0 (T04 deixa de criar a suíte).
-- **Aprovação humana (requisitos 0.2.0):** pendente — commit candidato a ser criado pelo orquestrador antes do gate HITL.
+- **Aprovação humana (plano 0.1.1):** `aprovo` em 2026-07-18 por `camilocoelhogomes` (commit candidato `8d0f84b64a6a03fab361b072ac02e456dd7e92ca`); tasks T01–T07 estavam em `READY_FOR_IMPLEMENTATION` sob 0.1.x — **plano deve ser refeito** sob 0.2.0 (T04 deixa de criar a suíte).
+- **Aprovação humana (requisitos 0.2.0):** `aprovo` em 2026-07-18 por `camilocoelhogomes` (commit candidato `37f7def0ecacabcb079feaec780016735fefc9fd`).
 - **Histórico deste delta:** `0.1.0` → `0.2.0` — ownership Robot → T21; REQ-001/005/008–011 e DEC-007 reescritos; T04 reduzida a consumo/integração na esteira.
 
 ## Problema

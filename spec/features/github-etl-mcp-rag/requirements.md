@@ -4,12 +4,12 @@
 
 - **Feature ID:** `github-etl-mcp-rag`
 - **Versão:** 0.5.0
-- **Estado:** `PENDING_HUMAN_APPROVAL`
+- **Estado:** `ENGINEERING_REFINEMENT`
 - **Natureza:** delta de prova e2e do MVP (Robot + Podman + stack real + indexação GitHub); o conteúdo funcional de `0.4.0` permanece válido.
 - **Aprovação humana (requisitos 0.3.0):** `aprovo` em 2026-07-18 por `camilocoelhogomes` (commit candidato `71ed647`).
 - **Aprovação humana (requisitos 0.4.0):** `aprovado` em 2026-07-18 por `camilocoelhogomes` (commit candidato `7747a27`).
-- **Aprovação humana (requisitos 0.5.0):** pendente — commit candidato a ser criado pelo orquestrador antes do gate HITL.
-- **Artefatos de engenharia (pré-delta):** `implementation-plan.md` v0.1.6 e tasks `T01`–`T20` (aprovação humana do plano: `f92e7d3`). Plano/tasks do delta 0.5.0 (T19 residual de composes + **T21**) aguardam ENGINEERING_REFINEMENT após aprovação destes requisitos.
+- **Aprovação humana (requisitos 0.5.0):** `aprovo` em 2026-07-18 por `camilocoelhogomes` (commit candidato `37f7def0ecacabcb079feaec780016735fefc9fd`).
+- **Artefatos de engenharia (pré-delta):** `implementation-plan.md` v0.1.6 e tasks `T01`–`T20` (aprovação humana do plano: `f92e7d3`). Plano/tasks do delta 0.5.0 (T19 residual de composes + **T21**) em ENGINEERING_REFINEMENT.
 - **Rastreabilidade:** requisitos `REQ-*`, regras `BR-*`, decisões `DEC-*` e cenários `BDD-*`.
 - **Histórico deste delta:** `0.4.0` → `0.5.0` — REQ-043–052, BR-025–030, DEC-017–021, BDD-025–028; ownership T19 (3 composes) + T21 (Robot e2e); MVP só entregue com prova e2e real; `docs-cicd-e2e-release` deixa de ser dona da suíte Robot.
 
