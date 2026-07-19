@@ -97,12 +97,17 @@ class TestSCH07InvalidCron(unittest.TestCase):
 
 class TestSCH08SetCronNoConfigPath(unittest.TestCase):
     def test_set_cron_does_not_touch_connections(self) -> None:
-        sched, *_ = make_scheduler()
-        sched.set_cron("0 0,12 * * *")
-        self.assertEqual(sched.active_cron(), "0 0,12 * * *")
-        import github_rag.schedule as pkg
+        # Dado: scheduler iniciado com cron A (Given literal do cenário SCH-08).
+        sched, *_ = make_scheduler(default_cron="0 2 * * *")
+        sched.start()
+        try:
+            sched.set_cron("0 0,12 * * *")
+            self.assertEqual(sched.active_cron(), "0 0,12 * * *")
+            import github_rag.schedule as pkg
 
-        self.assertFalse(hasattr(pkg, "create_connection"))
+            self.assertFalse(hasattr(pkg, "create_connection"))
+        finally:
+            sched.stop()
 
 
 class TestSCH09NoConnectionCrud(unittest.TestCase):

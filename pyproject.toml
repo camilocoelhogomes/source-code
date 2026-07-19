@@ -12,6 +12,7 @@ dependencies = [
     "sqlalchemy>=2",
     "alembic",
     "psycopg[binary]",
+    "apscheduler>=3.10,<4",
     "PyGithub>=2",
     "GitPython>=3.1",
     "pathspec>=0.12",
@@ -52,11 +53,13 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = ["github_rag"]
-# Adaptador PostgreSQL: I/O só exercível contra PG real (testes `integration`,
-# excluídos do run padrão de domínio — design §3.3/D-T03-010). Omitido do gate
-# de cobertura ≥95% do run padrão para não penalizar quem não tem Docker.
+# Adaptadores PostgreSQL: I/O só exercível contra PG real (testes `integration`,
+# excluídos do run padrão de domínio — design §3.3/D-T03-010 e T15 design §3.6/
+# D-T15-010). Omitidos do gate de cobertura ≥95% do run padrão para não
+# penalizar quem não tem Docker.
 omit = [
     "*/catalog/postgres/*",
+    "*/schedule/postgres.py",
 ]
 
 [tool.coverage.report]

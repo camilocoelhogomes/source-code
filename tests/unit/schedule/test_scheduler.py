@@ -57,6 +57,19 @@ class TestSetCron(unittest.TestCase):
             sched.start()
         sched.stop()
 
+    def test_valid_reschedules_while_running_without_restart(self) -> None:
+        """SCH-08/D-T15-009: set_cron com scheduler já iniciado reagenda em
+        runtime sem exigir stop()+start() do processo (única chamada a
+        start() neste teste)."""
+        sched, store, *_ = make_scheduler(default_cron="0 2 * * *")
+        sched.start()
+        try:
+            self.assertEqual(sched.set_cron("0 */6 * * *"), "0 */6 * * *")
+            self.assertEqual(sched.active_cron(), "0 */6 * * *")
+            self.assertEqual(store.get(), "0 */6 * * *")
+        finally:
+            sched.stop()
+
 
 class TestTickBehavior(unittest.TestCase):
     def test_tick_indexes_not_indexed(self) -> None:
