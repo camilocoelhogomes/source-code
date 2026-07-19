@@ -190,3 +190,111 @@ Falhas esperadas: dep `robotframework-browser` ausente; `GREEN_PATH_SUITES` sem 
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — unit-test-plan + suíte cobrem M-T23-*/UB-*/extremos/secrets; manifesto sem Playwright; RED canônico pré-implementação. Prosseguir para implementação Developer (sem alterar testes para obter verde).
+
+---
+
+## Review — Implementation — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `e2e/robot/ui_browser.robot`, `e2e/robot/resources/browser.resource`, `src/github_rag/e2e/suite.py`, `tests/unit/e2e/helpers.py`, `pyproject.toml`, `requirements-e2e.txt`, `e2e/fixtures/config.e2e.json`, `e2e/README.md` |
+| Data | 2026-07-19 |
+| Pipeline | autonomous (aprovação Architect substitui HITL intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Dep `robotframework-browser>=18` (D-T23-001 / M-T23-001..003) | OK | `pyproject.toml` L48; `requirements-e2e.txt` L3; RF/Requests/httpx preservados |
+| `GREEN_PATH_SUITES` + markers após `ui` (I-T23-006/007) | OK | `suite.py` L33–40; `helpers.py` L11–18 |
+| Resource keywords Open/Close/Wait (I-T23-003) | OK | `browser.resource` L15–37 |
+| Suite Settings + tags inventário (I-T23-004/005; UB-04) | OK | `ui_browser.robot` L1–7; tags `bdd001`…`bdd023` nos cases |
+| Cases DOM BDD-001/002/007/009/010/016/019/023 | OK | `ui_browser.robot` L10–85; keywords em `browser.resource` |
+| Wildcard fixture (D-T23-005) | OK | `config.e2e.json` L12 `camilocoelhogomes/source-*` |
+| README `rfbrowser init` + headless (D-T23-013) | OK | `e2e/README.md` L51–59, L76, L86 |
+| API suites T21 preservadas (D-T23-012) | OK | `ui.robot` / `catalog_indexing.robot` intactos |
+| Sem secrets versionados (D-T23-015) | OK | token só `{ "env": "GITHUB_TOKEN" }`; README placeholder |
+| Manifesto pytest verde; sem Playwright no unit | OK | `35 passed, 8 subtests` Camada A |
+| Cobertura global ≥95% | OK | `1250 passed, 2 skipped`; TOTAL **96.53%** |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| `SUGGESTION` | `Library Collections` importado e não usado | `browser.resource` (pré-Blue) L6 | Remover import morto na etapa Blue | Resolvido na Blue |
+| `SUGGESTION` | Assert BDD-007 fraco em “etapa” (só `Detalhe` + flags) | `Assert Repo Detail Progress And Flags`; `#repo-detail` emite `state_label` (`app.js` L55–56) | Exigir regexp de rótulo PT de estado | Resolvido na Blue |
+| `SUGGESTION` | Asserts duplicados case×keyword (019/007/009/010) | `ui_browser.robot` pré-Blue | Remover redundância sem perder seletores canônicos (UB-18) | Resolvido na Blue |
+| `SUGGESTION` | `${GITHUB_INCLUSION_PATTERN}` hardcoded vs fixture | `browser.resource` L11 vs `config.e2e.json` L12 | Manter espelho documentado; sync manual se fixture mudar | Aberto residual — não bloqueia |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Evidência de testes
+
+```text
+.venv/bin/python -m pytest tests/bdd/test_ui_browser_gap.py \
+  tests/unit/e2e/test_ui_browser_manifest.py -q --tb=line --no-cov
+# 35 passed, 8 subtests passed in 0.04s
+
+.venv/bin/python -m pytest tests/ -q --tb=line
+# 1250 passed, 2 skipped; TOTAL coverage 96.53%
+```
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — implementação alinha design/BDD/interfaces/unit-test-plan 0.1.0; Camada A verde; sem BLOCKING/MAJOR. Prosseguir etapa Blue.
+
+---
+
+## Review — Blue refactoring — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `refactoring.md` + `browser.resource` + `ui_browser.robot` |
+| Data | 2026-07-19 |
+| Pipeline | autonomous |
+| Resultado | `BLUE_APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Baseline subset T23 registrado | OK | 35 passed / 8 subtests / 0.04s (pré e pós) |
+| Sem otimização especulativa | OK | sem hot path Python; performance N/A |
+| Simplificação só com evidência | OK | Collections morto; asserts redundantes; etapa BDD-007 |
+| Sem mudança de contratos manifesto | OK | UB-01..09/18 + UT-UB verdes; seletores canônicos na suite |
+| Cobertura ≥95% | OK | TOTAL 96.53% |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| — | Nenhum `BLOCKING` / `MAJOR` | — | — | — |
+
+### Mudança Blue
+
+| Arquivo | Delta | Motivo |
+|---|---|---|
+| `e2e/robot/resources/browser.resource` | remove `Library Collections`; assert etapa PT em `#repo-detail` | código morto + SUGGESTION BDD-007 |
+| `e2e/robot/ui_browser.robot` | remove asserts redundantes 019/007/009/010 | simplificação sem perder seletores UB-18 |
+
+### Evidência pós-Blue
+
+```text
+.venv/bin/python -m pytest tests/bdd/test_ui_browser_gap.py \
+  tests/unit/e2e/test_ui_browser_manifest.py -q --tb=line --no-cov
+# 35 passed, 8 subtests passed in 0.04s
+
+.venv/bin/python -m pytest tests/ -q --tb=line
+# 1250 passed, 2 skipped; TOTAL 96.53%
+```
+
+### Decisão
+
+`BLUE_APPROVED_BY_ARCHITECT` — baseline estável; Blue mínima aprovada; sem otimização de performance necessária.
