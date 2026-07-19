@@ -90,3 +90,91 @@ comando: python -m pytest tests/bdd/test_mvp_e2e_audit_pytest_run.py -q --no-cov
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — BDD v0.1.1 apto para gate de interfaces (contrato documental `ParentPytestRun`). Gate humano intermediário substituído pela aprovação Architect (modo autonomous).
+
+---
+
+## Review Interfaces — Tech Lead Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `interfaces.md` |
+| Versão revisada | `0.1.0` → `0.1.1` |
+| Data | 2026-07-18 |
+| Branch | `feature/mvp-e2e-audit-hardening-T03-run-pytest-all-tasks` |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Checks executados
+
+| Check | Resultado |
+|---|---|
+| Interface lógica `ParentPytestRun` com responsabilidade + motivo | OK — §2 |
+| Sem Protocol/ABC Python (D-T03-001 / I-T03-003) | OK |
+| Path canônico `runs/pytest-all-tasks.md` | OK |
+| Comando canônico §3.4 | OK — I-T03-004 |
+| D-T03-002 / lista pai | OK — I-T03-005, §3.4 |
+| `coverage_gate` alinhado BDD 0.1.1 | OK após M-01 |
+| Superfícies ENG-006 | OK — I-T03-007 |
+| Soft-dep T01 / secrets / escopo src+robot | OK após M-02/M-03 |
+| Sem superfície em `src/` | OK |
+
+### Achados
+
+| ID | Severidade | Evidência | Achado | Correção esperada | Status |
+|---|---|---|---|---|---|
+| M-01 | `MAJOR` | `interfaces.md` v0.1.0 I-T03-006 / §3.3 | `coverage_gate` só `true\|false`; BDD 0.1.1 exige também `N/A` | Domínio `true\|false\|N/A` | Corrigido em `0.1.1` |
+| M-02 | `MAJOR` | `interfaces.md` v0.1.0 §3.1 | “Branch e/ou commit SHA” enfraquece PYTEST-02 / design | Exigir branch **e** commit SHA | Corrigido em `0.1.1` |
+| M-03 | `MAJOR` | `interfaces.md` v0.1.0 §3.6 | Declaração omitia `src/github_rag/**` (PYTEST-09) | Declarar produto + `src/github_rag/**` + `e2e/robot/**` | Corrigido em `0.1.1` |
+
+### Bloqueios abertos
+
+Nenhum.
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — interfaces `0.1.1` aptas para unit-test-plan / implementação documental.
+
+---
+
+## Review Unit Test Plan — Tech Lead Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `unit-test-plan.md` |
+| Versão revisada | `0.1.0` → `0.1.1` |
+| Data | 2026-07-18 |
+| Branch | `feature/mvp-e2e-audit-hardening-T03-run-pytest-all-tasks` |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Checks executados
+
+| Check | Resultado |
+|---|---|
+| Estratégia: só BDD PYTEST-01..09; sem unitários `src/` | OK — D-T03-001 |
+| Corners C-01..C-10 mapeados | OK |
+| C-04 alinhado a `coverage_gate` true\|false\|N/A | OK após alinhamento |
+| Sem helpers `tests/unit/` obrigatórios | OK — opção A |
+| RED pré-artefato ainda válido | OK — 9 failed / 0 passed |
+| Sem exigir fix de produto | OK |
+
+### Achados
+
+| ID | Severidade | Evidência | Achado | Correção esperada | Status |
+|---|---|---|---|---|---|
+| S-01 | `SUGGESTION` | `unit-test-plan.md` v0.1.0 C-04 | Texto “true/false” sem `N/A` | Alinhar a interfaces/BDD 0.1.1 | Corrigido em `0.1.1` |
+
+### Bloqueios abertos
+
+Nenhum.
+
+### Evidência RED (Architect — reconfirmada neste gate)
+
+```text
+9 failed / 0 passed — artefato ausente (razão esperada)
+comando: python -m pytest tests/bdd/test_mvp_e2e_audit_pytest_run.py -q --no-cov
+```
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — unit-test-plan `0.1.1` apto; implementação = materializar `runs/pytest-all-tasks.md` (sem `src/`).

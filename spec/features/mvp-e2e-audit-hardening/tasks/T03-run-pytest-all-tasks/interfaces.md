@@ -6,8 +6,8 @@
 | Task | `T03-run-pytest-all-tasks` |
 | Autor | Tech Lead Architect |
 | Data | 2026-07-18 |
-| Estado | `PENDING_ARCHITECT_REVIEW` |
-| Versão | `0.1.0` |
+| Estado | `APPROVED_BY_ARCHITECT` |
+| Versão | `0.1.1` |
 | Design base | `0.1.1` (`APPROVED_BY_ARCHITECT`) |
 | BDD base | `0.1.1` (`APPROVED_BY_ARCHITECT`) |
 | Branch | `feature/mvp-e2e-audit-hardening-T03-run-pytest-all-tasks` |
@@ -19,6 +19,7 @@
 | Data | Autor | Decisão | Versão | Observações |
 |---|---|---|---|---|
 | 2026-07-18 | Tech Lead Architect | `PENDING_ARCHITECT_REVIEW` | `0.1.0` | Draft: interface lógica única alinhada design §3 e BDD PYTEST-01..09. |
+| 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.1` | M-01..M-03: `coverage_gate` true\|false\|N/A; branch+SHA; declaração `src/github_rag/**`. |
 
 ## 1. Escopo e exclusões
 
@@ -81,7 +82,7 @@ spec/features/mvp-e2e-audit-hardening/runs/pytest-all-tasks.md
 | I-T03-003 | Sem Protocol/ABC/classes em `src/` | D-T03-001 | design §3.1 |
 | I-T03-004 | Comando canônico único §3.4 | ENG-003 | PYTEST-02 |
 | I-T03-005 | Lista T05 só falhas do pai | D-T03-002 | PYTEST-05/08 |
-| I-T03-006 | `coverage_gate` sempre presente (true/false) | Distinguir fail_under | PYTEST-04 |
+| I-T03-006 | `coverage_gate` sempre presente (`true` \| `false` \| `N/A`) | Distinguir fail_under; alinhar BDD 0.1.1 | PYTEST-04 |
 | I-T03-007 | Superfícies ENG-006 | Handoff T05 | PYTEST-05 |
 | I-T03-008 | Soft-dep T01 documentada | Não bloquear | PYTEST-06 |
 | I-T03-009 | Sem secrets no artefato | BR-004 | PYTEST-07 |
@@ -94,7 +95,8 @@ spec/features/mvp-e2e-audit-hardening/runs/pytest-all-tasks.md
 | Campo | Obrigatório |
 |---|---|
 | Data/hora ISO | sim |
-| Branch e/ou commit SHA | sim |
+| Branch | sim |
+| Commit SHA | sim |
 | Comando canônico exato `python -m pytest tests/ -q --tb=line` | sim |
 | Python version | sim |
 | OS resumido | sim |
@@ -115,7 +117,7 @@ spec/features/mvp-e2e-audit-hardening/runs/pytest-all-tasks.md
 | Campo | Domínio |
 |---|---|
 | coverage % ou `N/A` + motivo | texto |
-| `coverage_gate` | `true` \| `false` (sempre presente) |
+| `coverage_gate` | `true` \| `false` \| `N/A` (sempre presente; `true` = exit ≠ 0 só por `fail_under` sem nodeids do pai) |
 
 ### 3.4 Lista de falhas do pai (PYTEST-05 / PYTEST-08)
 
@@ -143,7 +145,9 @@ Regras:
 
 | Campo | Obrigatório |
 |---|---|
-| Sem alteração de produto / `e2e/robot/**` nesta task | sim (declaração no artefato) |
+| Sem mudança de produto exigida nesta task | sim (declaração no artefato) |
+| Sem alteração em `src/github_rag/**` no escopo T03 | sim |
+| Sem alteração em `e2e/robot/**` no escopo T03 | sim |
 
 ## 4. Proibições de secrets
 

@@ -6,9 +6,9 @@
 | Task | `T03-run-pytest-all-tasks` |
 | Autor | Tech Lead Architect |
 | Data | 2026-07-18 |
-| Estado | `PENDING_ARCHITECT_REVIEW` |
-| Versão | `0.1.0` |
-| Design / BDD / Interfaces | `0.1.1` / `0.1.1` / `0.1.0` |
+| Estado | `APPROVED_BY_ARCHITECT` |
+| Versão | `0.1.1` |
+| Design / BDD / Interfaces | `0.1.1` / `0.1.1` / `0.1.1` |
 | Natureza | Documental — sem `src/`; contrato `ParentPytestRun` |
 | Suíte de aceite | `tests/bdd/test_mvp_e2e_audit_pytest_run.py` (PYTEST-01..09) |
 | Branch | `feature/mvp-e2e-audit-hardening-T03-run-pytest-all-tasks` |
@@ -18,6 +18,7 @@
 | Data | Autor | Decisão | Versão | Observações |
 |---|---|---|---|---|
 | 2026-07-18 | Tech Lead Architect | `PENDING_ARCHITECT_REVIEW` | `0.1.0` | Corners cobertos pelo BDD; unitários em `src/` desnecessários (D-T03-001). |
+| 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.1` | Alinha C-04 a `coverage_gate` true\|false\|N/A; confirma RED e zero unitários `src/`. |
 
 ## 1. Estratégia
 
@@ -40,7 +41,7 @@ Decisão (I-T03-003 / D-T03-001):
 | C-01 | Artefato ausente | PYTEST-01 (+02..09 via `_read_artifact`) | `AssertionError: artefato ausente` | Não |
 | C-02 | Metadados incompletos / comando errado | PYTEST-02 | ISO, SHA, comando canônico, python, OS | Não |
 | C-03 | Agregados ausentes | PYTEST-03 | exit + passed/failed/skipped/errors/total | Não |
-| C-04 | Cobertura / coverage_gate ausente | PYTEST-04 | % ou N/A + `coverage_gate` true/false | Não |
+| C-04 | Cobertura / coverage_gate ausente | PYTEST-04 | % ou N/A + `coverage_gate` true\|false\|N/A | Não |
 | C-05 | Falha sem superfície / superfície inválida | PYTEST-05 | SURFACES + nodeid/tipo/mensagem | Não |
 | C-06 | Soft-dep T01 omitida | PYTEST-06 | nota inventário / sem depender | Não |
 | C-07 | Secrets no markdown | PYTEST-07 | `TOKEN_PREFIX_RE` / `TOKEN_ASSIGN_RE` | Não |
