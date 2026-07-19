@@ -265,8 +265,42 @@ Os testes de integração contra PostgreSQL real usam o marcador `integration`
 disponível; o run padrão (`python -m pytest`) cobre domínio e fake, sem exigir
 PostgreSQL.
 
+## Servidor MCP de evidências (T17)
+
+O pacote `github_rag.mcp` expõe um servidor MCP via SDK oficial Python
+**`mcp`** (`FastMCP` em `mcp.server.fastmcp`; pin `mcp>=1.27,<2`). Transport
+MVP: **stdio** (integração Cursor). Somente evidências — sem narrativa nem SLM
+(DEC-008 / BR-011).
+
+Tools aprovadas (REQ-028):
+
+| Tool | Fonte |
+|---|---|
+| `list_repos` | `CatalogRepository.list_active_catalog` (estados REQ-020; sem `local_path`/token) |
+| `search_code` | `QueryService.search_exact` |
+| `semantic_search` | `QueryService.search_semantic` (`reformulate=False`) |
+| `read_file` | `QueryService.read_file` |
+| `list_tree` | `QueryService.list_tree` |
+
+Detalhes opcionais (`repository` / `path` / `commit` / `snippet`) só quando o
+agente passa `include_*` (BDD-012). Consultas paralelas respeitam
+`QUERY_WORKERS` via `WorkerLimiter` do pool query (BDD-013).
+
+```python
+from github_rag.mcp import DefaultMcpEvidenceServer
+
+server = DefaultMcpEvidenceServer(
+    catalog=catalog,       # CatalogRepository
+    query=query_service,   # QueryService (T16)
+    query_limiter=limiter, # create_query_limiter(settings)
+)
+app = server.build()       # FastMCP com as 5 tools
+server.run(transport="stdio")  # processo MCP (T19 empacota na imagem)
+```
+
 ## Entrega por container
 
 O venv é exclusivo do desenvolvimento local. Docker/T19 é a entrega
 padronizada: a imagem/container não monta nem usa o `.venv` do host. As
-dependências são instaladas diretamente no runtime da imagem.
+dependências são instaladas diretamente no runtime da imagem. O processo MCP
+(T17) é exposto na imagem pelo delivery (T19).

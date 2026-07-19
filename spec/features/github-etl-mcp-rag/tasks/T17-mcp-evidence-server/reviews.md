@@ -240,3 +240,66 @@ Revisar alinhamento interfaces §3 / I-T17-* e aprovar ou devolver com achados. 
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — implementação T17 aprovada. Blue ainda não iniciado.
+
+---
+
+## Review — Blue refactoring (v0.1.0)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `refactoring.md` + `src/github_rag/mcp/*` (sem diff) |
+| Data | 2026-07-18 |
+| Pipeline | autonomous |
+| Resultado | `BLUE_APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Baseline reproduzível | OK | 66 passed; cov mcp 98.87% |
+| Complexidade desnecessária | Nenhuma acionável | §3 refactoring.md |
+| Gargalo com evidência | Nenhum | superfície sem I/O próprio |
+| Sem mudança de contrato/comportamento | OK | no-op |
+| Otimização especulativa | Rejeitada | regras Blue |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum | — | — |
+
+### Decisão
+
+`BLUE_APPROVED_BY_ARCHITECT` — no-op Blue justificado; prosseguir docs/changelog se aplicável.
+
+---
+
+## Review — Docs / changelog
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `CHANGELOG.md` + `README.md` + `src/github_rag/mcp/__init__.py` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| README documenta tools + SDK `mcp` / stdio | OK | seção «Servidor MCP de evidências (T17)» |
+| CHANGELOG entrada T17 | OK | `[Unreleased]` / Adicionado |
+| Exports / docstring pública do pacote | OK | `mcp/__init__.py` |
+| Spec folder completo | OK | design, bdd, interfaces, unit-test-plan, refactoring, reviews, approvals |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — docs/changelog T17.
