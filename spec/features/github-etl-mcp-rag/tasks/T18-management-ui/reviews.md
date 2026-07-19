@@ -24,9 +24,13 @@
 
 **Decisão Architect:** `APPROVED_BY_ARCHITECT` (2026-07-18)
 
-## Unit tests
+## Unit tests `0.1.0`
 
-_(preenchido na etapa seguinte)_
+| Severidade | Achado | Evidência | Correção | Resultado |
+|---|---|---|---|---|
+| — | — | Red: `ModuleNotFoundError` em `github_rag.ui.*` (esperado pré-impl) | Implementar pacote `ui` | Aberto → impl |
+
+**Decisão Architect:** `APPROVED_BY_ARCHITECT` (2026-07-18) — plano e testes red pela razão esperada.
 
 ## Implementation
 
