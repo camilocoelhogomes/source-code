@@ -26,6 +26,15 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- Servidor MCP de evidências (T17): pacote `github_rag.mcp` com
+  `DefaultMcpEvidenceServer` sobre SDK oficial **`mcp`** (`FastMCP`,
+  `mcp>=1.27,<2`; transport stdio). Tools: `list_repos`, `search_code`,
+  `semantic_search`, `read_file`, `list_tree` (REQ-028); delegação a
+  catálogo + `QueryService` (T16); `DetailFields` / omit-null (BDD-012);
+  paralelismo `QUERY_WORKERS` / `WorkerLimiter` (BDD-013); sem narrativa/SLM
+  nem `ask_codebase` (DEC-008 / BR-011); redaction de token (BDD-014);
+  erros tipados `McpToolError`. Handoff de processo para T19.
+
 - QueryService compartilhado (T16): fachada `DefaultQueryService` com
   `search_exact`, `search_semantic`, `read_file` e `list_tree` sobre portas
   T10/T13/T08/T07; projeção `DetailFields` (BDD-012); `QueryReformulator`
