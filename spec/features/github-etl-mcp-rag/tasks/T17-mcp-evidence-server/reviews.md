@@ -203,3 +203,40 @@ Revisar alinhamento interfaces §3 / I-T17-* e aprovar ou devolver com achados. 
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — unit-test-plan v0.1.0 + `tests/unit/mcp/` alinhados. Prosseguir para implementação Developer.
+
+---
+
+## Review — Implementação (v0.1.0)
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `src/github_rag/mcp/*` |
+| Data | 2026-07-18 |
+| Pipeline | autonomous (sem gate humano intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| 5 tools only; `FastMCP` oficial `mcp` | OK | `tools.py` / `server.py`; MCP-01/07/08 |
+| `query_limiter.acquire()` em toda tool | OK | `list_repos`..`list_tree`; UT-L01 |
+| BDD-012 DetailFields + omit-null | OK | `serialize.py`; MCP-02/03 |
+| BDD-014 redaction / `map_query_error` | OK | `errors.py`; MCP-05/12 |
+| `reformulate=False`; sem SLM/imports banidos | OK | `tools.py` semantic; AST UT-X* |
+| `list_repos` shape I-T17-008 | OK | `repo_entry_to_dict`; MCP-10 |
+| `_EvidenceFastMCP` preserva `McpToolError` | OK | `server.py`; tipagem superfície |
+| Suíte BDD + unit | OK | 66 passed; `github_rag.mcp` cov **98.87%** (≥95%) |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção | Status |
+|---|---|---|---|---|
+| `MAJOR` | Cobertura do pacote <95% (fake/`run`/ramos mortos) | cov 94.97% pré-fix | testes UT-B05/B06/F01/S05b; removido `except McpToolError` morto | Corrigido |
+| `SUGGESTION` | Comando com `addopts` global `--cov=github_rag` falha cov ao rodar só T17 | `pyproject.toml` addopts | Usar `--override-ini` ou suíte completa no gate global | Aceito |
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — implementação T17 aprovada. Blue ainda não iniciado.

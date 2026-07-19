@@ -69,8 +69,13 @@ class TestImportBanAndSdk(unittest.TestCase):
     def test_ut_f01_fake_server_symbol_importable(self) -> None:
         from github_rag.mcp.fake import FakeMcpEvidenceServer
 
-        self.assertTrue(hasattr(FakeMcpEvidenceServer, "build"))
-        self.assertTrue(hasattr(FakeMcpEvidenceServer, "run"))
+        fake = FakeMcpEvidenceServer()
+        self.assertTrue(hasattr(fake, "build"))
+        self.assertTrue(hasattr(fake, "run"))
+        with self.assertRaises(NotImplementedError):
+            fake.build()
+        with self.assertRaises(NotImplementedError):
+            fake.run()
 
 
 if __name__ == "__main__":

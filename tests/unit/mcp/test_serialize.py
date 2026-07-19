@@ -61,6 +61,10 @@ class TestOmitNulls(unittest.TestCase):
         )
         self.assertEqual(out, {"hits": [{"kind": "exact", "path": "x.py"}]})
 
+    def test_ut_s05b_list_preserves_non_dict_items(self) -> None:
+        out = omit_nulls({"paths": ["a.py", "b.py"], "n": None})
+        self.assertEqual(out, {"paths": ["a.py", "b.py"]})
+
     def test_ut_s06_preserves_falsy_non_none(self) -> None:
         out = omit_nulls({"score": 0.0, "ok": False, "empty": "", "n": None})
         self.assertEqual(out, {"score": 0.0, "ok": False, "empty": ""})

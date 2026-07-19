@@ -11,12 +11,15 @@ Motivo da separação
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.exceptions import ToolError
 
 from github_rag.catalog.repository import CatalogRepository
 from github_rag.concurrency.limiter import WorkerLimiter
+from github_rag.mcp.errors import McpToolError
+from github_rag.mcp.tools import register_tools
 from github_rag.query.ports import QueryService
 
 DEFAULT_SERVER_NAME = "github-rag-evidence"
@@ -27,16 +30,35 @@ Motivo da separação: evita string mágica no construtor.
 """
 
 
+class _EvidenceFastMCP(FastMCP):
+    """FastMCP que repropaga ``McpToolError`` tipado ao host de testes/call_tool.
+
+    O SDK envolve qualquer Exception em ``ToolError``. Para preservar o contrato
+    I-T17-012 (``McpToolError`` tipado na superfície), desembrulhamos a causa.
+    """
+
+    async def call_tool(
+        self, name: str, arguments: dict[str, Any]
+    ) -> Any:
+        try:
+            return await super().call_tool(name, arguments)
+        except ToolError as exc:
+            cause = exc.__cause__
+            if isinstance(cause, McpToolError):
+                raise cause from None
+            raise
+
+
 class DefaultMcpEvidenceServer:
     """Composition default do servidor MCP de evidências.
 
     Responsabilidade
-        Guardar deps injetáveis e, na implementação completa, registrar as 5
-        tools no ``FastMCP`` e expor ``run(transport=\"stdio\")``.
+        Guardar deps injetáveis, registrar as 5 tools no ``FastMCP`` e expor
+        ``run(transport=\"stdio\")``.
 
     Motivo da separação
         Porta concreta testável (BDD) sem acoplar Cursor ao composition root
-        de índices; sem ``QueryReformulator`` / ``MetadataGenerator`` (I-T17-009).
+        de índices; sem reformulador SLM na composição (I-T17-009).
     """
 
     def __init__(
@@ -60,11 +82,15 @@ class DefaultMcpEvidenceServer:
 
         Motivo da separação
             Isola lifecycle SDK da execução ``run``.
-
-        Stub
-            Developer implementa registro + acquire (I-T17-015).
         """
-        raise NotImplementedError("T17: DefaultMcpEvidenceServer.build pending")
+        app = _EvidenceFastMCP(self._server_name)
+        register_tools(
+            app,
+            catalog=self._catalog,
+            query=self._query,
+            query_limiter=self._query_limiter,
+        )
+        return app
 
     def run(self, *, transport: Literal["stdio"] = "stdio") -> None:
         """Executa o servidor MCP (stdio no MVP — I-T17-011).
@@ -74,8 +100,5 @@ class DefaultMcpEvidenceServer:
 
         Motivo da separação
             Handoff de delivery sem acoplar compose às tools.
-
-        Stub
-            Developer implementa (I-T17-015).
         """
-        raise NotImplementedError("T17: DefaultMcpEvidenceServer.run pending")
+        self.build().run(transport=transport)
