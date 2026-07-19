@@ -6,7 +6,7 @@
 | Task | `T02-hitl-env-prep` |
 | Autor | QA Engineer |
 | Data | 2026-07-18 |
-| Estado | `TESTS_READY_FOR_REVIEW` |
+| Estado | `APPROVED_BY_ARCHITECT` |
 | Versão | `0.1.0` |
 | Design base | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
 | Execução | `tests/bdd/test_mvp_e2e_audit_hitl_env_prep.py` — valida checklist documental `HitlEnvPrep` (sem Robot/e2e; sem ler valor de `.env` real) |
@@ -16,6 +16,7 @@
 | Data | Autor | Decisão | Versão | Observações |
 |---|---|---|---|---|
 | 2026-07-18 | QA Engineer | `TESTS_READY_FOR_REVIEW` | `0.1.0` | HITL-01..HITL-10; contrato documental BDD-002 / design §3.3; RED até existir `audit/hitl-env-checklist.md`. |
+| 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.0` | Review BDD OK; 8 failed / 2 passed (artefato ausente); sem BLOCKING/MAJOR. Ver `reviews.md`. |
 
 ## Convenções
 
