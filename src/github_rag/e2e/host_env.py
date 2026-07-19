@@ -21,6 +21,7 @@ def build_host_delivery_env(
     config_path: Path,
     repos_dir: Path,
     zoekt_index_dir: Path,
+    zoekt_index_bin: str | None = None,
     extra: Mapping[str, str] | None = None,
 ) -> dict[str, str]:
     """Monta env para ``python -m github_rag.delivery`` no host.
@@ -61,6 +62,8 @@ def build_host_delivery_env(
     )
     # file:// repos montados via fixture path no host (local-e2e-fixture)
     merged.setdefault("HOST_REPOS", str(repos_dir.resolve()))
+    if zoekt_index_bin:
+        merged["ZOEKT_INDEX_BIN"] = str(zoekt_index_bin)
     if extra:
         merged.update({k: str(v) for k, v in extra.items()})
     return merged

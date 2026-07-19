@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import os
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from tests.unit.e2e.helpers import REPO_ROOT
 
@@ -26,6 +28,26 @@ class TestHostDeliveryEnv(unittest.TestCase):
         self.assertEqual(env["ZOEKT_URL"], "http://127.0.0.1:6070")
         self.assertEqual(env["QDRANT_URL"], "http://127.0.0.1:6333")
         self.assertTrue(zoekt.is_dir())
+
+    def test_build_host_delivery_env_without_zoekt_bin_omits_key(self) -> None:
+        from github_rag.e2e.host_env import build_host_delivery_env
+
+        cfg = REPO_ROOT / "e2e/fixtures/config.e2e.json"
+        repos = REPO_ROOT / "e2e/fixtures/repos"
+        zoekt = REPO_ROOT / ".data/test-zoekt-index-no-bin"
+        clean = {
+            k: v
+            for k, v in os.environ.items()
+            if k != "ZOEKT_INDEX_BIN"
+        }
+        with mock.patch.dict(os.environ, clean, clear=True):
+            env = build_host_delivery_env(
+                repo_root=REPO_ROOT,
+                config_path=cfg,
+                repos_dir=repos,
+                zoekt_index_dir=zoekt,
+            )
+        self.assertNotIn("ZOEKT_INDEX_BIN", env)
 
 
 if __name__ == "__main__":
