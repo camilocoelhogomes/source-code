@@ -23,6 +23,7 @@ from typing import Any, Callable
 
 from github_rag.e2e.errors import E2eStackError
 from github_rag.e2e.host_env import build_host_delivery_env, default_zoekt_index_dir
+from github_rag.e2e.zoekt_bin import resolve_zoekt_index_bin
 from github_rag.e2e.paths import (
     COMPOSE_DEV,
     COMPOSE_E2E,
@@ -197,11 +198,18 @@ class PodmanE2eStackLauncher:
         elif effective.get("GITHUB_TOKEN", "").strip():
             token_extra["GITHUB_TOKEN"] = effective["GITHUB_TOKEN"].strip()
 
+        zoekt_bin = resolve_zoekt_index_bin(
+            self._repo_root,
+            self.compose_file,
+            run_command=self._run_command,
+            env=effective,
+        )
         host_env = build_host_delivery_env(
             repo_root=self._repo_root,
             config_path=Path(effective["HOST_CONFIG"]),
             repos_dir=Path(effective["HOST_REPOS"]),
             zoekt_index_dir=Path(effective["ZOEKT_INDEX_HOST"]),
+            zoekt_index_bin=str(zoekt_bin),
             extra=token_extra,
         )
         self._app_process = subprocess.Popen(

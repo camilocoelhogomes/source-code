@@ -6,6 +6,9 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Corrigido
 
+- E2e zoekt-index no host (T33): launcher materializa wrapper `ZOEKT_INDEX_BIN`
+  via `podman exec` no container zoekt; elimina `FileNotFoundError` no fluxo
+  host+compose (F-W1-007).
 - Healthz com static mount (T31): `GET /healthz` registrado antes de
   `StaticFiles` em `/`; `wire_ui_app` retorna builder; runtime injeta
   `get_state` em `build()` — corrige F-W1-001 (404 pós-boot).

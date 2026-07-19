@@ -194,6 +194,37 @@ class TestPodmanE2eStackLauncher(unittest.TestCase):
         self.assertIn("code=1", str(ctx.exception))
         self.assertNotIn(SECRET_TOKEN, str(ctx.exception))
 
+    def test_t33_up_with_host_app_resolves_zoekt_bin(self) -> None:
+        launcher, runner, _e2e = self._make_launcher(host_app=True)
+        wrapper = REPO_ROOT / ".data/test-up-zoekt-bin/zoekt-index"
+        proc = mock.Mock(poll=mock.Mock(return_value=None))
+        with mock.patch("github_rag.e2e.launcher.ensure_local_git_fixture"):
+            with mock.patch(
+                "github_rag.e2e.launcher.resolve_zoekt_index_bin",
+                return_value=wrapper,
+            ):
+                with mock.patch(
+                    "github_rag.e2e.launcher.subprocess.Popen",
+                    return_value=proc,
+                ) as popen:
+                    launcher.up(env={})
+        self.assertEqual(len(runner.calls), 1)
+        popen.assert_called_once()
+        host_env = popen.call_args.kwargs["env"]
+        self.assertEqual(host_env["ZOEKT_INDEX_BIN"], str(wrapper))
+
+    def test_t33_resolve_failure_surfaces_stack_error(self) -> None:
+        from github_rag.e2e.errors import E2eStackError
+
+        launcher, _runner, e2e = self._make_launcher(host_app=True)
+        with mock.patch("github_rag.e2e.launcher.ensure_local_git_fixture"):
+            with mock.patch(
+                "github_rag.e2e.launcher.resolve_zoekt_index_bin",
+                side_effect=E2eStackError.from_stderr("zoekt container not running"),
+            ):
+                with self.assertRaises(e2e.E2eStackError):
+                    launcher.up(env={})
+
     def test_t29_host_exit_during_poll(self) -> None:
         launcher, _r, e2e = self._make_launcher(host_app=True, healthy_timeout_seconds=5.0)
         proc = mock.Mock(poll=mock.Mock(side_effect=[None, None, 1]), stderr=io.StringIO("fail"))
