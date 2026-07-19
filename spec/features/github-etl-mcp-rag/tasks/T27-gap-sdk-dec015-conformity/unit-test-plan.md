@@ -7,7 +7,7 @@
 | Autor | QA Engineer |
 | Data | 2026-07-19 |
 | Estado | `TESTS_READY_FOR_REVIEW` |
-| Versão | `0.1.0` |
+| Versão | `0.2.0` |
 | Design / BDD / Interfaces | `0.1.0` (`APPROVED_BY_ARCHITECT`) |
 | Cobertura alvo | ≥95% global (run padrão); nenhum `src/github_rag/**` alterado por esta task |
 | Branch | `feature/github-etl-mcp-rag-T27-gap-sdk-dec015-conformity` |
@@ -18,6 +18,8 @@
 | Data | Autor | Decisão | Versão | Observações |
 |---|---|---|---|---|
 | 2026-07-19 | QA Engineer | `TESTS_READY_FOR_REVIEW` | `0.1.0` | Plano + suíte RED `tests/bdd/test_dec015_conformity.py` + `tests/bdd/support/dec015_pins.py` (I-T27-001) + promoção `tests/unit/ui/helpers.py` (I-T27-002). RED nomeado em DEC015-01 (alembic/psycopg sem faixa de versão no `pyproject.toml` — gap real, não estilístico). |
+| 2026-07-19 | tech-lead-architect | `CHANGES_REQUIRED` | 0.1.0 | RED de `TestDEC01PinsVersionMatrix` (alembic/psycopg) e corner case pré-existente de `TestDEC03GitPythonReference` confirmados por reprodução direta — íntegros, conforme relatado pela QA. **Não aprovado nesta rodada**: achados `MAJOR` R-1/R-2/R-3 em `reviews.md` — os cenários `UT-DEC-P02`, `UT-DEC-P07` (§2) e `UT-DEC-R03` (§3) deste plano estão documentados mas não têm teste correspondente em `tests/bdd/test_dec015_conformity.py`/`tests/unit/ui/test_imports.py`. Ação: QA adiciona os 3 testes faltantes (branches de erro de `read_pyproject_dependencies`, `dependency_spec` e `imports_of_file`) e resubmete. |
+| 2026-07-19 | QA Engineer | `TESTS_READY_FOR_REVIEW` | `0.2.0` | UT-DEC-P02/UT-DEC-P07 implementados em `TestDec015PinsHelperContract` (nova classe, `tests/bdd/test_dec015_conformity.py`) com fixtures sintéticos de `pyproject.toml` via `tempfile`; UT-DEC-R03 implementado em `TestUiImports::test_imports_of_file_raises_for_missing_file` (`tests/unit/ui/test_imports.py`). RED de DEC015-01 preservado; ver `reviews.md` §2 para evidência completa. |
 
 ## 1. Estratégia
 

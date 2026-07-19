@@ -272,6 +272,55 @@ Motivo da separação
 
 
 # ---------------------------------------------------------------------------
+# Contrato de tests/bdd/support/dec015_pins.py (unit-test-plan §2 —
+# UT-DEC-P02/UT-DEC-P07; review Architect R-1/R-2)
+# ---------------------------------------------------------------------------
+
+
+class TestDec015PinsHelperContract(unittest.TestCase):
+    """Branches de erro de ``dec015_pins`` — sem teste-oráculo antes desta revisão.
+
+    R-1/R-2 (review Architect): ``read_pyproject_dependencies`` e
+    ``dependency_spec`` só eram exercitados pelo caminho feliz (via o
+    ``pyproject.toml`` real, que sempre tem a tabela e os pacotes
+    esperados). Estes testes cobrem os branches ``raise AssertionError``
+    com um fixture sintético, sem depender do manifesto real estar
+    "quebrado" para provar o comportamento de erro.
+    """
+
+    def test_read_pyproject_dependencies_raises_when_dependencies_key_missing(
+        self,
+    ) -> None:
+        """UT-DEC-P02: ``[project]`` sem a chave ``dependencies`` → erro."""
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture = Path(tmp) / "pyproject.toml"
+            fixture.write_text(
+                '[project]\nname = "fixture-sem-deps"\n', encoding="utf-8"
+            )
+            with self.assertRaises(AssertionError) as ctx:
+                read_pyproject_dependencies(fixture)
+            self.assertIn("dependencies", str(ctx.exception))
+
+    def test_read_pyproject_dependencies_raises_when_dependencies_empty(self) -> None:
+        """UT-DEC-P02: ``dependencies = []`` (presente, mas vazia) → erro."""
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture = Path(tmp) / "pyproject.toml"
+            fixture.write_text(
+                '[project]\nname = "fixture-deps-vazia"\ndependencies = []\n',
+                encoding="utf-8",
+            )
+            with self.assertRaises(AssertionError):
+                read_pyproject_dependencies(fixture)
+
+    def test_dependency_spec_raises_when_name_absent(self) -> None:
+        """UT-DEC-P07: nome ausente na lista de deps → ``AssertionError`` nomeando o pacote."""
+        deps = ["mcp>=1.27,<2", "fastapi>=0.115,<1"]
+        with self.assertRaises(AssertionError) as ctx:
+            dependency_spec("pacote-inexistente-fixture", deps)
+        self.assertIn("pacote-inexistente-fixture", str(ctx.exception))
+
+
+# ---------------------------------------------------------------------------
 # DEC015-01 — Matriz de pins DEC-015 no manifesto (faixa de versão)
 # ---------------------------------------------------------------------------
 

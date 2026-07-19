@@ -7,6 +7,7 @@ I-T27-002: constantes e extração AST promovidas a ``tests/unit/ui/helpers.py``
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
 
 from tests.unit.ui.helpers import (
     DOMAIN_MODULES,
@@ -36,6 +37,17 @@ class TestUiImports(unittest.TestCase):
         for path in UI_PKG.glob("*.py"):
             found = imports_of_file(path) & FORBIDDEN_HOMEMADE
             self.assertFalse(found, msg=f"{path.name}: {found}")
+
+    def test_imports_of_file_raises_for_missing_file(self) -> None:
+        """UT-DEC-R03 (review Architect R-3): arquivo inexistente propaga erro.
+
+        ``imports_of_file`` foi promovida a helper público (I-T27-002); antes
+        desta revisão nenhum teste chamava a função com um ``Path``
+        inexistente — todas as chamadas usavam arquivos reais do pacote
+        ``ui``. A função não deve engolir a ausência do arquivo.
+        """
+        with self.assertRaises((FileNotFoundError, OSError)):
+            imports_of_file(Path("/no/such/arquivo-t27-fixture.py"))
 
 
 if __name__ == "__main__":
