@@ -174,3 +174,45 @@ Nenhum `BLOCKING` / `MAJOR` aberto.
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — unit-test-plan `0.1.0` apto; cobertura de extremos via BDD documental; sem camada unitária em `src/`. Gate humano intermediário substituído pela aprovação Architect (modo autonomous). Estado confirmado em `unit-test-plan.md`.
+
+---
+
+## Review Implementation — Tech Lead Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `audit/failure-backlog-index.md` + `github-etl-mcp-rag/tasks/T22-fix-tooling-e2e-compose-zoekt.md` + BDD |
+| Contratos base | design `0.1.1`, bdd `0.1.1`, interfaces `0.1.1`, unit-test-plan `0.1.0` (`APPROVED_BY_ARCHITECT`) |
+| Data | 2026-07-19 |
+| Branch | `feature/mvp-e2e-audit-hardening-T05-open-failure-tasks-parent` |
+| Modo | autonomous |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Checks executados
+
+| Check | Resultado |
+|---|---|
+| Só T22; sem T23-fix-health* / T2*-fix-health* | OK — único `T2*-fix-*` no pai = T22 |
+| Classificação combinada F-T04-001=`flakiness` / F-T04-002=`produto` / F-T04-003=consequência | OK — T22 §Classificação + índice |
+| Zero falhas pytest; sem tasks pytest inventadas | OK — índice `failed \| \`0\``; glob `T2*-fix-pytest*` vazio |
+| Sem falhas inventadas health/catalog/ui/mcp/negative | OK — índice declara sem falha observável; lacunas → T06 |
+| ENG-010: sem fix em `src/` / compose / `e2e/robot` nesta feature | OK — commit T05 só índice + T22; diff branch sem esses paths |
+| BDD FAIL-01..10 verde | OK — `10 passed in 0.01s` |
+| Sanitização BR-004 | OK — sem tokens nos artefatos |
+| Alinhamento design §3.3–3.5 / D-T05-001..006 | OK |
+
+### Achados
+
+Nenhum `BLOCKING` / `MAJOR` / `SUGGESTION` aberto nesta revisão.
+
+### Evidência BDD (Architect)
+
+```text
+10 passed in 0.01s
+comando: python -m pytest tests/bdd/test_mvp_e2e_audit_failure_backlog.py -q --no-cov
+```
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — implementação documental `ParentFailureBacklog` apta para etapa Blue. Gate humano intermediário substituído pela aprovação Architect (modo autonomous).

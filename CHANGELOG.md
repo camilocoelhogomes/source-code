@@ -31,6 +31,14 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
   secrets) + contrato BDD `tests/bdd/test_mvp_e2e_audit_e2e_robot_run.py`.
   Sem expansão Robot/browser e sem alteração de produto (`src/github_rag/**`,
   `e2e/robot/**`).
+- Backlog de falhas run-first (T05 / `mvp-e2e-audit-hardening`): contrato
+  `ParentFailureBacklog` — índice
+  `spec/features/mvp-e2e-audit-hardening/audit/failure-backlog-index.md` + task
+  pai `T22-fix-tooling-e2e-compose-zoekt` (superfície `tooling-e2e`;
+  classificação combinada REQ-017: F-T04-001=`flakiness`, F-T04-002=`produto`,
+  F-T04-003=consequência); pytest T03 com zero falhas (sem task inventada);
+  BDD `tests/bdd/test_mvp_e2e_audit_failure_backlog.py`. Sem fix de produto
+  nesta feature (`src/github_rag/**`, `e2e/robot/**`, composes).
 - Prova e2e do MVP (T21): pacote `github_rag.e2e` com contratos
   `E2eStackLauncher` / `RobotMvpSuite` (`PodmanE2eStackLauncher`,
   `DefaultRobotMvpSuite`, `E2eCredentialResolver`), suíte Robot Framework em
