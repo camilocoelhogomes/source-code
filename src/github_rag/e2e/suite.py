@@ -25,6 +25,7 @@ from github_rag.e2e.paths import (
     E2E_RESULTS_DIR,
     ROBOT_ROOT,
     resolve_repo_root,
+    resolve_robot_executable,
 )
 from github_rag.e2e.ports import E2eStackLauncher, RobotCliRunner
 
@@ -63,7 +64,7 @@ def _default_robot_runner(
         output.mkdir(parents=True, exist_ok=True)
         suite_paths = [str(robot_root / f"{name}.robot") for name in suites]
         cmd = [
-            "robot",
+            resolve_robot_executable(),
             "--exclude",
             exclude_tag,
             "--outputdir",

@@ -9,6 +9,8 @@ Motivo da separação
 
 from __future__ import annotations
 
+import shutil
+import sys
 from pathlib import Path
 
 COMPOSE_E2E_NAME: str = "docker-compose.e2e.yml"
@@ -50,3 +52,26 @@ ROBOT_ROOT: Path = _REPO_ROOT / ROBOT_SUITE_DIRNAME
 E2E_CONFIG_FIXTURE: Path = _REPO_ROOT / E2E_CONFIG_FIXTURE_REL
 E2E_REPOS_FIXTURE: Path = _REPO_ROOT / E2E_REPOS_FIXTURE_REL
 E2E_RESULTS_DIR: Path = _REPO_ROOT / E2E_RESULTS_DIRNAME
+
+
+def resolve_robot_executable() -> str:
+    """Resolve o CLI ``robot`` co-localizado ao Python ativo (``.venv/bin``).
+
+    Responsabilidade
+        Garantir que ``python -m github_rag.e2e`` invoque Robot do extra
+        ``[e2e]`` sem depender de ``PATH`` do shell.
+
+    Motivo da separação
+        Launcher e suite compartilham a mesma regra; testável sem subprocess
+        real.
+    """
+    venv_robot = Path(sys.executable).parent / "robot"
+    if venv_robot.is_file():
+        return str(venv_robot)
+    prefix_robot = Path(sys.prefix) / "bin" / "robot"
+    if prefix_robot.is_file():
+        return str(prefix_robot)
+    found = shutil.which("robot")
+    if found:
+        return found
+    return "robot"

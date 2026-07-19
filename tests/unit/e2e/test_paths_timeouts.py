@@ -52,6 +52,21 @@ class TestE2ePaths(unittest.TestCase):
 
         self.assertEqual(e2e_paths.E2E_RESULTS_DIRNAME, "e2e/results")
 
+    def test_ut_p07_resolve_robot_executable_prefers_venv(self) -> None:
+        import sys
+
+        from github_rag.e2e.paths import resolve_robot_executable  # noqa: PLC0415
+
+        exe = resolve_robot_executable()
+        venv_robot = Path(sys.executable).parent / "robot"
+        prefix_robot = Path(sys.prefix) / "bin" / "robot"
+        if venv_robot.is_file():
+            self.assertEqual(exe, str(venv_robot))
+        elif prefix_robot.is_file():
+            self.assertEqual(exe, str(prefix_robot))
+        else:
+            self.assertTrue(exe.endswith("robot"))
+
 
 class TestE2eTimeouts(unittest.TestCase):
     """UT-P05 — defaults design §3.7."""

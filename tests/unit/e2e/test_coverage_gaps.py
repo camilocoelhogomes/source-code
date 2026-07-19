@@ -187,7 +187,7 @@ class TestSuiteCoverage(unittest.TestCase):
             )
         self.assertEqual(code, 0)
         cmd = run.call_args.args[0]
-        self.assertIn("robot", cmd)
+        self.assertTrue(str(cmd[0]).endswith("robot"))
         self.assertIn("--exclude", cmd)
         self.assertIn("bdd015", cmd)
         # Suite markers as bare args must NOT be appended (Robot would treat
