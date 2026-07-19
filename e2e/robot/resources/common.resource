@@ -61,9 +61,5 @@ Response Must Not Contain Token
     [Arguments]    ${text}
     ${e2e}=    Get Environment Variable    E2E_GITHUB_TOKEN    default=
     ${gh}=    Get Environment Variable    GITHUB_TOKEN    default=
-    IF    $e2e != $EMPTY
-        Should Not Contain    ${text}    ${e2e}
-    END
-    IF    $gh != $EMPTY
-        Should Not Contain    ${text}    ${gh}
-    END
+    Run Keyword If    '${e2e}' != ''    Should Not Contain    ${text}    ${e2e}
+    Run Keyword If    '${gh}' != ''    Should Not Contain    ${text}    ${gh}
