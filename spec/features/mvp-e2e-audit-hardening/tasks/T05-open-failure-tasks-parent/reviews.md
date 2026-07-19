@@ -37,3 +37,56 @@ Nenhum `BLOCKING` / `MAJOR` aberto após `0.1.1`.
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — design `0.1.1` apto para BDD/interfaces. Gate humano intermediário substituído pela aprovação Architect (modo autonomous). **Não** manter `APPROVED_BY_ARCHITECT` v0.1.0.
+
+---
+
+## Review BDD — Tech Lead Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `bdd.md` + `tests/bdd/test_mvp_e2e_audit_failure_backlog.py` |
+| Versão revisada | `0.1.0` → `0.1.1` |
+| Data | 2026-07-18 |
+| Branch | `feature/mvp-e2e-audit-hardening-T05-open-failure-tasks-parent` |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Checks executados
+
+| Check | Resultado |
+|---|---|
+| FAIL-01 índice canônico | OK |
+| FAIL-02 só T22 no pai (ENG-009) | OK |
+| FAIL-03 superfície `tooling-e2e` | OK |
+| FAIL-04 classificação combinada D-T05-003 | OK após M-01 |
+| FAIL-05 F-T04-001..003 | OK |
+| FAIL-06 zero pytest | OK |
+| FAIL-07 sem T23/health fantasma | OK |
+| FAIL-08 sem catalog/ui/mcp/negative inventados | OK |
+| FAIL-09 sanitização BR-004 | OK |
+| FAIL-10 ENG-010 / D-T05-005 escopo | OK após M-02 |
+| Sem T23 health; F-T04-003 consequência | OK |
+| RED pré-artefato | OK — 10 failed / 0 passed (`artefato ausente`) |
+
+### Achados
+
+| ID | Severidade | Evidência | Achado | Correção esperada | Status |
+|---|---|---|---|---|---|
+| M-01 | `MAJOR` | `test_mvp_e2e_audit_failure_backlog.py` FAIL-04; design `0.1.1` §3.3 / D-T05-003 | Teste aceitava `flakiness`+`produto` sem vincular a F-T04-001/002; omitia F-T04-003 → consequência | Assert regex ID↔classificação; incluir consequência | Corrigido no teste + `bdd.md` 0.1.1 |
+| M-02 | `MAJOR` | `bdd.md` FAIL-10 **E**; teste FAIL-10; paridade T03/T04 | Cenário exige sem alteração `src`/`e2e/robot`/composes; teste só checava declaração genérica de “não implementa” | Assert menção a `src/github_rag`, `e2e/robot`, `compose` | Corrigido no teste |
+| S-01 | `SUGGESTION` | FAIL-06 `| \`0\`` | Matcher `| \`0\`` é frouxo | Preferir `failed=0` / `zero` / `nenhuma falha` na implementação | Aberto (não bloqueia) |
+
+### Bloqueios abertos
+
+Nenhum.
+
+### Evidência RED (Architect)
+
+```text
+10 failed in 0.05s — artefato ausente (razão esperada)
+comando: python -m pytest tests/bdd/test_mvp_e2e_audit_failure_backlog.py -q --no-cov
+```
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — BDD v0.1.1 apto para gate de interfaces (contrato documental `ParentFailureBacklog`). Gate humano intermediário substituído pela aprovação Architect (modo autonomous).
