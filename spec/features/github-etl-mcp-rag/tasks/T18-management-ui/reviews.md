@@ -8,13 +8,21 @@
 
 **Decisão Architect:** `APPROVED_BY_ARCHITECT` (2026-07-18)
 
-## BDD
+## BDD `0.1.0`
 
-_(preenchido na etapa seguinte)_
+| Severidade | Achado | Evidência | Correção | Resultado |
+|---|---|---|---|---|
+| — | — | — | — | Sem BLOCKING/MAJOR |
 
-## Interfaces
+**Decisão Architect:** `APPROVED_BY_ARCHITECT` (2026-07-18)
 
-_(preenchido na etapa seguinte)_
+## Interfaces `0.1.0`
+
+| Severidade | Achado | Evidência | Correção | Resultado |
+|---|---|---|---|---|
+| — | — | — | — | Sem BLOCKING/MAJOR |
+
+**Decisão Architect:** `APPROVED_BY_ARCHITECT` (2026-07-18)
 
 ## Unit tests
 
