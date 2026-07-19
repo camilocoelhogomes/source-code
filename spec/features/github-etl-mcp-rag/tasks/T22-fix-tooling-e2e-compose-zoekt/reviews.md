@@ -163,3 +163,88 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — interfaces.md `0.1.0` documenta M-T22-* / I-T22-* com responsabilidade e motivo da separação; sem Protocols novos; T21 reusado. Prosseguir para unit-test-plan (QA).
+
+---
+
+## Review — Unit test plan `0.1.0` — QA (handoff; sem auto-aprovação)
+
+| Campo | Valor |
+|---|---|
+| Autor | QA Engineer |
+| Artefato | `unit-test-plan.md` + `tests/unit/delivery/test_zoekt_compose_manifest.py` + `tests/support/compose_manifest.py` |
+| Data | 2026-07-19 |
+| Pipeline | autonomous T22 |
+| Resultado | `TESTS_READY_FOR_REVIEW` (aguarda Architect; QA não auto-aprova) |
+
+### Casos
+
+| Grupo | IDs | Foco |
+|---|---|---|
+| Contratos repo | UT-Z01..Z05 | `command` / paridade / entrypoint / volume / papéis |
+| Docs | UT-Z06, Z20, Z21 | pré-req provider (M-T22-010..013) |
+| Secrets | UT-Z07 | negativos |
+| Extremos sintéticos | UT-Z10..Z19, Z22 | command ausente, só tini, flags, path, multilinha, vazio |
+
+### Evidência red (pré-implementação)
+
+```text
+.venv/bin/python -m pytest tests/unit/delivery/test_zoekt_compose_manifest.py -q --tb=line --no-cov
+# 4 failed, 16 passed
+# Razão canônica: serviço zoekt sem `command` (F-T04-002: tini help → exit 1)
+#   nos 3 composes — UT-Z01 / Z02 / Z03
+# Docs: UT-Z06 falha (sem binário podman-compose)
+# Extremos sintéticos UT-Z10..Z22: PASS (helper)
+# UT-Z04/Z05/Z07: PASS (volume/papéis/secrets já ok no status quo)
+```
+
+### Contagem
+
+| Item | Valor |
+|---|---|
+| Métodos de teste | 20 |
+| Falhas repo/docs (RED) | UT-Z01, Z02, Z03, Z06 |
+| Helper só testes | `tests/support/compose_manifest.py` (I-T22-007) |
+| Produção alterada | nenhuma (composes/docs intactos) |
+
+---
+
+## Review — Unit test plan `0.1.0` — Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `unit-test-plan.md` + `tests/unit/delivery/test_zoekt_compose_manifest.py` + `tests/support/compose_manifest.py` |
+| Data | 2026-07-19 |
+| Pipeline | autonomous (aprovação Architect substitui HITL intermediário) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Critérios avaliados
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Contratos M-T22-001..005 nos 3 composes | OK | UT-Z01..Z05; `assert_zoekt_webserver_command` |
+| M-T22-002 / I-T22-006 (sem entrypoint; só command) | OK | UT-Z03 |
+| Docs M-T22-010..013 | OK | UT-Z06 + Z20/Z21 |
+| Secrets M-T22-006/014 | OK | UT-Z07; `assert_no_embedded_secrets` |
+| Extremos/corners | OK | UT-Z10..Z19, Z22 (ausente, tini-only, index, ordem, `-rpc`, path, vazio, multilinha) |
+| Helper só em `tests/` (I-T22-007) | OK | `tests/support/compose_manifest.py`; sem `src/` |
+| Não enfraquece BDD | OK | unitário endurece ordem lógica + multilinha vs EZ-02/03 |
+| Sem compose up / sem produção | OK | só leitura; composes/docs intactos |
+| RED pré-implementação | OK | `4 failed, 16 passed` — Z01/Z02/Z03/Z06 |
+
+### Achados
+
+| Severidade | Achado | Evidência | Correção esperada | Status |
+|---|---|---|---|---|
+| `SUGGESTION` | UT-Z02 valida tokens canônicos + ordem por arquivo; não compara igualdade byte-a-byte dos blobs entre composes | `test_ut_z02_parity_across_user_e2e_dev` | Suficiente p/ M-T22-004 (mesmo argv efetivo); igualdade estrita opcional | Aberto residual — não bloqueia |
+| `SUGGESTION` | `canonical_argv_present` no helper não é usado pelos testes | `compose_manifest.py` L205–207 | Remover ou usar em Z02 se desejado | Aberto residual — não bloqueia |
+
+### Achados abertos
+
+| Severidade | Achado | Evidência | Correção esperada |
+|---|---|---|---|
+| — | Nenhum `BLOCKING` ou `MAJOR` aberto | — | — |
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — unit-test-plan + suíte cobrem M-T22-*/extremos/secrets; helper só em tests/; RED canônico F-T04-002 + docs. Prosseguir para implementação Developer (sem alterar testes para obter verde).
