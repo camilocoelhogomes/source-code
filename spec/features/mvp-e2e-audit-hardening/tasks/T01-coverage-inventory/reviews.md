@@ -152,3 +152,44 @@ Nenhum.
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — `interfaces.md` v0.1.0 apto para unit plan / implementação documental da matriz. Gate humano intermediário substituído pela aprovação Architect (modo autonomous).
+
+---
+
+## Review Unitários — Tech Lead Architect
+
+| Campo | Valor |
+|---|---|
+| Revisor | Tech Lead Architect |
+| Artefato | `unit-test-plan.md` v0.1.0 + `tests/unit/audit/inventory_schema.py` + `tests/unit/audit/test_coverage_inventory_schema.py` |
+| Data | 2026-07-18 |
+| Branch | `feature/mvp-e2e-audit-hardening-T01-coverage-inventory` |
+| Tip | `377515d` (`test(T01): unitários schema CoverageInventory (RED no artefato).`) |
+| Resultado | `APPROVED_BY_ARCHITECT` |
+
+### Checks executados
+
+| Check | Resultado |
+|---|---|
+| Corners schema §6 (UT-P01..P14) | OK — tabela ausente, colunas, domínio superficie/status/browser, 015, duplicata, conjunto 23 |
+| REQ-009 / M-02 evidência real para `coberto-integral` | OK — UT-P06 + helper `is_absent_evidence` |
+| BR-001 / M-01 denylist T21 003/006/013/024 | OK — helper força `lacuna`+nota; UT-P11/P12 corners; UT-A03 no canônico |
+| D-T01-005 UI sem browser | OK — UT-P13 |
+| Sem Robot/e2e execução; helper só em `tests/unit/audit/` | OK — I-T01-003 |
+| Sem `src/` / produção | OK |
+| RED pré-matriz (UT-A01..A04) | OK — `14 passed, 4 failed` (artefato ausente) |
+| Alinhamento design 0.1.0 / BDD 0.1.1 / interfaces 0.1.0 | OK |
+
+### Achados
+
+| ID | Severidade | Evidência | Achado | Correção esperada |
+|---|---|---|---|---|
+| — | — | — | Nenhum BLOCKING / MAJOR aberto | — |
+| S-UT-01 | `SUGGESTION` | UT-P11 só muta BDD-003; UT-P12 só BDD-006 | Corners da denylist não exercitam 013/024 individualmente; regra completa já está no helper + UT-A03 + UT-P14 | Opcional pós-GREEN: parametrizar UT-P11 para os 4 ids |
+
+### Bloqueios abertos
+
+Nenhum.
+
+### Decisão
+
+`APPROVED_BY_ARCHITECT` — unitários aptos para implementação documental da matriz. Gate `ARCHITECT_UNIT_TESTS` (modo autonomous; substitui HITL). Não implementar a matriz nesta etapa de review.

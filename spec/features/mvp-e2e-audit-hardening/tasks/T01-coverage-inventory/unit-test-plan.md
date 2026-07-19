@@ -6,7 +6,7 @@
 | Task | `T01-coverage-inventory` |
 | Autor | QA Engineer |
 | Data | 2026-07-18 |
-| Estado | `TESTS_READY_FOR_REVIEW` |
+| Estado | `APPROVED_BY_ARCHITECT` |
 | Versão | `0.1.0` |
 | Design / BDD / Interfaces | `0.1.0` / `0.1.1` / `0.1.0` (Architect-approved) |
 | Natureza | Documental — sem `src/`; valida contrato `CoverageInventory` |
@@ -18,6 +18,7 @@
 | Data | Autor | Decisão | Versão | Observações |
 |---|---|---|---|---|
 | 2026-07-18 | QA Engineer | `TESTS_READY_FOR_REVIEW` | `0.1.0` | Plano + unitários de schema/corners; RED no path canônico até existir a matriz. |
+| 2026-07-18 | Tech Lead Architect | `APPROVED_BY_ARCHITECT` | `0.1.0` | Gate `ARCHITECT_UNIT_TESTS`; ver `reviews.md` / `approvals.md`. |
 
 ## 1. Estratégia
 
