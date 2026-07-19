@@ -6,7 +6,7 @@
 | Task | `T27-gap-sdk-dec015-conformity` |
 | Autor | Developer |
 | Data | 2026-07-19 |
-| Estado | `BLUE_READY_FOR_REVIEW` |
+| Estado | `BLUE_APPROVED_BY_ARCHITECT` |
 | Branch | `feature/github-etl-mcp-rag-T27-gap-sdk-dec015-conformity` |
 | Superfície | docs (`interfaces.md`, `bdd.md`) + docstring de teste (`tests/bdd/test_dec015_conformity.py`) |
 | Orientação | `reviews.md` §5 (B-1/B-2/B-3), a partir dos achados `SUGGESTION` R-4/R-6 |
@@ -75,3 +75,12 @@ Comparação de performance before/after: **N/A** — Blue é documental/docstri
 ## 5. Decisão
 
 `BLUE_READY_FOR_REVIEW` — mudanças limitadas a documentação (`interfaces.md`, `bdd.md`) e docstring de teste; zero alteração de comportamento/contratos/cobertura; suíte completa estável em **1258 passed / 2 skipped / 96.53%**. Pendente `BLUE_APPROVED_BY_ARCHITECT`.
+
+## 6. Review Architect
+
+Reproduzido de forma independente (venv efêmera, removida ao final), não só aceito por relato: diff `git show 2702ae4` confirma que só `bdd.md`, `interfaces.md` e a docstring de `TestDEC10Br024Postgres` (comentário, sem tocar em nenhuma linha de asserção/lógica de teste) foram alterados — B-1/B-2 aplicados exatamente como orientado em `reviews.md` §5 (menor risco, sem migrar `TestDEC10Br024Postgres` para `SourceConformityRule`, sem tocar código executável). B-3 confirmado por `git diff fdf29b0..HEAD --stat -- src/ e2e/robot/ docker-compose*.yml Dockerfile` vazio — nenhum arquivo de produção/robot/compose tocado nos commits `2702ae4`/`6b1cde4`. `python -m pytest -q` → **1258 passed, 2 skipped**, cobertura **96.53%** — idêntico byte a byte ao baseline pré-Blue registrado em §1/§4; zero regressão comportamental. `CHANGELOG.md` registra a entrada T27 em `[Unreleased]` com escopo e gap fechado corretos.
+
+**Decisão:** `BLUE_APPROVED_BY_ARCHITECT`
+**Data:** 2026-07-19
+**Autor:** tech-lead-architect
+**Versão:** v0.1.0
