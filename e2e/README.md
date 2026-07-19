@@ -80,7 +80,8 @@ podman compose -f docker-compose.e2e.yml down
 |------|--------|
 | `e2e/robot/*.robot` | Suites green path (health, catalog_indexing, ui, mcp, negative) |
 | `e2e/robot/resources/` | Keywords HTTP/auth (nunca logam token) |
-| `e2e/fixtures/config.e2e.json` | Config sem secrets (`token.env=GITHUB_TOKEN`) |
+| `e2e/probes/negative_probes.py` | Indução controlada BDD-008/022 (T25; fora de `github_rag.e2e`) |
+| `e2e/fixtures/config.e2e.json` | Config sem secrets (`token.env=GITHUB_TOKEN`); inclui conexão volume ausente (BDD-018) |
 | `e2e/fixtures/repos/` | Volume local (repo `sample-local` inicializado no `up`) |
 | `e2e/results/` | Artefatos Robot (gitignored) |
 

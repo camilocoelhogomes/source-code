@@ -19,6 +19,7 @@ from github_rag.catalog.models import (
     IndexingExecution,
     Progress,
 )
+from github_rag.sources.local.discovery import LocalDiscoveryIssue
 from github_rag.ui.labels import state_label
 
 
@@ -96,4 +97,17 @@ def execution_to_view(execution: IndexingExecution) -> dict[str, Any]:
         "error_message": execution.error_message,
         "error_at": _iso(execution.error_at),
         "commit_target": execution.commit_target,
+    }
+
+
+def issue_to_view(issue: LocalDiscoveryIssue) -> dict[str, str]:
+    """LocalDiscoveryIssue → JSON UI (BDD-018 / T25).
+
+    Responsabilidade: projetar connection_name/path/message sem extras.
+    Motivo da separação: serialize ≠ store ≠ discovery.
+    """
+    return {
+        "connection_name": issue.connection_name,
+        "path": issue.path,
+        "message": issue.message,
     }

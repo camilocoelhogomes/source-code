@@ -25,6 +25,15 @@
           "main"
         ]
       }
+    },
+    "local-missing-volume": {
+      "type": "git",
+      "url": "file:///repos/__missing_e2e_volume__/*",
+      "revisions": {
+        "branches": [
+          "main"
+        ]
+      }
     }
   }
 }

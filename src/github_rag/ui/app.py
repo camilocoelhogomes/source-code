@@ -28,8 +28,10 @@ from github_rag.query.types import (
 from github_rag.schedule.errors import InvalidCronExpressionError
 from github_rag.schedule.ports import DailyScheduler
 from github_rag.ui.errors import http_status_for, safe_detail
+from github_rag.ui.issues import CatalogIssueStore, InMemoryCatalogIssueStore
 from github_rag.ui.serialize import (
     execution_to_view,
+    issue_to_view,
     repo_to_detail,
     repo_to_view,
 )
@@ -71,6 +73,7 @@ def create_app(
     query: QueryService,
     drain_on_index: bool,
     web_root: Path,
+    issue_store: CatalogIssueStore | None = None,
 ) -> FastAPI:
     """Monta FastAPI com rotas da Management UI.
 
@@ -78,6 +81,9 @@ def create_app(
     Motivo da separação: ``DefaultManagementUiApi.build`` só compõe deps.
     """
     app = FastAPI(title="github-rag management UI", version="0.1.0")
+    issues: CatalogIssueStore = (
+        issue_store if issue_store is not None else InMemoryCatalogIssueStore()
+    )
 
     def _http(exc: BaseException) -> HTTPException:
         return HTTPException(
@@ -105,6 +111,13 @@ def create_app(
     def list_repos() -> dict:
         repos = [repo_to_view(e) for e in catalog.list_active_catalog()]
         return {"repos": repos}
+
+    @app.get("/api/catalog/issues")
+    def list_catalog_issues() -> dict:
+        """Issues locais do último sync (BDD-018 / T25)."""
+        return {
+            "issues": [issue_to_view(i) for i in issues.list_issues()]
+        }
 
     @app.get("/api/repos/{repository_id}")
     def get_repo(repository_id: int) -> dict:

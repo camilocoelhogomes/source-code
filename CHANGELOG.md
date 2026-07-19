@@ -6,6 +6,12 @@ Todas as mudanças relevantes do projeto são registradas neste arquivo.
 
 ### Adicionado
 
+- Gaps negativos integrais (T25 / `github-etl-mcp-rag`): `GET /api/catalog/issues`
+  + `CatalogIssueStore` (BDD-018); probes `e2e/probes/negative_probes.py` para
+  BDD-008 (falha parcial + histórico + reindex) e BDD-022 (`CONFIG_PATH`
+  fail-fast sem leak); `negative.robot` e fixture `local-missing-volume`;
+  testes BDD/unitários; cobertura ≥95%. Asserts API autocontidos; browser
+  residual T23.
 - Pacote de fechamento da auditoria (T07 / `mvp-e2e-audit-hardening`): contrato
   `AuditClosurePack` em
   `spec/features/mvp-e2e-audit-hardening/audit/closure-pack.md` — índice de
