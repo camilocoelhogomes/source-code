@@ -129,3 +129,22 @@
 ### Decisão
 
 `APPROVED_BY_ARCHITECT` — interfaces.md `0.1.0` adequado para unitários QA e implementação Developer.
+
+## Review — Unit test plan `0.1.0` — QA (entrega)
+
+| Campo | Valor |
+|---|---|
+| Autor | QA Engineer |
+| Artefato | `unit-test-plan.md` + `tests/bdd/test_ui_browser_gap.py` + `tests/unit/e2e/test_ui_browser_manifest.py` |
+| Data | 2026-07-19 |
+| Pipeline | autonomous |
+| Resultado | `TESTS_READY_FOR_REVIEW` (não APPROVED) |
+
+### Evidência TDD red
+
+```text
+15 failed, 20 passed
+pytest tests/bdd/test_ui_browser_gap.py tests/unit/e2e/test_ui_browser_manifest.py -q --tb=line --no-cov
+```
+
+Falhas esperadas: dep `robotframework-browser` ausente; `GREEN_PATH_SUITES` sem `ui_browser`; `browser.resource` / `ui_browser.robot` ausentes; README sem `rfbrowser init`; fixture sem wildcard.
