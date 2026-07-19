@@ -104,3 +104,74 @@
 ### Resultado
 
 `CHANGES_REQUIRED` na v0.1.0 (M-UT-T15-01, M-UT-T15-02, M-UT-T15-03) → correções aplicadas pelo próprio Architect: `tests/unit/schedule/test_scheduler.py` (novo `test_valid_reschedules_while_running_without_restart`), `tests/bdd/test_daily_scheduler.py` (`TestSCH08SetCronNoConfigPath` corrigido para chamar `start()`/`stop()`), `pyproject.toml` (`apscheduler>=3.10,<4` adicionado; `*/schedule/postgres.py` incluído em `omit`); evidência RED reexecutada e reconfirmada sem regressão → **`APPROVED_BY_ARCHITECT`** na v0.2.0. Sem achados BLOCKING ou MAJOR abertos.
+
+## Revisão 5 — Tech Lead Architect — Implementação (`src/github_rag/schedule/*`, `settings.py`, `migrations/versions/0002_scheduler_preference.py`)
+
+- **Revisor:** Tech Lead Architect
+- **Artefatos:** `src/github_rag/schedule/{ports,errors,cron_expr,memory,scheduler,postgres}.py`; `src/github_rag/settings.py`; `migrations/versions/0002_scheduler_preference.py`; `tests/unit/schedule/*`; `tests/bdd/test_daily_scheduler.py`
+- **Data:** 2026-07-18
+- **Worktree:** `/private/tmp/github_rag_T15` (branch `feature/github-etl-mcp-rag-T15-daily-scheduler`)
+
+### Achados
+
+| ID | Severidade | Evidência | Descrição | Correção aplicada |
+|---|---|---|---|---|
+| M-IMPL-T15-01 | MAJOR | `unit-test-plan.md` v0.2.0 §"Cobertura alvo" ("`schedule/postgres.py` excluído do gate... adaptador só exercível contra PostgreSQL real (`tests/integration`)"); ausência de `tests/integration/test_scheduler_postgres_preference*.py` no candidato | O próprio plano de testes aprovado (0.2.0) prometia exercitar `SqlAlchemyCronPreferenceStore`/migration `0002` via teste de integração, no mesmo padrão de T03 (`tests/integration/test_postgres_catalog_repository.py`). O candidato implementou o adaptador e o omitiu do gate de cobertura, mas nunca criou o teste de integração prometido — a migration `0002_scheduler_preference` nunca foi de fato aplicada contra PostgreSQL, e o get/set/clear/upsert do adaptador ORM nunca foi exercido, mesmo em modo skip-sem-Docker. Deriva do artefato aprovado. | Criado `tests/integration/test_scheduler_postgres_preference.py` (mesma técnica `testcontainers`/`pytest.importorskip`/`pytest.mark.integration` de T03): aplica migração até `head`, valida singleton (get None inicial, set/get, set duplicado não duplica linha, set inválido não persiste, clear idempotente, `updated_at` presente). Roda e pula corretamente sem Docker (confirmado: 6 `SKIPPED` com a mesma mensagem de T03); lógica do adaptador também sanity-checada contra SQLite in-memory nesta revisão. |
+| M-IMPL-T15-02 | MAJOR | `scheduler.py:56-62` (branch "já rodando" dentro de `start()`) e `scheduler.py:103-104` (`except Exception` genérico em `_reschedule`) sem cobertura (relatório `--cov-report=term-missing` do candidato: `90% missing 56-62, 81->83, 103-104`); comportamento não previsto em `interfaces.md` (`start()` documentado sem menção a idempotência) | (a) Chamar `start()` com o job já ativo (idempotência não especificada) nunca foi testado; (b) `except Exception` em `_reschedule` é amplo demais — mascararia qualquer falha real do APScheduler (ex.: trigger inválido) como "job ausente", recriando o job silenciosamente em vez de propagar o erro. | (a) Docstring de `DailyScheduler.start()` (`ports.py`) atualizada explicitando o comportamento idempotente (reschedule em vez de duplicar/erro); testes `TestStartIdempotent::test_start_twice_reschedules_instead_of_raising_or_duplicating` e `TestStopIdempotent::test_stop_when_scheduler_already_shutdown_externally` adicionados. (b) `except Exception` restrito a `apscheduler.jobstores.base.JobLookupError`; teste `test_reschedule_recreates_job_when_missing_from_store` adicionado. `scheduler.py` agora 100% linhas+branches. |
+| M-IMPL-T15-03 | MAJOR | `postgres.py` `SchedulerPreferenceRow.updated_at` (`mapped_column(DateTime(timezone=True), nullable=False)`, sem `server_default`) vs. `migrations/versions/0002_scheduler_preference.py:26-31` (`server_default=sa.text("now()")`) | Divergência modelo↔migration quebra a convenção já estabelecida por T03 (`catalog/postgres/models.py:97-101`, onde todo `DateTime` com `server_default` na migração tem o mesmo `server_default` espelhado no modelo ORM). Sem o espelhamento, um futuro `alembic revision --autogenerate` comparando `Base.metadata` contra o banco tentaria remover o `server_default` da coluna, e `Base.metadata.create_all()` fora do fluxo de migração perderia o default. | Adicionado `server_default=text("now()")` ao `mapped_column` de `updated_at` em `postgres.py`, espelhando a migração e o padrão de T03. |
+| S-IMPL-T15-01 | SUGGESTION | `cron_expr.py:32-33` (`if expression is None: raise ...`) sem cobertura (`90% missing 33`) | Ramo defensivo nunca exercitado por teste, embora a assinatura declare `expression: str`. | Adicionado `test_none_is_rejected` em `test_cron_expr.py`; `cron_expr.py` agora 100%. |
+| S-IMPL-T15-02 | SUGGESTION (sem correção) | `schedule/memory.py` importa `schedule/cron_expr.py`, que importa `apscheduler` | `memory.py` não importa `apscheduler` diretamente (conforme AST de `test_eng013.py`/SCH-13, que checa só imports de nível de módulo), mas depende transitivamente do pacote via a função de validação compartilhada `validate_cron_expression`. Isso é reuso intencional (evita duplicar a regra de validação — mesmo espírito de D-T15-005) e não viola a letra de SCH-13/D-T15-010 (nenhum módulo importa **os dois** SDKs; `apscheduler` continua restrito a `cron_expr.py`/`scheduler.py`). Registrado apenas para rastreabilidade; não bloqueia. | — |
+
+### Verificação dos demais critérios (sem achados)
+
+- `AppSettings.index_cron`/`ENV_INDEX_CRON`/`DEFAULT_INDEX_CRON` (`settings.py`) conformes a I-T15-006; `schedule` nunca lê `os.environ` diretamente (D-T15-001) — confirmado por leitura completa de `scheduler.py`/`memory.py`/`postgres.py`.
+- Precedência ENG-004 (`DefaultDailyScheduler.active_cron`), `set_cron` único caminho de escrita (D-T15-002/D-T15-009), `run_tick_once` com lock de instância (D-T15-011/012) — implementados conforme design/interfaces 0.2.0.
+- `@runtime_checkable` em `CronPreferenceStore`/`DailyScheduler` (I-T15-009); docstrings de Responsabilidade/Motivo presentes em todas as portas e módulos.
+- Confinamento de SDK (ENG-013/SCH-13): `apscheduler` só em `cron_expr.py`/`scheduler.py`; `sqlalchemy` só em `postgres.py`; `ports.py`/`errors.py`/`memory.py` sem imports de nível de módulo de nenhum dos dois — confirmado por AST (`test_eng013.py`, `TestSCH13SdkConfinement`) e por leitura manual.
+- Migration `0002_scheduler_preference` com `down_revision = "0001_initial_catalog"` correto; cadeia de revisões resolvida sem conflito (`alembic.script.ScriptDirectory.walk_revisions`).
+- BR-017 (sem CRUD de conexões): superfície de `github_rag.schedule` restrita a `CronPreferenceStore`, `DailyScheduler`, `DefaultDailyScheduler`, `InMemoryCronPreferenceStore`, erros e `validate_cron_expression` — sem símbolos de CRUD.
+- Naming convention de constraints (`_NAMING_CONVENTION` em `postgres.py`) idêntica à de `catalog/postgres/models.py`.
+- Execução real da suíte completa nesta revisão (venv isolado apontando ao worktree, `pip install -e ".[dev,integration]"`): **813 passed, 10 skipped** (4 pré-existentes de T03 + 6 novos do teste de integração criado nesta revisão, todos pulados por Docker indisponível no ambiente de revisão, mesma mensagem de skip de T03), cobertura total **98.85%** (acima do gate de 95%; subiu de 98.56% após as correções). Pacote `github_rag.schedule` e `settings.py` em **100%** linhas+branches após as correções desta revisão.
+
+### Resultado
+
+`CHANGES_REQUIRED` na implementação candidata (M-IMPL-T15-01, M-IMPL-T15-02, M-IMPL-T15-03) → correções aplicadas pelo próprio Architect (arquivos listados acima; suíte reexecutada, sem regressão, cobertura do pacote `schedule` elevada a 100%) → **`APPROVED_BY_ARCHITECT`**. Sem achados BLOCKING ou MAJOR abertos (S-IMPL-T15-02 é SUGGESTION informativa, sem ação).
+
+## Revisão 6 — Tech Lead Architect — Refatoração Blue (`src/github_rag/schedule/scheduler.py`)
+
+- **Revisor:** Tech Lead Architect
+- **Artefatos:** `spec/.../T15-daily-scheduler/refactoring.md`; `src/github_rag/schedule/scheduler.py`
+- **Data:** 2026-07-18
+- **Worktree:** `/private/tmp/github_rag_T15` (branch `feature/github-etl-mcp-rag-T15-daily-scheduler`)
+
+### Mudanças avaliadas
+
+1. Extração de `_cron_trigger(expression)` e `_add_cron_job(scheduler, expression)`,
+   eliminando a duplicação de `add_job(...)` entre `start()` e o fallback
+   `JobLookupError` de `_reschedule()`.
+2. `active_cron()` reescrito como expressão condicional direta (mesma semântica
+   ENG-004: preferência do store prevalece sobre `default_cron`).
+
+### Verificação
+
+- Reexecutei a suíte completa no worktree (venv isolado, `PYTHONPATH=src pytest -q`):
+  **813 passed, 2 skipped**, cobertura total **98.85%** (gate 95%) — idêntico ao
+  baseline registrado em `refactoring.md` pré-Blue.
+- `src/github_rag/schedule/scheduler.py`: **100%** linhas+branches (0 missing),
+  sem regressão de cobertura.
+- Diff linha a linha: `_add_cron_job` preserva exatamente os mesmos argumentos de
+  `add_job` (`run_tick_once`, `id=_JOB_ID`, `replace_existing=True`,
+  `max_instances=1`, `coalesce=True`); `_cron_trigger` preserva
+  `CronTrigger.from_crontab(expression, timezone=_UTC)`; `except JobLookupError`
+  em `_reschedule` inalterado. Nenhuma assinatura pública (`start`, `stop`,
+  `set_cron`, `active_cron`, `run_tick_once`) foi alterada — contrato de
+  `interfaces.md` 0.2.0 preservado.
+
+### Achados
+
+Nenhum. Sem BLOCKING/MAJOR/SUGGESTION.
+
+### Resultado
+
+**`BLUE_APPROVED_BY_ARCHITECT`**. Simplificação sem alteração de comportamento
+ou contrato; testes verdes antes/depois com cobertura equivalente.

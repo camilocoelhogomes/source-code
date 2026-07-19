@@ -151,6 +151,49 @@ class TestStopIdempotent(unittest.TestCase):
         sched.stop()
         sched.stop()
 
+    def test_stop_when_scheduler_already_shutdown_externally(self) -> None:
+        """stop() não chama shutdown() duas vezes se o BackgroundScheduler já
+        não está `.running` (ex.: encerrado por fora do DailyScheduler)."""
+        sched, *_ = make_scheduler()
+        sched.start()
+        sched._scheduler.shutdown(wait=False)  # noqa: SLF001 — simula shutdown externo
+        sched.stop()
+
+
+class TestStartIdempotent(unittest.TestCase):
+    def test_start_twice_reschedules_instead_of_raising_or_duplicating(
+        self,
+    ) -> None:
+        """start() chamado com o job já rodando reagenda (mesmo caminho de
+        set_cron) em vez de duplicar o job ou lançar erro (docstring de
+        DailyScheduler.start em ports.py)."""
+        sched, store, *_ = make_scheduler(default_cron="0 2 * * *")
+        sched.start()
+        try:
+            store.set("0 */6 * * *")
+            sched.start()
+            self.assertEqual(sched.active_cron(), "0 */6 * * *")
+            jobs = sched._scheduler.get_jobs()  # noqa: SLF001 — inspeção de teste
+            self.assertEqual(len(jobs), 1)
+        finally:
+            sched.stop()
+
+    def test_reschedule_recreates_job_when_missing_from_store(self) -> None:
+        """_reschedule captura só JobLookupError (job removido do
+        BackgroundScheduler por fora do DailyScheduler) e recria o job em vez
+        de propagar; qualquer outra exceção do APScheduler deve propagar."""
+        sched, store, *_ = make_scheduler(default_cron="0 2 * * *")
+        sched.start()
+        try:
+            sched._scheduler.remove_job("index_cron_tick")  # noqa: SLF001
+            sched.set_cron("0 */6 * * *")
+            self.assertEqual(sched.active_cron(), "0 */6 * * *")
+            jobs = sched._scheduler.get_jobs()  # noqa: SLF001
+            self.assertEqual(len(jobs), 1)
+            self.assertEqual(jobs[0].id, "index_cron_tick")
+        finally:
+            sched.stop()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -66,7 +66,10 @@ class DailyScheduler(Protocol):
         """Inicia ``BackgroundScheduler`` com job ``CronTrigger`` (UTC).
 
         Responsabilidade: registrar job ``index_cron_tick``; ``max_instances=1``;
-        ``coalesce=True``.
+        ``coalesce=True``. Idempotente se já rodando: reaplica ``active_cron()``
+        via reschedule (mesmo caminho de ``set_cron``) em vez de duplicar o job
+        ou lançar erro — evita que um segundo ``start()`` acidental (ex.: wiring
+        de boot, T19) derrube o job em vigor.
         Erros: ``InvalidCronExpressionError``; ``SchedulerConfigError``.
         """
         ...

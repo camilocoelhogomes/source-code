@@ -27,6 +27,10 @@ class TestValidateCronExpression(unittest.TestCase):
                     # mensagem cita algo da expressão (ou truncamento)
                     self.assertIn(expr.strip()[:20], message)
 
+    def test_none_is_rejected(self) -> None:
+        with self.assertRaises(InvalidCronExpressionError):
+            validate_cron_expression(None)  # type: ignore[arg-type]
+
     def test_long_expression_message_truncated(self) -> None:
         huge = "x" * 300
         with self.assertRaises(InvalidCronExpressionError) as ctx:
