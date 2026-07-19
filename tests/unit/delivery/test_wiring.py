@@ -65,5 +65,121 @@ class TestWiringBindHelpers(unittest.TestCase):
         self.assertIn("environ", mcp_params)
 
 
+class TestWiringHelpersCoverage(unittest.TestCase):
+    """Cobertura adicional de factories/binds (sem infra real)."""
+
+    def test_wait_for_postgres_missing_database_url(self) -> None:
+        from github_rag.delivery.wiring import DeliveryWiringError, wait_for_postgres
+
+        with self.assertRaises(DeliveryWiringError):
+            wait_for_postgres({})
+
+    def test_run_alembic_upgrade_missing_database_url(self) -> None:
+        from github_rag.delivery.wiring import DeliveryWiringError, run_alembic_upgrade
+
+        with self.assertRaises(DeliveryWiringError):
+            run_alembic_upgrade({})
+
+    def test_wire_catalog_sync_builds(self) -> None:
+        from github_rag.delivery.wiring import wire_catalog_sync
+
+        sync = wire_catalog_sync({}, catalog=object())
+        self.assertTrue(hasattr(sync, "sync"))
+
+    def test_wire_query_service_missing_frontier_env(self) -> None:
+        from github_rag.delivery.wiring import wire_query_service
+
+        class _Settings:
+            index_workers = 2
+            query_workers = 4
+            index_cron = "0 2 * * *"
+            config_path = None
+
+        with self.assertRaises(Exception):
+            wire_query_service({}, catalog=object(), settings=_Settings())
+
+    def test_wire_scheduler_missing_database_url(self) -> None:
+        from github_rag.delivery.wiring import wire_scheduler
+
+        class _Settings:
+            index_cron = "0 2 * * *"
+
+        with self.assertRaises(Exception):
+            wire_scheduler(
+                {},
+                catalog=object(),
+                orchestrator=object(),
+                settings=_Settings(),
+                reconcile=object(),
+            )
+
+    def test_default_bind_ui_invalid_port(self) -> None:
+        from github_rag.delivery.wiring import DeliveryWiringError, default_bind_ui
+
+        with self.assertRaises(DeliveryWiringError):
+            default_bind_ui(object(), {"UI_PORT": "not-a-port"})
+
+    def test_default_bind_mcp_invalid_port(self) -> None:
+        from github_rag.delivery.wiring import DeliveryWiringError, default_bind_mcp
+
+        with self.assertRaises(DeliveryWiringError):
+            default_bind_mcp(object(), {"MCP_PORT": "bad"})
+
+    def test_default_bind_ui_calls_uvicorn(self) -> None:
+        from unittest import mock
+
+        from github_rag.delivery.wiring import default_bind_ui
+
+        with mock.patch("uvicorn.run") as run:
+            default_bind_ui(object(), {"UI_HOST": "127.0.0.1", "UI_PORT": "9090"})
+        run.assert_called_once()
+        self.assertEqual(run.call_args.kwargs["host"], "127.0.0.1")
+        self.assertEqual(run.call_args.kwargs["port"], 9090)
+
+    def test_default_bind_mcp_calls_run(self) -> None:
+        from github_rag.delivery.wiring import default_bind_mcp
+
+        class _Settings:
+            port = 0
+            host = ""
+
+        class _Mcp:
+            def __init__(self) -> None:
+                self.settings = _Settings()
+                self.calls: list[str] = []
+
+            def run(self, *, transport: str) -> None:
+                self.calls.append(transport)
+
+        mcp = _Mcp()
+        default_bind_mcp(
+            mcp, {"MCP_PORT": "8001", "MCP_TRANSPORT": "sse", "MCP_HOST": "0.0.0.0"}
+        )
+        self.assertEqual(mcp.calls, ["sse"])
+        self.assertEqual(mcp.settings.port, 8001)
+
+    def test_wire_ui_and_mcp_compose(self) -> None:
+        from unittest import mock
+
+        from github_rag.delivery.wiring import wire_mcp_server, wire_ui_app
+
+        with mock.patch("github_rag.ui.DefaultManagementUiApi") as ui_cls:
+            ui_cls.return_value.build.return_value = "ui-app"
+            app = wire_ui_app(
+                catalog=object(),
+                orchestrator=object(),
+                scheduler=object(),
+                query=object(),
+            )
+        self.assertEqual(app, "ui-app")
+
+        with mock.patch("github_rag.mcp.DefaultMcpEvidenceServer") as mcp_cls:
+            mcp_cls.return_value.build.return_value = "mcp-app"
+            built = wire_mcp_server(
+                catalog=object(), query=object(), query_limiter=object()
+            )
+        self.assertEqual(built, "mcp-app")
+
+
 if __name__ == "__main__":
     unittest.main()

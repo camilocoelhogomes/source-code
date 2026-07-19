@@ -44,6 +44,24 @@ class TestHealthzPayload(unittest.TestCase):
         body = healthz_payload(ui_ready=True, mcp_ready=True)
         self.assertEqual(set(body.keys()), {"status", "ui", "mcp"})
 
+    def test_healthz_route_503_when_not_ready_and_object_state(self) -> None:
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+
+        from github_rag.delivery.health import register_health_routes
+
+        class _State:
+            ui_ready = False
+            mcp_ready = False
+
+        app = FastAPI()
+        register_health_routes(app, get_state=lambda: _State())
+        resp = TestClient(app).get("/healthz")
+        self.assertEqual(resp.status_code, 503)
+        body = resp.json()
+        self.assertNotEqual(body.get("status"), "ok")
+        self.assertNotEqual(body.get("ui"), "ready")
+
 
 class TestHealthzAfterBoot(unittest.TestCase):
     """UT-H03 / UT-H04 — health só após boot; sem segredos."""
